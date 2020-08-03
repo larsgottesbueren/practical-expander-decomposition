@@ -62,5 +62,10 @@ std::vector<Vertex> UnitFlow::compute() {
     }
   }
 
-  return {};
+  std::vector<Vertex> levelCut;
+  for (Vertex u = 0; u < size(); ++u)
+    if (excess(u) > 0)
+      levelCut.push_back(u);
+
+  return levelCut;
 }

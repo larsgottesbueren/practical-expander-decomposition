@@ -2,14 +2,17 @@
 
 #include "lib/unit_flow.hpp"
 
+#include <algorithm>
+
 TEST(UnitFlow, TwoVertexFlow) {
   UnitFlow uf(2, INT_MAX);
   uf.addSource(0, 10);
   uf.addSink(1, 10);
   uf.addEdge(0, 1, 10);
 
-  uf.compute();
+  auto cut = uf.compute();
 
+  EXPECT_TRUE(cut.empty());
   EXPECT_EQ(uf.flowIn(0), 0);
   EXPECT_EQ(uf.flowIn(1), 10);
 }
@@ -20,8 +23,9 @@ TEST(UnitFlow, TwoVertexFlowSmallEdge) {
   uf.addSink(1, 10);
   uf.addEdge(0, 1, 4);
 
-  uf.compute();
+  auto cut = uf.compute();
 
+  EXPECT_EQ(cut, (std::vector<Vertex>{0}));
   EXPECT_EQ(uf.flowIn(0), 6);
   EXPECT_EQ(uf.flowIn(1), 4);
 }
@@ -32,10 +36,11 @@ TEST(UnitFlow, TwoVertexFlowSmallSink) {
   uf.addSink(1, 2);
   uf.addEdge(0, 1, 9);
 
-  uf.compute();
+  auto cut = uf.compute();
 
-  EXPECT_EQ(uf.flowIn(0), 7);
-  EXPECT_EQ(uf.flowIn(1), 3);
+  EXPECT_FALSE(cut.empty());
+  EXPECT_GT(uf.excess(0), 0);
+  EXPECT_GT(uf.excess(1), 0);
 }
 
 /**
@@ -57,8 +62,9 @@ TEST(UnitFlow, CanRouteBipartite) {
     for (int v = 0; v < m; ++v)
       uf.addEdge(u, n + v, 2);
 
-  uf.compute();
+  auto cut = uf.compute();
 
+  EXPECT_TRUE(cut.empty());
   for (int u = 0; u < n; ++u)
     EXPECT_EQ(uf.excess(u), 0) << "Left hand side should not have any excess";
   for (int u = 0; u < m; ++u)
@@ -84,8 +90,13 @@ TEST(UnitFlow, CannotRouteBottleneck) {
       uf.addEdge(u, v, 10);
   }
 
-  uf.compute();
+  auto cut = uf.compute();
+  std::sort(cut.begin(), cut.end());
+  std::vector<Vertex> expected = {0,1,2};
+  EXPECT_EQ(cut, expected) << "Expected source nodes be part of the level cut";
 
   for (int u = 0; u < 3; ++u)
     EXPECT_GT(uf.excess(u), 0) << "Expected positive excess on source node";
+  for (int u = 4; u < n; ++u)
+    EXPECT_EQ(uf.excess(u), 0) << "Expected no excess on other side of bottleneck";
 }
