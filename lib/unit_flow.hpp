@@ -72,13 +72,6 @@ private:
   int size() const { return (int)graph.size(); }
 
   /**
-     Return the excess of a node, i.e. the flow it cannot absorb.
-   */
-  Flow excess(Vertex u) const {
-    return std::max((Flow)0, absorbed[u] - sink[u]);
-  }
-
-  /**
      Residual capacity of an edge.
    */
   Flow residual(const Edge &e) const { return e.capacity - e.flow; }
@@ -114,7 +107,14 @@ public:
   /**
       The amount of flow absorbed by a vertex.
   */
-  Flow getAbsorbed(Vertex u) const { return absorbed[u]; }
+  Flow flowIn(Vertex u) const { return absorbed[u]; }
+
+  /**
+     Return the excess of a node, i.e. the flow it cannot absorb.
+   */
+  Flow excess(Vertex u) const {
+    return std::max((Flow)0, absorbed[u] - sink[u]);
+  }
 
   /**
      Compute max flow with push relabel and max height h. Return those vertices
@@ -130,7 +130,7 @@ public:
     const int maxH = std::min(maxHeight, 2 * size() + 1);
 
     for (Vertex u = 0; u < size(); ++u)
-      if (absorbed[u] > sink[u])
+      if (excess(u) > 0)
         q.push({height[u], u});
 
     while (!q.empty()) {
@@ -140,9 +140,9 @@ public:
       if (excess(e.from) > 0 && residual(e) > 0 &&
           height[e.from] == height[e.to] + 1) {
         // push
+        assert(excess(e.to) == 0 && "Pushing to vertex with non-zero excess");
         Flow delta =
-            std::min({excess(e.from),
-                      residual(e)}); // TODO: Add push limit based on degree
+            std::min({excess(e.from), residual(e), (Flow)degree(e.to)});
 
         e.flow += delta;
         absorbed[e.from] -= delta;
@@ -154,7 +154,7 @@ public:
                "Excess after pushing cannot be negative");
         if (height[e.from] >= maxH || excess(e.from) == 0)
           q.pop();
-        if (height[e.to] < maxH && excess(e.to))
+        if (height[e.to] < maxH && excess(e.to) > 0)
           q.push({height[e.to], e.to});
       } else if (nextEdgeIdx[e.from] == (int)graph[e.from].size() - 1) {
         // all edges have been tried, relabel
