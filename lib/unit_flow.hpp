@@ -1,5 +1,4 @@
-#ifndef CLUSTERING_UNIT_FLOW
-#define CLUSTERING_UNIT_FLOW
+#pragma once
 
 #include <algorithm>
 #include <list>
@@ -17,18 +16,15 @@ using Flow = long long;
 struct UnitFlow {
 public:
   struct Edge {
-    Vertex from, to;
+    const Vertex from, to;
     /**
         Index such that graph[to][backIdx] = edge to->from
     */
-    int backIdx;
+    const int backIdx;
     Flow flow, capacity;
 
-    Edge() {}
-    Edge(Vertex from, Vertex to, int backIdx = -1, Flow flow = 0,
-         Flow capacity = 0)
-        : from(from), to(to), backIdx(backIdx), flow(flow), capacity(capacity) {
-    }
+    Edge(const Vertex from, const Vertex to, const int backIdx, Flow flow,
+         Flow capacity);
   };
 
 private:
@@ -78,21 +74,16 @@ private:
 
 public:
   /**
-     Construct a unit flow problem with n vertices and max height h.
+     Construct a unit flow problem with n vertices and maximum label height h.
    */
-  UnitFlow(int n, int maxHeight)
-      : graph(n), absorbed(n), sink(n), height(n), nextEdgeIdx(n),
-        maxHeight(maxHeight) {}
+  UnitFlow(int n, int maxHeight);
 
-  void addEdge(Vertex u, Vertex v, Flow capacity) {
-    if (u == v)
-      return;
-    int uNeighborCount = (int)graph[u].size(),
-        vNeighborCount = (int)graph[v].size();
+  /**
+     Add an undirected edge between two vertices with a certain capacity.
 
-    graph[u].emplace_back(u, v, vNeighborCount, 0, capacity);
-    graph[v].emplace_back(v, u, uNeighborCount, 0, capacity);
-  }
+     If the edge forms a loop it is ignored.
+   */
+  void addEdge(Vertex u, Vertex v, Flow capacity);
 
   /**
      Increase the amount of flow a vertex is currently absorbing.
@@ -123,54 +114,5 @@ public:
 
      Extra log factor compared to paper due to use of priority queue.
    */
-  std::vector<Vertex> compute() {
-    typedef std::pair<Flow, Vertex> QPair;
-    std::priority_queue<QPair, std::vector<QPair>, std::greater<QPair>> q;
-
-    const int maxH = std::min(maxHeight, 2 * size() + 1);
-
-    for (Vertex u = 0; u < size(); ++u)
-      if (excess(u) > 0)
-        q.push({height[u], u});
-
-    while (!q.empty()) {
-      auto [_, u] = q.top();
-
-      Edge &e = graph[u][nextEdgeIdx[u]];
-      if (excess(e.from) > 0 && residual(e) > 0 &&
-          height[e.from] == height[e.to] + 1) {
-        // push
-        assert(excess(e.to) == 0 && "Pushing to vertex with non-zero excess");
-        Flow delta =
-            std::min({excess(e.from), residual(e), (Flow)degree(e.to)});
-
-        e.flow += delta;
-        absorbed[e.from] -= delta;
-
-        graph[e.to][e.backIdx].flow -= delta;
-        absorbed[e.to] += delta;
-
-        assert(excess(e.from) >= 0 &&
-               "Excess after pushing cannot be negative");
-        if (height[e.from] >= maxH || excess(e.from) == 0)
-          q.pop();
-        if (height[e.to] < maxH && excess(e.to) > 0)
-          q.push({height[e.to], e.to});
-      } else if (nextEdgeIdx[e.from] == (int)graph[e.from].size() - 1) {
-        // all edges have been tried, relabel
-        q.pop();
-        height[e.from]++;
-        nextEdgeIdx[e.from] = 0;
-
-        if (height[e.from] < maxH)
-          q.push({height[e.from], e.from});
-      } else {
-        nextEdgeIdx[e.from]++;
-      }
-    }
-
-    return {};
-  }
+  std::vector<Vertex> compute();
 };
-
-#endif
