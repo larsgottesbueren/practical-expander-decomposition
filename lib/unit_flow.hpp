@@ -25,12 +25,13 @@ public:
     Flow flow, capacity;
 
     Edge() {}
-    Edge(Vertex from, Vertex to, int backIdx = -1, Flow flow = 0, Flow capacity = 0)
-      : from(from), to(to), backIdx(backIdx), flow(flow), capacity(capacity) {}
+    Edge(Vertex from, Vertex to, int backIdx = -1, Flow flow = 0,
+         Flow capacity = 0)
+        : from(from), to(to), backIdx(backIdx), flow(flow), capacity(capacity) {
+    }
   };
 
 private:
-
   /**
      For each vertex maintain a neighbor list.
    */
@@ -80,21 +81,21 @@ private:
   /**
      Residual capacity of an edge.
    */
-  Flow residual(const Edge & e) const {
-    return e.capacity - e.flow;
-  }
+  Flow residual(const Edge &e) const { return e.capacity - e.flow; }
 
 public:
   /**
      Construct a unit flow problem with n vertices and max height h.
    */
-  UnitFlow(int n, int maxHeight) : graph(n), absorbed(n), sink(n), height(n), nextEdgeIdx(n), maxHeight(maxHeight) {}
+  UnitFlow(int n, int maxHeight)
+      : graph(n), absorbed(n), sink(n), height(n), nextEdgeIdx(n),
+        maxHeight(maxHeight) {}
 
   void addEdge(Vertex u, Vertex v, Flow capacity) {
     if (u == v)
       return;
     int uNeighborCount = (int)graph[u].size(),
-      vNeighborCount = (int)graph[v].size();
+        vNeighborCount = (int)graph[v].size();
 
     graph[u].emplace_back(u, v, vNeighborCount, 0, capacity);
     graph[v].emplace_back(v, u, uNeighborCount, 0, capacity);
@@ -103,16 +104,12 @@ public:
   /**
      Increase the amount of flow a vertex is currently absorbing.
    */
-  void addSource(Vertex u, Flow amount) {
-    absorbed[u] += amount;
-  }
+  void addSource(Vertex u, Flow amount) { absorbed[u] += amount; }
 
   /**
      Increase the amount of flow a vertex is able to absorb on its own.
    */
-  void addSink(Vertex u, Flow amount) {
-    sink[u] += amount;
-  }
+  void addSink(Vertex u, Flow amount) { sink[u] += amount; }
 
   /**
       The amount of flow absorbed by a vertex.
@@ -127,22 +124,25 @@ public:
      Extra log factor compared to paper due to use of priority queue.
    */
   std::vector<Vertex> compute() {
-    typedef std::pair<Flow,Vertex> QPair;
-    std::priority_queue<QPair,std::vector<QPair>,std::greater<QPair>> q;
+    typedef std::pair<Flow, Vertex> QPair;
+    std::priority_queue<QPair, std::vector<QPair>, std::greater<QPair>> q;
 
     const int maxH = std::min(maxHeight, 2 * size() + 1);
 
     for (Vertex u = 0; u < size(); ++u)
       if (absorbed[u] > sink[u])
-        q.push({height[u],u});
+        q.push({height[u], u});
 
     while (!q.empty()) {
-      auto [_,u] = q.top();
+      auto [_, u] = q.top();
 
-      Edge & e = graph[u][nextEdgeIdx[u]];
-      if (excess(e.from) > 0 && residual(e) > 0 && height[e.from] == height[e.to] + 1) {
+      Edge &e = graph[u][nextEdgeIdx[u]];
+      if (excess(e.from) > 0 && residual(e) > 0 &&
+          height[e.from] == height[e.to] + 1) {
         // push
-        Flow delta = std::min({excess(e.from), residual(e)}); // TODO: Add push limit based on degree
+        Flow delta =
+            std::min({excess(e.from),
+                      residual(e)}); // TODO: Add push limit based on degree
 
         e.flow += delta;
         absorbed[e.from] -= delta;
@@ -150,11 +150,12 @@ public:
         graph[e.to][e.backIdx].flow -= delta;
         absorbed[e.to] += delta;
 
-        assert(excess(e.from) >= 0 && "Excess after pushing cannot be negative");
+        assert(excess(e.from) >= 0 &&
+               "Excess after pushing cannot be negative");
         if (height[e.from] >= maxH || excess(e.from) == 0)
           q.pop();
         if (height[e.to] < maxH && excess(e.to))
-          q.push({height[e.to],e.to});
+          q.push({height[e.to], e.to});
       } else if (nextEdgeIdx[e.from] == (int)graph[e.from].size() - 1) {
         // all edges have been tried, relabel
         q.pop();
@@ -162,7 +163,7 @@ public:
         nextEdgeIdx[e.from] = 0;
 
         if (height[e.from] < maxH)
-          q.push({height[e.from],e.from});
+          q.push({height[e.from], e.from});
       } else {
         nextEdgeIdx[e.from]++;
       }
