@@ -65,3 +65,27 @@ TEST(UnitFlow, CanRouteBipartite) {
     EXPECT_EQ(uf.excess(n + u), 0)
         << "Right hand side should not have any excess";
 }
+
+TEST(UnitFlow, CannotRouteBottleneck) {
+  const int n = 10;
+
+  UnitFlow uf(n, INT_MAX);
+
+  for (int u = 0; u < 3; ++u) {
+    uf.addSource(u, 10);
+    uf.addEdge(u, 3, 5);
+    for (int v = u + 1; v < 3; ++v)
+      uf.addEdge(u, v, 10);
+  }
+  for (int u = 4; u < n; ++u) {
+    uf.addSink(u, 10);
+    uf.addEdge(3, u, 5);
+    for (int v = u + 1; v < n; ++v)
+      uf.addEdge(u, v, 10);
+  }
+
+  uf.compute();
+
+  for (int u = 0; u < 3; ++u)
+    EXPECT_GT(uf.excess(u), 0) << "Expected positive excess on source node";
+}
