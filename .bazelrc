@@ -1,0 +1,4 @@
+build:c++17 --cxxopt=-std=c++1z
+build:c++17 --cxxopt=-stdlib=libc++
+build:c++1z --cxxopt=-std=c++1z
+build:c++1z --cxxopt=-stdlib=libc++
