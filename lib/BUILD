@@ -2,8 +2,8 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 
 cc_library(
   name = "cluster_util",
-  srcs = ["unit_flow.cpp"],
-  hdrs = ["unit_flow.hpp"],
+  srcs = glob(["**/*.cpp"]),
+  hdrs = glob(["**/*.hpp"]),
   deps = [
     "@boost//:graph"
   ],
