@@ -34,4 +34,11 @@ struct Graph {
      Time complexity: O(1)
    */
   void addEdge(Vertex u, Vertex v);
+
+  /**
+     Volume of a list of vertices.
+
+     Time complexity: O(|xs|)
+   */
+  int volume(std::vector<Vertex> xs) const;
 };
