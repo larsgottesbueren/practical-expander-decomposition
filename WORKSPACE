@@ -15,3 +15,14 @@ git_repository(
   commit = "703bd9caab50b139428cea1aaff9974ebee5742e",
   shallow_since = "1570114335 -0400",
 )
+
+
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+  name = "eigen",
+  build_file = "//:eigen.BUILD",
+  url = "https://gitlab.com/libeigen/eigen/-/archive/3.3.7/eigen-3.3.7.tar",
+  sha256 = "92d7a913120cb64bf2d00b55c9a4275a1c6a61f848bad6a212b6eba7d172deec",
+  strip_prefix = "eigen-3.3.7",
+)

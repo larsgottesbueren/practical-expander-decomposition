@@ -4,8 +4,12 @@ cc_library(
   name = "cluster_util",
   srcs = glob(["**/*.cpp"]),
   hdrs = glob(["**/*.hpp"]),
+  copts = [
+    "-Iexternal/eigen",
+  ],
   deps = [
-    "@boost//:graph"
+    "@boost//:graph",
+    "@eigen",
   ],
   visibility = [
     "//main:__pkg__",
