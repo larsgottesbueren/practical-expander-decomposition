@@ -92,11 +92,12 @@ TEST(UnitFlow, CannotRouteBottleneck) {
 
   auto cut = uf.compute();
   std::sort(cut.begin(), cut.end());
-  std::vector<Vertex> expected = {0,1,2};
+  std::vector<Vertex> expected = {0, 1, 2};
   EXPECT_EQ(cut, expected) << "Expected source nodes be part of the level cut";
 
   for (int u = 0; u < 3; ++u)
     EXPECT_GT(uf.excess(u), 0) << "Expected positive excess on source node";
   for (int u = 4; u < n; ++u)
-    EXPECT_EQ(uf.excess(u), 0) << "Expected no excess on other side of bottleneck";
+    EXPECT_EQ(uf.excess(u), 0)
+        << "Expected no excess on other side of bottleneck";
 }
