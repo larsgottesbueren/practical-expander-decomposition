@@ -7,8 +7,8 @@
 
 TEST(UnitFlow, SingleVertex) {
   UnitFlow uf(1, INT_MAX);
-  uf.addSource(0,10);
-  uf.addSink(0,5);
+  uf.addSource(0, 10);
+  uf.addSink(0, 5);
 
   auto cut = uf.compute();
 
@@ -211,5 +211,4 @@ TEST(UnitFlow, CanRoutePathGraph) {
 
   EXPECT_EQ(left, (std::set<Vertex>{0, 1}));
   EXPECT_EQ(right, (std::set<Vertex>{3, 4}));
-
 }

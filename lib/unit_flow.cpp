@@ -1,4 +1,5 @@
 #include "unit_flow.hpp"
+#include <iostream>
 
 UnitFlow::Edge::Edge(const Vertex from, const Vertex to, const int backIdx,
                      Flow flow = 0, Flow capacity = 0)
@@ -79,6 +80,17 @@ std::vector<std::pair<Vertex, Vertex>>
 UnitFlow::matching(const std::vector<Vertex> &sources) {
   std::vector<std::pair<Vertex, Vertex>> matches;
 
+#ifdef DEBUG_UNIT_FLOW
+  std::cerr << "Starting matching" << std::endl;
+  for (Vertex u = 0; u < size(); ++u)
+    std::cerr
+      << "Vertex " << u
+      << "\n\tflowIn = " << flowIn(u)
+      << "\n\tabsorbed = " << absorbed[u]
+      << "\n\tsink = " << sink[u]
+      << std::endl;
+#endif
+
   std::function<Vertex(Vertex)> search = [&](Vertex start) {
     std::vector<bool> visited(size());
     std::function<Vertex(Vertex)> dfs = [&](Vertex u) {
@@ -86,9 +98,9 @@ UnitFlow::matching(const std::vector<Vertex> &sources) {
         return -1;
       visited[u] = true;
       for (auto &e : graph[u]) {
-        if (e.flow == 0)
+        if (e.flow <= 0)
           continue;
-        else if (flowIn(e.to) > 0) {
+        else if (flowIn(e.to) > 0 && sink[e.to] > 0) {
           e.flow--, absorbed[e.to]--;
           return e.to;
         } else {
@@ -105,7 +117,7 @@ UnitFlow::matching(const std::vector<Vertex> &sources) {
   };
 
   for (auto u : sources) {
-    Vertex v = search(u);
+    const Vertex v = search(u);
     if (v != -1)
       matches.push_back({u, v});
   }
