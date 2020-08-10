@@ -69,3 +69,40 @@ std::vector<Vertex> UnitFlow::compute() {
 
   return levelCut;
 }
+
+std::vector<std::pair<Vertex, Vertex>> UnitFlow::matching(const std::vector<Vertex> & sources) {
+  std::vector<std::pair<Vertex, Vertex>> matches;
+
+  std::function<Vertex(Vertex)> search = [&](Vertex start) {
+    std::vector<bool> visited(size());
+    std::function<Vertex(Vertex)> dfs = [&](Vertex u) {
+      if (visited[u])
+        return -1;
+      visited[u] = true;
+      for (auto &e : graph[u]) {
+        if (e.flow == 0)
+          continue;
+        else if (flowIn(e.to) > 0) {
+          e.flow--, absorbed[e.to]--;
+          return e.to;
+        } else {
+          const Vertex match = dfs(e.to);
+          if (match != -1) {
+            e.flow--;
+            return match;
+          }
+        }
+      }
+      return -1;
+    };
+    return dfs(start);
+  };
+
+  for (auto u : sources) {
+    Vertex v = search(u);
+    if (v != -1)
+      matches.push_back({u, v});
+  }
+
+  return matches;
+}

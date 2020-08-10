@@ -101,6 +101,21 @@ public:
   Flow flowIn(Vertex u) const { return absorbed[u]; }
 
   /**
+     The amount of flow leaving vertex.
+
+     Time complexity: O(m)
+
+     TODO: make this function O(1)
+   */
+  Flow flowOut(Vertex u) const {
+    Flow f = 0;
+    for (auto &e : graph[u])
+      if (e.flow > 0)
+        f += e.flow;
+    return f;
+  }
+
+  /**
      Return the excess of a node, i.e. the flow it cannot absorb.
    */
   Flow excess(Vertex u) const {
@@ -115,4 +130,14 @@ public:
      Extra log factor compared to paper due to use of priority queue.
    */
   std::vector<Vertex> compute();
+
+  /**
+     Compute a matching between vertices using the current state of the flow
+     graph. A matching between vertices (u,v) is possible iff there is a path
+     from u to v in the flow graph, where for each edge, the number of matchings
+     going across it is <= to the flow going across it.
+
+     Method will mutate the flow such that it is no longer legal.
+   */
+  std::vector<std::pair<Vertex, Vertex>> matching(const std::vector<Vertex> & sources);
 };
