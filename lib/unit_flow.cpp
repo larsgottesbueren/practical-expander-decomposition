@@ -70,7 +70,8 @@ std::vector<Vertex> UnitFlow::compute() {
   return levelCut;
 }
 
-std::vector<std::pair<Vertex, Vertex>> UnitFlow::matching(const std::vector<Vertex> & sources) {
+std::vector<std::pair<Vertex, Vertex>>
+UnitFlow::matching(const std::vector<Vertex> &sources) {
   std::vector<std::pair<Vertex, Vertex>> matches;
 
   std::function<Vertex(Vertex)> search = [&](Vertex start) {

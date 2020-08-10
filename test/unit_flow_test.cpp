@@ -152,7 +152,8 @@ TEST(UnitFlow, CanMatchMultiple) {
   for (int u = 0; u < leftN; ++u)
     ASSERT_TRUE(uf.flowOut(u) > 0) << "Expected flow out of u.";
   for (int u = 0; u < leftN; ++u)
-    ASSERT_EQ(uf.flowIn(u), 0) << "Did not expect a left partition vertex absorbing flow.";
+    ASSERT_EQ(uf.flowIn(u), 0)
+        << "Did not expect a left partition vertex absorbing flow.";
 
   std::vector<Vertex> sources(leftN);
   std::iota(sources.begin(), sources.end(), 0);
@@ -177,26 +178,26 @@ TEST(UnitFlow, CanMatchMultiple) {
  */
 TEST(UnitFlow, CanRoutePathGraph) {
   UnitFlow uf(5, INT_MAX);
-  uf.addSource(0,1);
-  uf.addSource(1,1);
+  uf.addSource(0, 1);
+  uf.addSource(1, 1);
 
-  uf.addSink(3,1);
-  uf.addSink(4,1);
+  uf.addSink(3, 1);
+  uf.addSink(4, 1);
 
-  uf.addEdge(0,1,2);
-  uf.addEdge(1,2,2);
-  uf.addEdge(2,3,2);
-  uf.addEdge(3,4,2);
+  uf.addEdge(0, 1, 2);
+  uf.addEdge(1, 2, 2);
+  uf.addEdge(2, 3, 2);
+  uf.addEdge(3, 4, 2);
 
   uf.compute();
-  auto matches = uf.matching({0,1});
+  auto matches = uf.matching({0, 1});
 
   ASSERT_EQ((int)matches.size(), 2);
 
-  std::set<Vertex> left,right;
-  for (auto [u,v] : matches)
+  std::set<Vertex> left, right;
+  for (auto [u, v] : matches)
     left.insert(u), right.insert(v);
 
-  EXPECT_EQ(left, (std::set<Vertex>{0,1}));
-  EXPECT_EQ(right, (std::set<Vertex>{3,4}));
+  EXPECT_EQ(left, (std::set<Vertex>{0, 1}));
+  EXPECT_EQ(right, (std::set<Vertex>{3, 4}));
 }

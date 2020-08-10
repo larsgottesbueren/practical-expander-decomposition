@@ -139,5 +139,6 @@ public:
 
      Method will mutate the flow such that it is no longer legal.
    */
-  std::vector<std::pair<Vertex, Vertex>> matching(const std::vector<Vertex> & sources);
+  std::vector<std::pair<Vertex, Vertex>>
+  matching(const std::vector<Vertex> &sources);
 };
