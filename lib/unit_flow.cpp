@@ -31,6 +31,11 @@ std::vector<Vertex> UnitFlow::compute() {
   while (!q.empty()) {
     auto [_, u] = q.top();
 
+    if (graph[u].empty()) {
+      q.pop();
+      continue;
+    }
+
     Edge &e = graph[u][nextEdgeIdx[u]];
     if (excess(e.from) > 0 && residual(e) > 0 &&
         height[e.from] == height[e.to] + 1) {
