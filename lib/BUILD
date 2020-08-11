@@ -8,7 +8,6 @@ cc_library(
     "-Iexternal/eigen",
   ],
   deps = [
-    "@boost//:graph",
     "@eigen",
   ],
   visibility = [
