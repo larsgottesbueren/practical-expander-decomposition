@@ -83,12 +83,9 @@ UnitFlow::matching(const std::vector<Vertex> &sources) {
 #ifdef DEBUG_UNIT_FLOW
   std::cerr << "Starting matching" << std::endl;
   for (Vertex u = 0; u < size(); ++u)
-    std::cerr
-      << "Vertex " << u
-      << "\n\tflowIn = " << flowIn(u)
-      << "\n\tabsorbed = " << absorbed[u]
-      << "\n\tsink = " << sink[u]
-      << std::endl;
+    std::cerr << "Vertex " << u << "\n\tflowIn = " << flowIn(u)
+              << "\n\tabsorbed = " << absorbed[u] << "\n\tsink = " << sink[u]
+              << std::endl;
 #endif
 
   std::function<Vertex(Vertex)> search = [&](Vertex start) {

@@ -13,6 +13,18 @@ private:
   Graph graph;
 
 public:
+  enum ResultType { Balanced, Expander, NearExpander };
+  /**
+     The cut-matching algorithm can return one of three types of result.
+     - Balanced: (a,r) is a balanced cut
+     - Expander: a is a phi expander
+     - NearExpander: a is a nearly phi expander
+   */
+  struct Result {
+    ResultType t;
+    std::vector<Vertex> a, r;
+  };
+
   const int numRegularNodes;
 
   /**
@@ -27,5 +39,5 @@ public:
    */
   CutMatching(const Graph &g);
 
-  std::pair<std::vector<Vertex>, std::vector<Vertex>> compute(double phi) const;
+  Result compute(double phi) const;
 };

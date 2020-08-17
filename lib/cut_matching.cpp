@@ -120,8 +120,7 @@ Mat matchingToMatrix(const std::vector<std::pair<Vertex, Vertex>> &ms, int n,
   - AX: A \cap X_E, all sub-division vertices in A. Zero indexed to allow for
         quick access to flow projection.
  */
-std::pair<std::vector<Vertex>, std::vector<Vertex>>
-CutMatching::compute(double phi) const {
+CutMatching::Result CutMatching::compute(double phi) const {
   const int m = numSplitNodes(); // Number of edges in original graph.
 
   std::vector<Mat> matchings;
@@ -141,7 +140,8 @@ CutMatching::compute(double phi) const {
 
   // TODO: RST14 uses A as edge subdivision nodes left while Saranurak & Wang
   // uses A as all nodes left.
-  for (int t = 1; graph.volume(R) <= m / (10 * T) && t <= T; ++t) {
+  int iterations = 1;
+  for (; graph.volume(R) <= m / (10 * T) && iterations <= T; ++iterations) {
     fillRandomUnitVector(r);
 
     const Vec &projectedFlow = projectFlow(matchings, r);
@@ -259,19 +259,23 @@ CutMatching::compute(double phi) const {
       R.push_back(u);
   }
 
+  CutMatching::ResultType rType;
+  if (iterations <= T)
+    // We have: graph.volume(R) > m / (10 * T)
+    rType = Balanced;
+  else if (R.empty())
+    rType = Expander;
+  else
+    rType = NearExpander;
+
   auto removeSubdivisionVertices = [this](std::vector<Vertex> &us) {
     const int limit = numRegularNodes;
     us.erase(std::remove_if(us.begin(), us.end(),
-                            [limit](Vertex u) { return u < limit; }),
+                            [limit](Vertex u) { return u >= limit; }),
              us.end());
   };
   removeSubdivisionVertices(A);
   removeSubdivisionVertices(R);
 
-  for (auto & u : A)
-    u -= numSplitNodes();
-  for (auto & u : R)
-    u -= numSplitNodes();
-
-  return {A, R};
+  return {rType, A, R};
 }
