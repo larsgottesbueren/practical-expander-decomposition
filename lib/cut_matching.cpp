@@ -79,7 +79,6 @@ void fillRandomUnitVector(Vec &r) {
   // TODO: It is slow to declare random device every function call.
   std::random_device rd;
   std::mt19937 g(rd());
-  g.seed(0);
   std::shuffle(xs.begin(), xs.end(), g);
   for (int i = 0; i < n; ++i)
     r(i) = xs[i] / (double)n;
