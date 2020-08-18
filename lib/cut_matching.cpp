@@ -128,16 +128,15 @@ CutMatching::Result CutMatching::compute(double phi) const {
   for (Vertex u = numRegularNodes; u < graph.size(); ++u)
     AX.push_back(u - numRegularNodes);
 
-  const int Tconst = 2;
-  const int T =
-      Tconst + std::ceil(std::log(numSplitNodes) * std::log(numSplitNodes));
+  const double T =
+    10 + 0.05 * std::ceil(std::log(numSplitNodes) * std::log(numSplitNodes));
 
   Vec r(numSplitNodes);
 
   // TODO: RST14 uses A as edge subdivision nodes left while Saranurak & Wang
   // uses A as all nodes left.
   int iterations = 1;
-  for (; graph.volume(R) <= numSplitNodes / (10 * T) && iterations <= T;
+  for (; graph.volume(R) <= numSplitNodes / (10.0 * T) && iterations <= T;
        ++iterations) {
     fillRandomUnitVector(r);
 
