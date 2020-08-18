@@ -22,7 +22,7 @@ TEST(CutMatching, ConstructSimple) {
   CutMatching cm(g);
 
   EXPECT_EQ(cm.numRegularNodes, 4);
-  EXPECT_EQ(cm.numSplitNodes(), 5);
+  EXPECT_EQ(cm.numSplitNodes, 5);
 }
 
 /**
@@ -41,7 +41,7 @@ TEST(CutMatching, ConstructSimpleDuplicateEdges) {
   CutMatching cm(g);
 
   EXPECT_EQ(cm.numRegularNodes, 4);
-  EXPECT_EQ(cm.numSplitNodes(), 7);
+  EXPECT_EQ(cm.numSplitNodes, 7);
 }
 
 /**
@@ -73,7 +73,7 @@ TEST(CutMatching, ConstructLargeRandom) {
   CutMatching cm(g);
 
   EXPECT_EQ(cm.numRegularNodes, n);
-  EXPECT_EQ(cm.numSplitNodes(), m);
+  EXPECT_EQ(cm.numSplitNodes, m);
 }
 
 /*
@@ -86,7 +86,7 @@ TEST(CutMatching, PartitionsSimplePath) {
   CutMatching cm(g);
 
   EXPECT_EQ(cm.numRegularNodes, n);
-  EXPECT_EQ(cm.numSplitNodes(), n - 1);
+  EXPECT_EQ(cm.numSplitNodes, n - 1);
 
   auto [left, right] = cm.compute(0.5);
   EXPECT_FALSE(left.empty());
@@ -116,7 +116,7 @@ TEST(CutMatching, PartitionTwoClusters) {
   CutMatching cm(g);
 
   EXPECT_EQ(cm.numRegularNodes, n+m);
-  EXPECT_EQ(cm.numSplitNodes(), (n-1)*n/2 + (m-1)*m/2 + 2);
+  EXPECT_EQ(cm.numSplitNodes, (n-1)*n/2 + (m-1)*m/2 + 2);
 
   auto [left, right] = cm.compute(0.5);
   std::vector<Vertex> leftCorrect, rightCorrect;

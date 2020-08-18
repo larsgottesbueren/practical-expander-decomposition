@@ -5,6 +5,9 @@
 using Vertex = int;
 
 struct Graph {
+private:
+  int numEdges;
+public:
   std::vector<std::vector<Vertex>> neighbors;
 
   /**
@@ -20,6 +23,11 @@ struct Graph {
      Time complexity: O(1)
    */
   int size() const { return (int)neighbors.size(); }
+
+  /**
+     Number of edges currently in graph.
+   */
+  int edgeCount() const { return numEdges; }
 
   /**
      Degree of vertex.

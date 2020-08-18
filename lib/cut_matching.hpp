@@ -26,11 +26,10 @@ public:
   };
 
   const int numRegularNodes;
-
   /**
      Number of "split nodes", i.e. those which were created from edges.
    */
-  int numSplitNodes() const { return graph.size() - numRegularNodes; }
+  const int numSplitNodes;
 
   /**
      Create a cut-matching problem from a graph.

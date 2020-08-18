@@ -4,14 +4,15 @@
 #include <cmath>
 #include <random>
 #include <unordered_set>
+#include <iostream>
 
 #include "cut_matching.hpp"
 #include "graph.hpp"
 #include "unit_flow.hpp"
 
-CutMatching::CutMatching(const Graph &g) : graph(0), numRegularNodes(g.size()) {
+CutMatching::CutMatching(const Graph &g) : graph(g.size() + g.edgeCount()), numRegularNodes(g.size()), numSplitNodes(g.edgeCount()) {
   const int n = g.size();
-  int m = 0;
+  int m = g.edgeCount();
   std::vector<std::pair<Vertex, Vertex>> edges;
 
   for (Vertex u = 0; u < n; ++u)
@@ -19,10 +20,9 @@ CutMatching::CutMatching(const Graph &g) : graph(0), numRegularNodes(g.size()) {
       assert(u != v &&
              "No loops allowed when constructing sub-division graph.");
       if (u < v)
-        m++, edges.push_back({u, v});
+        edges.push_back({u, v});
     }
 
-  graph.neighbors.resize(n + m);
   for (int i = 0; i < (int)edges.size(); ++i) {
     const Vertex w = i + n;
     const auto &[u, v] = edges[i];
@@ -121,8 +121,6 @@ Mat matchingToMatrix(const std::vector<std::pair<Vertex, Vertex>> &ms, int n,
         quick access to flow projection.
  */
 CutMatching::Result CutMatching::compute(double phi) const {
-  const int m = numSplitNodes(); // Number of edges in original graph.
-
   std::vector<Mat> matchings;
 
   std::vector<Vertex> A, AX, R;
@@ -132,16 +130,16 @@ CutMatching::Result CutMatching::compute(double phi) const {
     AX.push_back(u - numRegularNodes);
 
   const int Tconst = 10;
-  const int T = Tconst + std::ceil(std::log(m) * std::log(m));
+  const int T = Tconst + std::ceil(std::log(numSplitNodes) * std::log(numSplitNodes));
 
   // int c = std::ceil(1 / (phi * T));
 
-  Vec r(m);
+  Vec r(numSplitNodes);
 
   // TODO: RST14 uses A as edge subdivision nodes left while Saranurak & Wang
   // uses A as all nodes left.
   int iterations = 1;
-  for (; graph.volume(R) <= m / (10 * T) && iterations <= T; ++iterations) {
+  for (; graph.volume(R) <= numSplitNodes / (10 * T) && iterations <= T; ++iterations) {
     fillRandomUnitVector(r);
 
     const Vec &projectedFlow = projectFlow(matchings, r);
@@ -211,14 +209,14 @@ CutMatching::Result CutMatching::compute(double phi) const {
         leftAX.resize(std::ceil((double)AX.size() / 8.0));
     }
 
-    const int h = (int)ceil(1.0 / phi / std::log(m));
+    const int h = (int)ceil(1.0 / phi / std::log(numSplitNodes));
     UnitFlow uf(graph.size(), h);
     for (auto u : leftAX)
       uf.addSource(u + numRegularNodes, 1);
     for (auto u : rightAX)
       uf.addSink(u + numRegularNodes, 1);
 
-    const int cap = (int)std::ceil(1.0 / phi / std::log(m) / std::log(m));
+    const int cap = (int)std::ceil(1.0 / phi / std::log(numSplitNodes) / std::log(numSplitNodes));
     std::unordered_set<Vertex> alive;
     for (auto u : A)
       alive.insert(u);
@@ -232,6 +230,10 @@ CutMatching::Result CutMatching::compute(double phi) const {
     for (auto u : cutS)
       removed.insert(u);
 
+    std::cerr << "Cut" << std::endl;
+    for (auto u : cutS)
+      std::cerr << u << std::endl;
+
     std::vector<Vertex> sourcesLeft;
     for (auto u : leftAX) {
       // Convert to regular indexing before matching in entire graph.
@@ -241,7 +243,11 @@ CutMatching::Result CutMatching::compute(double phi) const {
     }
 
     auto matching = uf.matching(sourcesLeft);
-    matchings.push_back(matchingToMatrix(matching, numRegularNodes, m));
+    matchings.push_back(matchingToMatrix(matching, numRegularNodes, numSplitNodes));
+
+    std::cerr << "Matching:" << std::endl;
+    for (auto [u,v] : matching)
+      std::cerr << u << " - " << v << std::endl;
 
     A.erase(std::remove_if(A.begin(), A.end(),
                            [&removed](Vertex u) {
