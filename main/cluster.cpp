@@ -38,9 +38,12 @@ int main() {
     cout << "Partition with phi = " << phi << endl;
     auto [type, left, right] = cm.compute(phi);
     cout << "Type: ";
-    if (type == CutMatching::Balanced) cout << "balanced";
-    else if (type == CutMatching::Expander) cout << "expander";
-    else cout << "near expander";
+    if (type == CutMatching::Balanced)
+      cout << "balanced";
+    else if (type == CutMatching::Expander)
+      cout << "expander";
+    else
+      cout << "near expander";
     cout << endl;
     cout << "A:";
     for (auto u : left)
