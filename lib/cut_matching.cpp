@@ -2,15 +2,17 @@
 #include <Eigen/Sparse>
 #include <algorithm>
 #include <cmath>
+#include <iostream>
 #include <random>
 #include <unordered_set>
-#include <iostream>
 
 #include "cut_matching.hpp"
 #include "graph.hpp"
 #include "unit_flow.hpp"
 
-CutMatching::CutMatching(const Graph &g) : graph(g.size() + g.edgeCount()), numRegularNodes(g.size()), numSplitNodes(g.edgeCount()) {
+CutMatching::CutMatching(const Graph &g)
+    : graph(g.size() + g.edgeCount()), numRegularNodes(g.size()),
+      numSplitNodes(g.edgeCount()) {
   std::vector<std::pair<Vertex, Vertex>> edges;
 
   for (Vertex u = 0; u < g.size(); ++u)
@@ -127,17 +129,17 @@ CutMatching::Result CutMatching::compute(double phi) const {
   for (Vertex u = numRegularNodes; u < graph.size(); ++u)
     AX.push_back(u - numRegularNodes);
 
-  const int Tconst = 10;
-  const int T = Tconst + std::ceil(std::log(numSplitNodes) * std::log(numSplitNodes));
-
-  // int c = std::ceil(1 / (phi * T));
+  const int Tconst = 2;
+  const int T =
+      Tconst + std::ceil(std::log(numSplitNodes) * std::log(numSplitNodes));
 
   Vec r(numSplitNodes);
 
   // TODO: RST14 uses A as edge subdivision nodes left while Saranurak & Wang
   // uses A as all nodes left.
   int iterations = 1;
-  for (; graph.volume(R) <= numSplitNodes / (10 * T) && iterations <= T; ++iterations) {
+  for (; graph.volume(R) <= numSplitNodes / (10 * T) && iterations <= T;
+       ++iterations) {
     fillRandomUnitVector(r);
 
     const Vec &projectedFlow = projectFlow(matchings, r);
@@ -172,7 +174,6 @@ CutMatching::Result CutMatching::compute(double phi) const {
     };
 
     double allP = potentialFunc(AX), leftP = potentialFunc(left);
-    //           rightP = potentialFunc(right);
 
     std::vector<Vertex> leftAX, rightAX;
     double eta; // See RST14 lemma 3.3
@@ -214,7 +215,8 @@ CutMatching::Result CutMatching::compute(double phi) const {
     for (auto u : rightAX)
       uf.addSink(u + numRegularNodes, 1);
 
-    const int cap = (int)std::ceil(1.0 / phi / std::log(numSplitNodes) / std::log(numSplitNodes));
+    const int cap = (int)std::ceil(1.0 / phi / std::log(numSplitNodes) /
+                                   std::log(numSplitNodes));
     std::unordered_set<Vertex> alive;
     for (auto u : A)
       alive.insert(u);
@@ -223,44 +225,45 @@ CutMatching::Result CutMatching::compute(double phi) const {
         if (alive.find(v) != alive.end() && u < v)
           uf.addEdge(u, v, cap);
 
-    auto cutS = uf.compute();
-    std::unordered_set<Vertex> removed;
-    for (auto u : cutS)
-      removed.insert(u);
-
-    std::cerr << "Cut" << std::endl;
-    for (auto u : cutS)
-      std::cerr << u << std::endl;
+    auto levelCut = uf.compute();
+    std::vector<bool> S(graph.size());
+    for (auto u : levelCut)
+      S[u] = true;
+    for (Vertex u = numRegularNodes; u < graph.size(); ++u) {
+      if (S[u])
+        continue;
+      bool both = true;
+      assert(graph.neighbors[u].size() == 2 &&
+             "Split nodes should have degree two");
+      for (auto v : graph.neighbors[u])
+        if (!S[v])
+          both = false;
+      if (both)
+        S[u] = true;
+    }
 
     std::vector<Vertex> sourcesLeft;
     for (auto u : leftAX) {
       // Convert to regular indexing before matching in entire graph.
       const int idx = u + numRegularNodes;
-      if (removed.find(idx) == removed.end())
+      if (!S[idx])
         sourcesLeft.push_back(idx);
     }
 
     auto matching = uf.matching(sourcesLeft);
-    matchings.push_back(matchingToMatrix(matching, numRegularNodes, numSplitNodes));
+    matchings.push_back(
+        matchingToMatrix(matching, numRegularNodes, numSplitNodes));
 
-    std::cerr << "Matching:" << std::endl;
-    for (auto [u,v] : matching)
-      std::cerr << u << " - " << v << std::endl;
-
-    A.erase(std::remove_if(A.begin(), A.end(),
-                           [&removed](Vertex u) {
-                             return removed.find(u) != removed.end();
-                           }),
+    A.erase(std::remove_if(A.begin(), A.end(), [&S](Vertex u) { return S[u]; }),
             A.end());
 
-    AX.erase(std::remove_if(AX.begin(), AX.end(),
-                            [this, &removed](Vertex u) {
-                              const int idx = u + numRegularNodes;
-                              return removed.find(idx) != removed.end();
-                            }),
-             AX.end());
-    for (auto u : removed)
-      R.push_back(u);
+    AX.erase(
+        std::remove_if(AX.begin(), AX.end(),
+                       [this, &S](Vertex u) { return S[u + numRegularNodes]; }),
+        AX.end());
+    for (Vertex u = 0; u < graph.size(); ++u)
+      if (S[u])
+        R.push_back(u);
   }
 
   CutMatching::ResultType rType;

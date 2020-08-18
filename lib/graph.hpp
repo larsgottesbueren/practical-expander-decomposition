@@ -7,6 +7,7 @@ using Vertex = int;
 struct Graph {
 private:
   int numEdges;
+
 public:
   std::vector<std::vector<Vertex>> neighbors;
 
