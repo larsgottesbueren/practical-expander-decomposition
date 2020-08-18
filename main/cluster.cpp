@@ -12,7 +12,8 @@ int main() {
   cin >> n >> m;
   Graph g(n);
   if (m == -1) {
-    m = rand() % (n * (n + 1) / 2);
+    //    m = rand() % (n * (n + 1) / 2);
+    m = n + rand() % (2 * n);
     for (int i = 0; i < m; ++i) {
       int u = rand() % n;
       int v = u;
