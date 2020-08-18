@@ -11,11 +11,9 @@
 #include "unit_flow.hpp"
 
 CutMatching::CutMatching(const Graph &g) : graph(g.size() + g.edgeCount()), numRegularNodes(g.size()), numSplitNodes(g.edgeCount()) {
-  const int n = g.size();
-  int m = g.edgeCount();
   std::vector<std::pair<Vertex, Vertex>> edges;
 
-  for (Vertex u = 0; u < n; ++u)
+  for (Vertex u = 0; u < g.size(); ++u)
     for (auto v : g.neighbors[u]) {
       assert(u != v &&
              "No loops allowed when constructing sub-division graph.");
@@ -24,7 +22,7 @@ CutMatching::CutMatching(const Graph &g) : graph(g.size() + g.edgeCount()), numR
     }
 
   for (int i = 0; i < (int)edges.size(); ++i) {
-    const Vertex w = i + n;
+    const Vertex w = i + g.size();
     const auto &[u, v] = edges[i];
     graph.addEdge(u, w);
     graph.addEdge(v, w);
@@ -222,8 +220,8 @@ CutMatching::Result CutMatching::compute(double phi) const {
       alive.insert(u);
     for (auto u : A)
       for (auto v : graph.neighbors[u])
-        if (alive.find(v) != alive.end())
-          uf.addEdge(u, v, cap); // TODO: are double edges being added?
+        if (alive.find(v) != alive.end() && u < v)
+          uf.addEdge(u, v, cap);
 
     auto cutS = uf.compute();
     std::unordered_set<Vertex> removed;
