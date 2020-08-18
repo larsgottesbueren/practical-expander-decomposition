@@ -33,8 +33,8 @@ int main() {
   }
 
   CutMatching cm(g);
-  double phi = 0.1;
-  while (phi < 1.0) {
+  double phi = 0.01;
+  while (phi < 1.0/(std::log(g.edgeCount()) * std::log(g.edgeCount()))) {
     cout << "------------------------------------------------------" << endl;
     cout << "Partition with phi = " << phi << endl;
     auto [type, left, right] = cm.compute(phi);
@@ -56,6 +56,6 @@ int main() {
     cout << endl;
 
     cout << "------------------------------------------------------" << endl;
-    phi += 0.1;
+    phi += 0.01;
   }
 }
