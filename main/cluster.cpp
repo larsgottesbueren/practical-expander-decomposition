@@ -8,12 +8,17 @@
 using namespace std;
 
 int main() {
-  int n, m;
-  cin >> n >> m;
+  int n;
+  cin >> n;
+  string type;
+  cin >> type;
+
   Graph g(n);
-  if (m == -1) {
-    //    m = rand() % (n * (n + 1) / 2);
-    m = n + rand() % (2 * n);
+
+  if (type == "random") {
+    cerr << "Generating random graph with O(n) edges" << endl;
+
+    int m = n + rand() % (2 * n);
     for (int i = 0; i < m; ++i) {
       int u = rand() % n;
       int v = u;
@@ -22,19 +27,39 @@ int main() {
       } while (u == v);
       g.addEdge(u, v);
     }
-    cerr << "Generated graph" << endl;
+  } else if (type == "cluster") {
+    cerr
+        << "Generating two unconnected clusters where the balanced cut is clear"
+        << endl;
+
+    int leftN = n / 2;
+
+    for (int i = 0; i < leftN; ++i)
+      for (int j = i + 1; j < leftN; ++j)
+        if (rand() % 100 < 50)
+          g.addEdge(i, j);
+    for (int i = leftN; i < n; ++i)
+      for (int j = i + 1; j < n; ++j)
+        if (rand() % 100 < 50)
+          g.addEdge(i, j);
+  } else if (type == "path") {
+    cerr << "Generating path" << endl;
+    for (int i = 0; i < n - 1; ++i)
+      g.addEdge(i, i + 1);
   } else {
+    int m;
+    cin >> m;
+
     for (int i = 0; i < m; ++i) {
       Vertex u, v;
       cin >> u >> v;
       g.addEdge(u, v);
     }
-    cerr << "Read graph" << endl;
   }
 
   CutMatching cm(g);
-  double phi = 0.01;
-  while (phi < 1.0/(std::log(g.edgeCount()) * std::log(g.edgeCount()))) {
+  double phi = 1.0 / (g.edgeCount() + 10);
+  while (phi < 1.0 / (std::log(g.edgeCount()) * std::log(g.edgeCount()))) {
     cout << "------------------------------------------------------" << endl;
     cout << "Partition with phi = " << phi << endl;
     auto [type, left, right] = cm.compute(phi);
@@ -56,6 +81,6 @@ int main() {
     cout << endl;
 
     cout << "------------------------------------------------------" << endl;
-    phi += 0.01;
+    phi += 1.0 / (g.edgeCount() + 10);
   }
 }
