@@ -122,11 +122,11 @@ Mat matchingToMatrix(const std::vector<std::pair<Vertex, Vertex>> &ms, int n,
 CutMatching::Result CutMatching::compute(double phi) const {
   std::vector<Mat> matchings;
 
-  std::vector<Vertex> A, AX, R;
+  std::unordered_set<Vertex> A, AX, R;
   for (Vertex u = 0; u < graph.size(); ++u)
-    A.push_back(u);
+    A.insert(u);
   for (Vertex u = numRegularNodes; u < graph.size(); ++u)
-    AX.push_back(u - numRegularNodes);
+    AX.insert(u - numRegularNodes);
 
   const double T =
     10 + 0.05 * std::ceil(std::log(numSplitNodes) * std::log(numSplitNodes));
@@ -136,7 +136,7 @@ CutMatching::Result CutMatching::compute(double phi) const {
   // TODO: RST14 uses A as edge subdivision nodes left while Saranurak & Wang
   // uses A as all nodes left.
   int iterations = 1;
-  for (; graph.volume(R) <= numSplitNodes / (10.0 * T) && iterations <= T;
+  for (; graph.volume(R.begin(), R.end()) <= numSplitNodes / (10.0 * T) && iterations <= T;
        ++iterations) {
     fillRandomUnitVector(r);
 
@@ -171,7 +171,9 @@ CutMatching::Result CutMatching::compute(double phi) const {
       return sum;
     };
 
-    double allP = potentialFunc(AX), leftP = potentialFunc(left);
+    std::vector<Vertex> tmpAX;
+    for (auto u : AX) tmpAX.push_back(u);
+    double allP = potentialFunc(tmpAX), leftP = potentialFunc(left);
 
     std::vector<Vertex> leftAX, rightAX;
     double eta; // See RST14 lemma 3.3
@@ -252,16 +254,39 @@ CutMatching::Result CutMatching::compute(double phi) const {
     matchings.push_back(
         matchingToMatrix(matching, numRegularNodes, numSplitNodes));
 
-    A.erase(std::remove_if(A.begin(), A.end(), [&S](Vertex u) { return S[u]; }),
-            A.end());
+    for (auto it = A.begin(); it != A.end();)
+      if (S[*it])
+        it = A.erase(it);
+      else
+        ++it;
+    for (auto it = AX.begin(); it != AX.end();)
+      if (S[*it + numRegularNodes])
+        it = AX.erase(it);
+      else
+        ++it;
 
-    AX.erase(
-        std::remove_if(AX.begin(), AX.end(),
-                       [this, &S](Vertex u) { return S[u + numRegularNodes]; }),
-        AX.end());
     for (Vertex u = 0; u < graph.size(); ++u)
       if (S[u])
-        R.push_back(u);
+        R.insert(u);
+
+    for (Vertex u = numRegularNodes; u < graph.size(); ++u) {
+      assert(graph.neighbors[u].size() == 2 && "Split vertices should have degree two");
+      if (A.find(u) != A.end()) {
+        bool both = true;
+        for (auto v : graph.neighbors[u])
+          if (R.find(v) == R.end())
+            both = false;
+        if (both)
+          A.erase(u), AX.erase(u-numRegularNodes), R.insert(u);
+      } else {
+        bool both = true;
+        for (auto v : graph.neighbors[u])
+          if (A.find(v) == A.end())
+            both = false;
+        if (both)
+          R.erase(u), A.insert(u), AX.insert(u-numRegularNodes);
+      }
+    }
   }
 
   CutMatching::ResultType rType;
@@ -273,14 +298,21 @@ CutMatching::Result CutMatching::compute(double phi) const {
   else
     rType = NearExpander;
 
-  auto removeSubdivisionVertices = [this](std::vector<Vertex> &us) {
+  auto removeSubdivisionVertices = [this](std::unordered_set<Vertex> &us) {
     const int limit = numRegularNodes;
-    us.erase(std::remove_if(us.begin(), us.end(),
-                            [limit](Vertex u) { return u >= limit; }),
-             us.end());
+    for (auto it = us.begin(); it != us.end();)
+      if (*it >= limit)
+        it = us.erase(it);
+      else
+        ++it;
   };
   removeSubdivisionVertices(A);
   removeSubdivisionVertices(R);
 
-  return {rType, A, R};
+  CutMatching::Result result;
+  result.t = rType;
+  for (auto u : A) result.a.push_back(u);
+  for (auto u : R) result.r.push_back(u);
+
+  return result;
 }

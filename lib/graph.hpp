@@ -49,5 +49,11 @@ public:
 
      Time complexity: O(|xs|)
    */
-  int volume(std::vector<Vertex> xs) const;
+  template <typename It>
+  int volume(It begin, It end) const {
+    int vol = 0;
+    for (It it = begin; it != end; ++it)
+      vol += degree(*it);
+    return vol;
+  }
 };
