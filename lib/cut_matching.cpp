@@ -105,7 +105,10 @@ Mat matchingToMatrix(const std::vector<std::pair<Vertex, Vertex>> &ms, int n,
   typedef Eigen::Triplet<double> T;
   std::vector<T> values;
   for (auto &[u, v] : ms) {
+    values.push_back(T(u - n, u - n, 0.5));
     values.push_back(T(u - n, v - n, 0.5));
+
+    values.push_back(T(v - n, v - n, 0.5));
     values.push_back(T(v - n, u - n, 0.5));
   }
   Mat mat(m, m);
@@ -129,20 +132,27 @@ CutMatching::Result CutMatching::compute(double phi) const {
     AX.insert(u - numRegularNodes);
 
   const double T =
-    10 + 0.05 * std::ceil(std::log(numSplitNodes) * std::log(numSplitNodes));
+      1 + 0.9 * std::ceil(std::log(numSplitNodes) * std::log(numSplitNodes));
 
   Vec r(numSplitNodes);
 
   // TODO: RST14 uses A as edge subdivision nodes left while Saranurak & Wang
   // uses A as all nodes left.
   int iterations = 1;
-  for (; graph.volume(R.begin(), R.end()) <= numSplitNodes / (10.0 * T) && iterations <= T;
+  for (; graph.volume(R.begin(), R.end()) <= 100 + numSplitNodes / (10.0 * T) &&
+         iterations <= T;
        ++iterations) {
+
+#define CUT_MATCHING_DEBUG
+#ifdef CUT_MATCHING_DEBUG
+    std::cerr << "Iteration: " << iterations
+              << " volume(R) = " << graph.volume(R.begin(), R.end())
+              << std::endl;
+#endif
     fillRandomUnitVector(r);
 
     const Vec &projectedFlow = projectFlow(matchings, r);
 
-    // TODO: is it correct to average flow _after_ projection?
     double avgFlow = 0;
     for (auto u : AX)
       avgFlow += projectedFlow(u);
@@ -155,11 +165,25 @@ CutMatching::Result CutMatching::compute(double phi) const {
       else
         right.push_back(u);
 
-    if (left.size() > right.size())
-      std::swap(left, right);
-    assert(left.size() <= right.size() &&
-           "Expected right partition to be at least as large. See RST14 lemma "
-           "3.3.");
+#ifdef CUT_MATCHING_DEBUG
+    std::cerr << "Average flow = " << avgFlow << std::endl
+              << "|Left|=" << left.size() << " :";
+    for (auto u : left)
+      std::cerr << " " << u << ":" << projectedFlow(u);
+    std::cerr << std::endl << "|Right|=" << right.size() << " :";
+    for (auto u : right)
+      std::cerr << " " << u << ":" << projectedFlow(u);
+    std::cerr << std::endl;
+#endif
+
+    // TODO: It is unclear if average flow is computed correctly. RST14 says
+    // |left| <= |right| must be true.
+    //
+    //    if (left.size() > right.size())
+    //      std::swap(left, right);
+    //    assert(left.size() <= right.size() &&
+    //           "Expected right partition to be at least as large. See RST14
+    //           lemma " "3.3.");
 
     auto potentialFunc = [avgFlow,
                           &projectedFlow](const std::vector<Vertex> &vertices) {
@@ -172,7 +196,8 @@ CutMatching::Result CutMatching::compute(double phi) const {
     };
 
     std::vector<Vertex> tmpAX;
-    for (auto u : AX) tmpAX.push_back(u);
+    for (auto u : AX)
+      tmpAX.push_back(u);
     double allP = potentialFunc(tmpAX), leftP = potentialFunc(left);
 
     std::vector<Vertex> leftAX, rightAX;
@@ -204,9 +229,20 @@ CutMatching::Result CutMatching::compute(double phi) const {
         return projectedFlow(i1) < projectedFlow(i2);
       });
       std::reverse(leftAX.begin(), leftAX.end());
+
       if (8 * leftAX.size() > AX.size())
         leftAX.resize(std::ceil((double)AX.size() / 8.0));
     }
+
+#ifdef CUT_MATCHING_DEBUG
+    std::cerr << "Left A U X:";
+    for (auto u : leftAX)
+      std::cerr << " " << u;
+    std::cerr << std::endl << "Right A U X:";
+    for (auto u : rightAX)
+      std::cerr << " " << u;
+    std::cerr << std::endl;
+#endif
 
     const int h = (int)ceil(1.0 / phi / std::log(numSplitNodes));
     UnitFlow uf(graph.size(), h);
@@ -241,6 +277,14 @@ CutMatching::Result CutMatching::compute(double phi) const {
       if (both)
         S[u] = true;
     }
+#ifdef CUT_MATCHING_DEBUG
+    int count = 0;
+    for (auto b : S)
+      if (b)
+        count++;
+    std::cerr << "|S| = " << count << " size of level cut = " << levelCut.size()
+              << std::endl;
+#endif
 
     std::vector<Vertex> sourcesLeft;
     for (auto u : leftAX) {
@@ -253,6 +297,17 @@ CutMatching::Result CutMatching::compute(double phi) const {
     auto matching = uf.matching(sourcesLeft);
     matchings.push_back(
         matchingToMatrix(matching, numRegularNodes, numSplitNodes));
+
+#ifdef CUT_MATCHING_DEBUG
+    std::cerr << "Sources to match:";
+    for (auto u : sourcesLeft)
+      std::cerr << " " << u;
+    std::cerr << std::endl;
+    std::cerr << "Matching:";
+    for (auto [u, v] : matching)
+      std::cerr << " (" << u << "-" << v << ")";
+    std::cerr << std::endl;
+#endif
 
     for (auto it = A.begin(); it != A.end();)
       if (S[*it])
@@ -270,24 +325,29 @@ CutMatching::Result CutMatching::compute(double phi) const {
         R.insert(u);
 
     for (Vertex u = numRegularNodes; u < graph.size(); ++u) {
-      assert(graph.neighbors[u].size() == 2 && "Split vertices should have degree two");
+      assert(graph.neighbors[u].size() == 2 &&
+             "Split vertices should have degree two");
       if (A.find(u) != A.end()) {
         bool both = true;
         for (auto v : graph.neighbors[u])
           if (R.find(v) == R.end())
             both = false;
         if (both)
-          A.erase(u), AX.erase(u-numRegularNodes), R.insert(u);
+          A.erase(u), AX.erase(u - numRegularNodes), R.insert(u);
       } else {
         bool both = true;
         for (auto v : graph.neighbors[u])
           if (A.find(v) == A.end())
             both = false;
         if (both)
-          R.erase(u), A.insert(u), AX.insert(u-numRegularNodes);
+          R.erase(u), A.insert(u), AX.insert(u - numRegularNodes);
       }
     }
   }
+
+#ifdef CUT_MATCHING_DEBUG
+  std::cerr << "Final volume(R) = " << graph.volume(R.begin(), R.end()) << std::endl;
+#endif
 
   CutMatching::ResultType rType;
   if (iterations <= T)
@@ -311,8 +371,10 @@ CutMatching::Result CutMatching::compute(double phi) const {
 
   CutMatching::Result result;
   result.t = rType;
-  for (auto u : A) result.a.push_back(u);
-  for (auto u : R) result.r.push_back(u);
+  for (auto u : A)
+    result.a.push_back(u);
+  for (auto u : R)
+    result.r.push_back(u);
 
   return result;
 }
