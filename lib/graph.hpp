@@ -49,8 +49,7 @@ public:
 
      Time complexity: O(|xs|)
    */
-  template <typename It>
-  int volume(It begin, It end) const {
+  template <typename It> int volume(It begin, It end) const {
     int vol = 0;
     for (It it = begin; it != end; ++it)
       vol += degree(*it);
