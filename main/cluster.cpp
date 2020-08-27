@@ -43,11 +43,11 @@ int main() {
         if (rand() % 100 < 50)
           g.addEdge(i, j);
 
-    g.addEdge(0,leftN);
-    g.addEdge(1,leftN+1);
-    g.addEdge(2,leftN+2);
-    g.addEdge(3,leftN+3);
-    g.addEdge(4,leftN+4);
+    g.addEdge(0, leftN);
+    g.addEdge(1, leftN + 1);
+    g.addEdge(2, leftN + 2);
+    g.addEdge(3, leftN + 3);
+    g.addEdge(4, leftN + 4);
   } else if (graphType == "path") {
     cerr << "Generating path" << endl;
     for (int i = 0; i < n - 1; ++i)

@@ -346,7 +346,8 @@ CutMatching::Result CutMatching::compute(double phi) const {
   }
 
 #ifdef CUT_MATCHING_DEBUG
-  std::cerr << "Final volume(R) = " << graph.volume(R.begin(), R.end()) << std::endl;
+  std::cerr << "Final volume(R) = " << graph.volume(R.begin(), R.end())
+            << std::endl;
 #endif
 
   CutMatching::ResultType rType;

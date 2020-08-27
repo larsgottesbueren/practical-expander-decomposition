@@ -19,6 +19,11 @@ public:
   Graph(int n);
 
   /**
+     Copy constructor.
+   */
+  Graph(const Graph &g);
+
+  /**
      Number of vertices in graph.
 
      Time complexity: O(1)
