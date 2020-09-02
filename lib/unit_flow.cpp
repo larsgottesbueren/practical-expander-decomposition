@@ -1,15 +1,16 @@
 #include "unit_flow.hpp"
 #include <iostream>
 
-UnitFlow::Edge::Edge(const Vertex from, const Vertex to, const int backIdx,
-                     Flow flow = 0, Flow capacity = 0)
+UnitFlow::Edge::Edge(const UnitFlow::Vertex from, const UnitFlow::Vertex to,
+                     const int backIdx, UnitFlow::Flow flow = 0,
+                     UnitFlow::Flow capacity = 0)
     : from(from), to(to), backIdx(backIdx), flow(flow), capacity(capacity) {}
 
-UnitFlow::UnitFlow(int n, int maxHeight)
-    : graph(n), absorbed(n), sink(n), height(n), nextEdgeIdx(n),
-      maxHeight(maxHeight) {}
+UnitFlow::UnitFlow(int n)
+    : graph(n), absorbed(n), sink(n), height(n), nextEdgeIdx(n) {}
 
-void UnitFlow::addEdge(Vertex u, Vertex v, Flow capacity) {
+void UnitFlow::addEdge(UnitFlow::Vertex u, UnitFlow::Vertex v,
+                       UnitFlow::Flow capacity) {
   if (u == v)
     return;
   int uNeighborCount = (int)graph[u].size(),
@@ -19,13 +20,13 @@ void UnitFlow::addEdge(Vertex u, Vertex v, Flow capacity) {
   graph[v].emplace_back(v, u, uNeighborCount, 0, capacity);
 }
 
-std::vector<Vertex> UnitFlow::compute() {
-  typedef std::pair<Flow, Vertex> QPair;
+std::vector<UnitFlow::Vertex> UnitFlow::compute(const int maxHeight) {
+  typedef std::pair<UnitFlow::Flow, UnitFlow::Vertex> QPair;
   std::priority_queue<QPair, std::vector<QPair>, std::greater<QPair>> q;
 
   const int maxH = std::min(maxHeight, 2 * size() + 1);
 
-  for (Vertex u = 0; u < size(); ++u)
+  for (UnitFlow::Vertex u = 0; u < size(); ++u)
     if (excess(u) > 0)
       q.push({height[u], u});
 
@@ -42,7 +43,8 @@ std::vector<Vertex> UnitFlow::compute() {
         height[e.from] == height[e.to] + 1) {
       // push
       assert(excess(e.to) == 0 && "Pushing to vertex with non-zero excess");
-      Flow delta = std::min({excess(e.from), residual(e), (Flow)degree(e.to)});
+      UnitFlow::Flow delta =
+          std::min({excess(e.from), residual(e), (UnitFlow::Flow)degree(e.to)});
 
       e.flow += delta;
       absorbed[e.from] -= delta;
@@ -68,53 +70,65 @@ std::vector<Vertex> UnitFlow::compute() {
     }
   }
 
-  std::vector<Vertex> levelCut;
-  for (Vertex u = 0; u < size(); ++u)
+  std::vector<UnitFlow::Vertex> levelCut;
+  for (UnitFlow::Vertex u = 0; u < size(); ++u)
     if (excess(u) > 0)
       levelCut.push_back(u);
 
   return levelCut;
 }
 
-std::vector<std::pair<Vertex, Vertex>>
-UnitFlow::matching(const std::vector<Vertex> &sources) {
-  std::vector<std::pair<Vertex, Vertex>> matches;
+void UnitFlow::reset() {
+  for (UnitFlow::Vertex u = 0; u < size(); ++u) {
+    for (auto edge : graph[u])
+      edge.flow = 0;
+    absorbed[u] = 0;
+    sink[u] = 0;
+    nextEdgeIdx[u] = 0;
+  }
+}
+
+std::vector<std::pair<UnitFlow::Vertex, UnitFlow::Vertex>>
+UnitFlow::matching(const std::vector<UnitFlow::Vertex> &sources) {
+  std::vector<std::pair<UnitFlow::Vertex, UnitFlow::Vertex>> matches;
 
 #ifdef DEBUG_UNIT_FLOW
   std::cerr << "Starting matching" << std::endl;
-  for (Vertex u = 0; u < size(); ++u)
-    std::cerr << "Vertex " << u << "\n\tflowIn = " << flowIn(u)
+  for (UnitFlow::Vertex u = 0; u < size(); ++u)
+    std::cerr << "UnitFlow::Vertex " << u << "\n\tflowIn = " << flowIn(u)
               << "\n\tabsorbed = " << absorbed[u] << "\n\tsink = " << sink[u]
               << std::endl;
 #endif
 
-  std::function<Vertex(Vertex)> search = [&](Vertex start) {
-    std::vector<bool> visited(size());
-    std::function<Vertex(Vertex)> dfs = [&](Vertex u) {
-      if (visited[u])
-        return -1;
-      visited[u] = true;
-      for (auto &e : graph[u]) {
-        if (e.flow <= 0)
-          continue;
-        else if (flowIn(e.to) > 0 && sink[e.to] > 0) {
-          e.flow--, absorbed[e.to]--;
-          return e.to;
-        } else {
-          const Vertex match = dfs(e.to);
-          if (match != -1) {
-            e.flow--;
-            return match;
-          }
-        }
-      }
-      return -1;
-    };
-    return dfs(start);
-  };
+  std::function<UnitFlow::Vertex(UnitFlow::Vertex)> search =
+      [&](UnitFlow::Vertex start) {
+        std::vector<bool> visited(size());
+        std::function<UnitFlow::Vertex(UnitFlow::Vertex)> dfs =
+            [&](UnitFlow::Vertex u) {
+              if (visited[u])
+                return -1;
+              visited[u] = true;
+              for (auto &e : graph[u]) {
+                if (e.flow <= 0)
+                  continue;
+                else if (flowIn(e.to) > 0 && sink[e.to] > 0) {
+                  e.flow--, absorbed[e.to]--;
+                  return e.to;
+                } else {
+                  const UnitFlow::Vertex match = dfs(e.to);
+                  if (match != -1) {
+                    e.flow--;
+                    return match;
+                  }
+                }
+              }
+              return -1;
+            };
+        return dfs(start);
+      };
 
   for (auto u : sources) {
-    const Vertex v = search(u);
+    const UnitFlow::Vertex v = search(u);
     if (v != -1)
       matches.push_back({u, v});
   }

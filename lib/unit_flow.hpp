@@ -10,11 +10,11 @@
    Push relabel based unit flow algorithm. Based on push relabel in KACTL.
  */
 
-using Vertex = int;
-using Flow = long long;
-
 struct UnitFlow {
 public:
+  using Vertex = int;
+  using Flow = long long;
+
   struct Edge {
     const Vertex from, to;
     /**
@@ -53,11 +53,6 @@ private:
   std::vector<int> nextEdgeIdx;
 
   /**
-     Maximum label height.
-   */
-  const int maxHeight;
-
-  /**
      The degree of a vertex.
    */
   int degree(Vertex u) const { return (int)graph[u].size(); }
@@ -76,7 +71,7 @@ public:
   /**
      Construct a unit flow problem with n vertices and maximum label height h.
    */
-  UnitFlow(int n, int maxHeight);
+  UnitFlow(int n);
 
   /**
      Add an undirected edge between two vertices with a certain capacity.
@@ -129,7 +124,12 @@ public:
 
      Extra log factor compared to paper due to use of priority queue.
    */
-  std::vector<Vertex> compute();
+  std::vector<Vertex> compute(const int maxHeight);
+
+  /**
+     Set all flow, sinks and source capacities to 0.
+   */
+  void reset();
 
   /**
      Compute a matching between vertices using the current state of the flow
