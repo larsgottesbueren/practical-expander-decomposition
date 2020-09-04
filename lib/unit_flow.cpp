@@ -7,7 +7,7 @@ UnitFlow::Edge::Edge(const UnitFlow::Vertex from, const UnitFlow::Vertex to,
     : from(from), to(to), backIdx(backIdx), flow(flow), capacity(capacity) {}
 
 UnitFlow::Edge UnitFlow::Edge::rev() const {
-  Edge e(to,from,0,flow,capacity);
+  Edge e(to, from, 0, flow, capacity);
   return e;
 }
 
@@ -19,8 +19,8 @@ void UnitFlow::addEdge(UnitFlow::Vertex u, UnitFlow::Vertex v,
   if (u == v)
     return;
 
-  graph.addEdge({u,v,graph.degree(u),0,capacity});
-  graph.addEdge({v,u,graph.degree(v),0,capacity});
+  graph.addEdge({u, v, graph.degree(u), 0, capacity});
+  graph.addEdge({v, u, graph.degree(v), 0, capacity});
 }
 
 std::vector<UnitFlow::Vertex> UnitFlow::compute(const int maxHeight) {
@@ -46,8 +46,8 @@ std::vector<UnitFlow::Vertex> UnitFlow::compute(const int maxHeight) {
         height[e.from] == height[e.to] + 1) {
       // push
       assert(excess(e.to) == 0 && "Pushing to vertex with non-zero excess");
-      UnitFlow::Flow delta =
-        std::min({excess(e.from), residual(e), (UnitFlow::Flow)graph.degree(e.to)});
+      UnitFlow::Flow delta = std::min(
+          {excess(e.from), residual(e), (UnitFlow::Flow)graph.degree(e.to)});
 
       e.flow += delta;
       absorbed[e.from] -= delta;

@@ -38,7 +38,7 @@ private:
   /**
      For each vertex maintain a neighbor list.
    */
-  PartitionGraph<int,Edge> graph;
+  PartitionGraph<int, Edge> graph;
   /**
      The amount of flow a vertex is absorbing. In the beginning, before any flow
      has been moved, this corresponds to the source function '\Delta(v)'.

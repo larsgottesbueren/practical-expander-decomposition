@@ -9,7 +9,7 @@ struct Edge {
   int from, to;
   Edge(int from, int to) : from(from), to(to) {}
   Edge rev() const {
-    Edge e(to,from);
+    Edge e(to, from);
     return e;
   }
 };
