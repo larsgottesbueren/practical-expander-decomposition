@@ -3,6 +3,14 @@
 #include <vector>
 
 /**
+   A simple directed edge.
+ */
+struct Edge {
+  int from, to;
+  Edge(int from, int to) : from(from), to(to) {}
+};
+
+/**
    A graph which supports partitioning vertices into separate sub-graphs.
 
    Parameterised over vertex type <V> and edge type <E>. An edge must have
@@ -169,7 +177,7 @@ public:
   std::vector<V> partitionNeighbors(const int u) const {
     std::vector<V> vs(pGraph[u].size());
     for (int i = 0; i < (int)pGraph[u].size(); ++i)
-      vs[i] = pGraph[u].to;
+      vs[i] = pGraph[u][i].to;
 
     return vs;
   };
@@ -219,8 +227,8 @@ public:
 
     for (const auto u : xs) {
       pGraph[u].erase(std::remove_if(pGraph[u].begin(), pGraph[u].end(),
-                                     [&newP, this](const int v) {
-                                       return partition[v] != newP;
+                                     [&newP, this](const auto &e) {
+                                       return partition[e.to] != newP;
                                      }),
                       pGraph[u].end());
       numEdgesInPartition[newP] += pGraph[u].size();
@@ -231,8 +239,8 @@ public:
     for (const auto u : ys)
       if (partition[u] == oldP) {
         pGraph[u].erase(std::remove_if(pGraph[u].begin(), pGraph[u].end(),
-                                       [&oldP, this](const int v) {
-                                         return partition[v] != oldP;
+                                       [&oldP, this](const auto &e) {
+                                         return partition[e.to] != oldP;
                                        }),
                         pGraph[u].end());
         numEdgesInPartition[oldP] += pGraph[u].size();
