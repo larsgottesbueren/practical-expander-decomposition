@@ -6,6 +6,11 @@ UnitFlow::Edge::Edge(const UnitFlow::Vertex from, const UnitFlow::Vertex to,
                      UnitFlow::Flow capacity = 0)
     : from(from), to(to), backIdx(backIdx), flow(flow), capacity(capacity) {}
 
+UnitFlow::Edge UnitFlow::Edge::rev() const {
+  Edge e(to,from,0,flow,capacity);
+  return e;
+}
+
 UnitFlow::UnitFlow(int n)
     : graph(n), absorbed(n), sink(n), height(n), nextEdgeIdx(n) {}
 
@@ -13,43 +18,41 @@ void UnitFlow::addEdge(UnitFlow::Vertex u, UnitFlow::Vertex v,
                        UnitFlow::Flow capacity) {
   if (u == v)
     return;
-  int uNeighborCount = (int)graph[u].size(),
-      vNeighborCount = (int)graph[v].size();
 
-  graph[u].emplace_back(u, v, vNeighborCount, 0, capacity);
-  graph[v].emplace_back(v, u, uNeighborCount, 0, capacity);
+  graph.addEdge({u,v,graph.degree(u),0,capacity});
+  graph.addEdge({v,u,graph.degree(v),0,capacity});
 }
 
 std::vector<UnitFlow::Vertex> UnitFlow::compute(const int maxHeight) {
   typedef std::pair<UnitFlow::Flow, UnitFlow::Vertex> QPair;
   std::priority_queue<QPair, std::vector<QPair>, std::greater<QPair>> q;
 
-  const int maxH = std::min(maxHeight, 2 * size() + 1);
+  const int maxH = std::min(maxHeight, 2 * graph.size() + 1);
 
-  for (UnitFlow::Vertex u = 0; u < size(); ++u)
+  for (UnitFlow::Vertex u = 0; u < graph.size(); ++u)
     if (excess(u) > 0)
       q.push({height[u], u});
 
   while (!q.empty()) {
     auto [_, u] = q.top();
 
-    if (graph[u].empty()) {
+    if (graph.degree(u) == 0) {
       q.pop();
       continue;
     }
 
-    Edge &e = graph[u][nextEdgeIdx[u]];
+    Edge &e = graph.edges(u)[nextEdgeIdx[u]];
     if (excess(e.from) > 0 && residual(e) > 0 &&
         height[e.from] == height[e.to] + 1) {
       // push
       assert(excess(e.to) == 0 && "Pushing to vertex with non-zero excess");
       UnitFlow::Flow delta =
-          std::min({excess(e.from), residual(e), (UnitFlow::Flow)degree(e.to)});
+        std::min({excess(e.from), residual(e), (UnitFlow::Flow)graph.degree(e.to)});
 
       e.flow += delta;
       absorbed[e.from] -= delta;
 
-      graph[e.to][e.backIdx].flow -= delta;
+      graph.edges(e.to)[e.backIdx].flow -= delta;
       absorbed[e.to] += delta;
 
       assert(excess(e.from) >= 0 && "Excess after pushing cannot be negative");
@@ -57,7 +60,7 @@ std::vector<UnitFlow::Vertex> UnitFlow::compute(const int maxHeight) {
         q.pop();
       if (height[e.to] < maxH && excess(e.to) > 0)
         q.push({height[e.to], e.to});
-    } else if (nextEdgeIdx[e.from] == (int)graph[e.from].size() - 1) {
+    } else if (nextEdgeIdx[e.from] == (int)graph.edges(e.from).size() - 1) {
       // all edges have been tried, relabel
       q.pop();
       height[e.from]++;
@@ -71,7 +74,7 @@ std::vector<UnitFlow::Vertex> UnitFlow::compute(const int maxHeight) {
   }
 
   std::vector<UnitFlow::Vertex> levelCut;
-  for (UnitFlow::Vertex u = 0; u < size(); ++u)
+  for (UnitFlow::Vertex u = 0; u < graph.size(); ++u)
     if (excess(u) > 0)
       levelCut.push_back(u);
 
@@ -79,8 +82,8 @@ std::vector<UnitFlow::Vertex> UnitFlow::compute(const int maxHeight) {
 }
 
 void UnitFlow::reset() {
-  for (UnitFlow::Vertex u = 0; u < size(); ++u) {
-    for (auto edge : graph[u])
+  for (UnitFlow::Vertex u = 0; u < graph.size(); ++u) {
+    for (auto edge : graph.edges(u))
       edge.flow = 0;
     absorbed[u] = 0;
     sink[u] = 0;
@@ -102,13 +105,13 @@ UnitFlow::matching(const std::vector<UnitFlow::Vertex> &sources) {
 
   std::function<UnitFlow::Vertex(UnitFlow::Vertex)> search =
       [&](UnitFlow::Vertex start) {
-        std::vector<bool> visited(size());
+        std::vector<bool> visited(graph.size());
         std::function<UnitFlow::Vertex(UnitFlow::Vertex)> dfs =
             [&](UnitFlow::Vertex u) {
               if (visited[u])
                 return -1;
               visited[u] = true;
-              for (auto &e : graph[u]) {
+              for (auto &e : graph.edges(u)) {
                 if (e.flow <= 0)
                   continue;
                 else if (flowIn(e.to) > 0 && sink[e.to] > 0) {

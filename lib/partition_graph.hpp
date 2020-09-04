@@ -8,13 +8,17 @@
 struct Edge {
   int from, to;
   Edge(int from, int to) : from(from), to(to) {}
+  Edge rev() const {
+    Edge e(to,from);
+    return e;
+  }
 };
 
 /**
    A graph which supports partitioning vertices into separate sub-graphs.
 
    Parameterised over vertex type <V> and edge type <E>. An edge must have
-   members '.from' and '.to' with type <V>.
+   members '.from' and '.to' with type <V> as well 'Edge rev() const'.
 
 
    Notation:
@@ -144,6 +148,7 @@ public:
      Size of result: O(|E|)
      Time complexity: O(1)
    */
+  std::vector<E> &edges(const int u) { return graph[u]; };
   const std::vector<E> &edges(const int u) const { return graph[u]; };
 
   /**
@@ -152,6 +157,7 @@ public:
      Size of result: O(|E_i|), where u \in V_i.
      Time complexity: O(1)
    */
+  std::vector<E> &partitionEdges(const int u) { return pGraph[u]; };
   const std::vector<E> &partitionEdges(const int u) const { return pGraph[u]; };
 
   /**
@@ -183,7 +189,7 @@ public:
   };
 
   /**
-     Add an undirected edge '{u,v}'. If 'u = v' do nothing.
+     Add directed edge '{u,v}'. If 'u = v' do nothing.
 
      Time complexity: O(1)
    */
@@ -195,14 +201,35 @@ public:
       return;
 
     numEdges++;
-
-    graph[u].push_back(v);
-    graph[v].push_back(u);
+    graph[u].push_back(e);
     if (partition[u] == partition[v]) {
       numEdgesInPartition[partition[u]]++;
 
-      pGraph[u].push_back(v);
-      pGraph[v].push_back(u);
+      pGraph[u].push_back(e);
+    }
+  }
+
+  /**
+     Add undirected edge '{u,v}'. If 'u = v' do nothing.
+
+     Time complexity: O(1)
+   */
+  void addUEdge(const E &e) {
+    V u = e.from, v = e.to;
+
+    assert(u < numVertices && v < numVertices && "Vertex out of bounds.");
+    if (u == v)
+      return;
+
+    numEdges++;
+    graph[u].push_back(e);
+    graph[v].push_back(e.rev());
+
+    if (partition[u] == partition[v]) {
+      numEdgesInPartition[partition[u]]++;
+
+      pGraph[u].push_back(e);
+      pGraph[v].push_back(e.rev());
     }
   }
 

@@ -6,6 +6,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "partition_graph.hpp"
+
 /**
    Push relabel based unit flow algorithm. Based on push relabel in KACTL.
  */
@@ -25,13 +27,18 @@ public:
 
     Edge(const Vertex from, const Vertex to, const int backIdx, Flow flow,
          Flow capacity);
+
+    /**
+       Reverse 'from' and 'to'.
+     */
+    Edge rev() const;
   };
 
 private:
   /**
      For each vertex maintain a neighbor list.
    */
-  std::vector<std::vector<Edge>> graph;
+  PartitionGraph<int,Edge> graph;
   /**
      The amount of flow a vertex is absorbing. In the beginning, before any flow
      has been moved, this corresponds to the source function '\Delta(v)'.
@@ -51,16 +58,6 @@ private:
      should consider next.
    */
   std::vector<int> nextEdgeIdx;
-
-  /**
-     The degree of a vertex.
-   */
-  int degree(Vertex u) const { return (int)graph[u].size(); }
-
-  /**
-     The number of vertices in the flow graph.
-   */
-  int size() const { return (int)graph.size(); }
 
   /**
      Residual capacity of an edge.
@@ -104,7 +101,7 @@ public:
    */
   Flow flowOut(Vertex u) const {
     Flow f = 0;
-    for (auto &e : graph[u])
+    for (const auto &e : graph.edges(u))
       if (e.flow > 0)
         f += e.flow;
     return f;
