@@ -6,12 +6,12 @@
 #include "cut_matching.hpp"
 #include "unit_flow.hpp"
 
-CutMatching::CutMatching(const PartitionGraph &g,
-                         const std::vector<PartitionGraph::Vertex> &subset,
+CutMatching::CutMatching(const std::unique_ptr<PartitionGraph<int, Edge>> &g,
+                         const std::vector<int> &subset,
                          const int graphPartition, const double phi)
     : graph(g), subset(subset), fromSubset(subset.size()),
       graphPartition(graphPartition), phi(phi),
-      flowInstance(subset.size() + g.edgeCount(graphPartition)) {
+      flowInstance(subset.size() + g->edgeCount(graphPartition)) {
   std::random_device rd;
   randomGen = std::mt19937(rd());
 
@@ -19,11 +19,11 @@ CutMatching::CutMatching(const PartitionGraph &g,
     fromSubset[subset[i]] = i;
 
   int edgesAdded = 0;
-  const int m = g.edgeCount(graphPartition);
+  const int m = graph->edgeCount(graphPartition);
   const int cap = (int)std::ceil(1.0 / phi / std::log(m) / std::log(m));
 
   for (const auto u : subset)
-    for (const auto v : graph.partitionNeighbors(u))
+    for (const auto v : graph->partitionNeighbors(u))
       if (u < v) {
         flowInstance.addEdge(fromSubset[u], m + edgesAdded, cap);
         flowInstance.addEdge(fromSubset[v], m + edgesAdded++, cap);
@@ -70,14 +70,15 @@ void fillRandomUnitVector(std::mt19937 &gen, std::vector<double> &xs) {
 CutMatching::Result CutMatching::compute() {
   std::vector<Matching> rounds;
 
-  const int numSplitNodes = graph.edgeCount(graphPartition);
+  const int numSplitNodes = graph->edgeCount(graphPartition);
   const double T =
       1 + 0.9 * std::ceil(std::log(numSplitNodes) * std::log(numSplitNodes));
 
   std::vector<double> r(numSplitNodes);
 
   int iterations = 1;
-  for (; graph.volume(subset) <= 100 + numSplitNodes / 10.0 / T &&
+  for (; graph->volume(subset.begin(), subset.end()) <=
+             100 + numSplitNodes / 10.0 / T &&
          iterations <= T;
        ++iterations) {
 

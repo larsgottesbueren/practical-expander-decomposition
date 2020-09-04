@@ -1,22 +1,23 @@
 #pragma once
 
 #include <random>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
 #include "partition_graph.hpp"
 #include "unit_flow.hpp"
 
 struct CutMatching {
 private:
-  const PartitionGraph &graph;
-  const std::vector<PartitionGraph::Vertex> &subset;
+  const std::unique_ptr<PartitionGraph<int, Edge>> &graph;
+  const std::vector<int> subset;
+
   /**
      Re-maps the vertices in 'subset' to the range '[0,|subset|)'.
 
      'fromSubset[subset[i]] = i'
    */
-  std::unordered_map<int,int> fromSubset;
+  std::unordered_map<int, int> fromSubset;
 
   const int graphPartition;
   const double phi;
@@ -35,7 +36,7 @@ public:
    */
   struct Result {
     ResultType t;
-    std::vector<PartitionGraph::Vertex> a, r;
+    std::vector<int> a, r;
   };
 
   /**
@@ -43,9 +44,9 @@ public:
 
      Precondition: graph should not contain loops.
    */
-  CutMatching(const PartitionGraph &g,
-              const std::vector<PartitionGraph::Vertex> &subset,
-              const int graphPartition, const double phi);
+  CutMatching(const std::unique_ptr<PartitionGraph<int, Edge>> &g,
+              const std::vector<int> &subset, const int graphPartition,
+              const double phi);
 
   Result compute();
 };
