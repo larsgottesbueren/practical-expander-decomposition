@@ -1,67 +1,40 @@
+#include <numeric>
+
 #include "expander_decomp.hpp"
 
-ExpanderDecomp::ExpanderDecomp(Graph g) : graph(g), partition(g.size()) {}
-
-void ExpanderDecomp::go(double phi, std::vector<Vertex> vs) {
-  CutMatching cm(graph);
-  CutMatching::Result result = cm.compute(phi);
-
-  std::vector<bool> inA(graph.size());
-  for (auto u : result.a)
-    inA[u] = true;
+void ExpanderDecomp::compute(const std::vector<PartitionGraph::Vertex> &xs,
+                             int partition) {
+  CutMatching cm(graph, xs, partition, phi);
+  auto result = cm.compute();
 
   switch (result.t) {
   case CutMatching::Balanced: {
-    Graph lg(result.a.size()), rg(result.r.size());
-    for (auto u : result.a)
-      for (auto v : graph.neighbors[u])
-        if (inA[v])
-          lg.addEdge(u, v);
-    for (auto u : result.r)
-      for (auto v : graph.neighbors[u])
-        if (!inA[v])
-          rg.addEdge(u, v);
-
+    int newPartition = graph.newPartition(result.a, xs);
+    compute(result.a, newPartition);
+    compute(result.r, partition);
+    break;
+  }
+  case CutMatching::NearExpander: {
+    break;
+  }
+  case CutMatching::Expander: {
     break;
   }
   }
 }
 
-std::vector<std::vector<Vertex>> ExpanderDecomp::compute(double phi) const {
-  CutMatching cm(graph);
-  CutMatching::Result result = cm.compute(phi);
+ExpanderDecomp::ExpanderDecomp(PartitionGraph &g, const double phi)
+    : graph(std::move(g)), phi(phi) {
+  std::vector<PartitionGraph::Vertex> vertices(g.size());
+  std::iota(vertices.begin(), vertices.end(), 0);
+  compute(vertices, 0);
+}
 
-  std::vector<bool> inA(graph.size());
-  for (auto u : result.a)
-    inA[u] = true;
-
-  switch (result.t) {
-  case CutMatching::Balanced: {
-    Graph lg(result.a.size());
-    Graph rg(result.r.size());
-
-    for (auto u : result.a)
-      for (auto v : graph.neighbors[u])
-        if (inA[v])
-          lg.addEdge(u, v);
-    for (auto u : result.r)
-      for (auto v : graph.neighbors[u])
-        if (!inA[v])
-          rg.addEdge(u, v);
-
-    ExpanderDecomp left(lg);
-    ExpanderDecomp right(rg);
-
-    std::vector<std::vector<Vertex>> result;
-    break;
-  }
-  case CutMatching::Expander: {
-
-    break;
-  }
-  case CutMatching::NearExpander: {
-
-    break;
-  }
-  }
+std::vector<std::vector<PartitionGraph::Vertex>>
+ExpanderDecomp::getPartition() const {
+  std::vector<std::vector<PartitionGraph::Vertex>> result(
+      graph.partitionCount());
+  for (int u = 0; u < graph.size(); ++u)
+    result[graph.getPartition(u)].push_back(u);
+  return result;
 }

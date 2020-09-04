@@ -22,8 +22,8 @@ void PartitionGraph::addEdge(const Vertex u, const Vertex v) {
   }
 }
 
-void PartitionGraph::newPartition(const std::vector<Vertex> &xs,
-                                  const std::vector<Vertex> &ys) {
+int PartitionGraph::newPartition(const std::vector<Vertex> &xs,
+                                 const std::vector<Vertex> &ys) {
   const int oldP = partition[xs[0]];
   const int newP = numPartitions++;
   for (const auto u : xs)
@@ -54,4 +54,13 @@ void PartitionGraph::newPartition(const std::vector<Vertex> &xs,
       numEdgesInPartition[oldP] += pGraph[u].size();
     }
   numEdgesInPartition[oldP] /= 2; // Edges are double counted above
+
+  return newP;
+}
+
+int PartitionGraph::volume(const std::vector<Vertex> &xs) const {
+  int result = 0;
+  for (const auto x : xs)
+    result += degree(x);
+  return result;
 }

@@ -1,16 +1,29 @@
 #pragma once
 
+#include <random>
 #include <vector>
+#include <unordered_map>
 
-#include "graph.hpp"
+#include "partition_graph.hpp"
+#include "unit_flow.hpp"
 
 struct CutMatching {
 private:
+  const PartitionGraph &graph;
+  const std::vector<PartitionGraph::Vertex> &subset;
   /**
-     A sub-division graph. See definition B.1 Saranurak et al. Given graph
-     G=(V,E), subdivision vertices start at index |V|.
+     Re-maps the vertices in 'subset' to the range '[0,|subset|)'.
+
+     'fromSubset[subset[i]] = i'
    */
-  Graph graph;
+  std::unordered_map<int,int> fromSubset;
+
+  const int graphPartition;
+  const double phi;
+
+  UnitFlow flowInstance;
+
+  std::mt19937 randomGen;
 
 public:
   enum ResultType { Balanced, Expander, NearExpander };
@@ -22,21 +35,17 @@ public:
    */
   struct Result {
     ResultType t;
-    std::vector<Vertex> a, r;
+    std::vector<PartitionGraph::Vertex> a, r;
   };
-
-  const int numRegularNodes;
-  /**
-     Number of "split nodes", i.e. those which were created from edges.
-   */
-  const int numSplitNodes;
 
   /**
      Create a cut-matching problem from a graph.
 
      Precondition: graph should not contain loops.
    */
-  CutMatching(const Graph &g);
+  CutMatching(const PartitionGraph &g,
+              const std::vector<PartitionGraph::Vertex> &subset,
+              const int graphPartition, const double phi);
 
-  Result compute(double phi) const;
+  Result compute();
 };

@@ -62,7 +62,7 @@ int main() {
       g.addEdge(u, v);
     }
   }
-
+  /*
   CutMatching cm(g);
   double phi;
   cin >> phi;
@@ -85,4 +85,5 @@ int main() {
   for (auto u : right)
     cout << " " << u;
   cout << endl;
+  */
 }

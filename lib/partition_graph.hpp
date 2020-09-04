@@ -73,6 +73,13 @@ public:
   int edgeCount(const int i) const { return numEdgesInPartition[i]; }
 
   /**
+     The number of partitions.
+
+     Time complexity: O(1)
+   */
+  int partitionCount() const { return numPartitions; }
+
+  /**
      Degree of vertex 'u' in entire graph.
 
      Time complexity: O(1)
@@ -85,6 +92,13 @@ public:
      Time complexity: O(1)
    */
   int partitionDegree(const int u) const { return pGraph[u].size(); };
+
+  /**
+     The volume of a subset of nodes is the sum of their degrees.
+
+     Time complexity: O(|xs|)
+   */
+  int volume(const std::vector<Vertex> &xs) const;
 
   /**
      The partition vertex 'u' is a part of.
@@ -120,13 +134,13 @@ public:
 
   /**
      Create a new partition for the nodes 'xs' given the current nodes in the
-     partition 'ys'.
+     partition 'ys'. Return the index of the new partition.
 
      Precondition: All 'xs \subseteq ys' and all 'y \in ys' are in the same
      partition.
 
      Time complexity: O(|V_i| + |E_i|) where 'ys \subseteq V_i'
    */
-  void newPartition(const std::vector<Vertex> &xs,
-                    const std::vector<Vertex> &ys);
+  int newPartition(const std::vector<Vertex> &xs,
+                   const std::vector<Vertex> &ys);
 };

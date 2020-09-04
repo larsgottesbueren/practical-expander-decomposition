@@ -3,25 +3,26 @@
 #include <vector>
 
 #include "cut_matching.hpp"
-#include "graph.hpp"
+#include "partition_graph.hpp"
 
 struct ExpanderDecomp {
 private:
-  Graph graph;
-  int partitions;
+  PartitionGraph graph;
+  const double phi;
 
-  void go(double phi, std::vector<Vertex> vs);
+  /**
+     Compute expander decomposition for subset of vertices 'xs'.
+   */
+  void compute(const std::vector<PartitionGraph::Vertex> &xs, int partition);
 
 public:
   /**
-     'partition[u]' is the partition index of vertex 'u'.
-   */
-  std::vector<int> partition;
-
-  /**
      Create a decomposition problem with n vertices.
    */
-  ExpanderDecomp(Graph g);
+  ExpanderDecomp(PartitionGraph &g, const double phi);
 
-  std::vector<std::vector<Vertex>> compute(double phi) const;
+  /**
+     Return the computed partition as a vector of disjoint vertex vectors.
+   */
+  std::vector<std::vector<PartitionGraph::Vertex>> getPartition() const;
 };

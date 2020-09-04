@@ -7,9 +7,7 @@ cc_library(
   copts = [
     "-Iexternal/eigen",
   ],
-  deps = [
-    "@eigen",
-  ],
+  deps = [],
   visibility = [
     "//main:__pkg__",
     "//test:__pkg__"
