@@ -3,7 +3,7 @@
 #include "lib/partition_graph.hpp"
 
 TEST(PartitionGraph, SingleVertex) {
-  PartitionGraph<int,Edge> g(1);
+  PartitionGraph<int, Edge> g(1);
 
   EXPECT_EQ(g.size(), 1);
   EXPECT_EQ(g.size(0), 1);
@@ -13,7 +13,7 @@ TEST(PartitionGraph, SingleVertex) {
 }
 
 TEST(PartitionGraph, AddEdge) {
-  PartitionGraph<int,Edge> g(2);
+  PartitionGraph<int, Edge> g(2);
 
   EXPECT_EQ(g.size(), 2);
   EXPECT_EQ(g.size(0), 2);
@@ -29,7 +29,7 @@ TEST(PartitionGraph, AddEdge) {
 }
 
 TEST(PartitionGraph, AddEdgeAndPartition) {
-  PartitionGraph<int,Edge> g(2);
+  PartitionGraph<int, Edge> g(2);
 
   EXPECT_EQ(g.size(), 2);
   EXPECT_EQ(g.size(0), 2);
@@ -65,7 +65,7 @@ TEST(PartitionGraph, AddEdgeAndPartition) {
 }
 
 TEST(PartitionGraph, NewPartitionMaintainsEdges) {
-  PartitionGraph<int,Edge> g(6);
+  PartitionGraph<int, Edge> g(6);
   g.addEdge(0, 1), g.addEdge(1, 2), g.addEdge(2, 0);
   g.addEdge(3, 4), g.addEdge(4, 5), g.addEdge(5, 3);
   g.addEdge(0, 3);
