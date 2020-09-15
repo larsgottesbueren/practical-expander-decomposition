@@ -4,6 +4,7 @@
 #include <list>
 #include <queue>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "partition_graph.hpp"
@@ -71,6 +72,11 @@ public:
   UnitFlow(int n);
 
   /**
+     Access the flow graph. Should not be possible to modify.
+   */
+  const PartitionGraph<int, Edge> &getGraph() const { return graph; }
+
+  /**
      Add an undirected edge between two vertices with a certain capacity.
 
      If the edge forms a loop it is ignored.
@@ -124,9 +130,21 @@ public:
   std::vector<Vertex> compute(const int maxHeight);
 
   /**
+     Same as 'compute(maxHeight)' but only considers subgraph spanned by
+     vertices in 'alive'.
+   */
+  std::vector<Vertex> compute(const int maxHeight,
+                              const std::unordered_set<Vertex> &alive);
+
+  /**
      Set all flow, sinks and source capacities to 0.
    */
   void reset();
+
+  /**
+     Set all flow, sinks and source capacities of a subset of vertices to 0.
+   */
+  template <typename It> void reset(It begin, It end);
 
   /**
      Compute a matching between vertices using the current state of the flow

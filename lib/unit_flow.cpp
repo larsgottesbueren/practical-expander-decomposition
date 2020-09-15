@@ -81,6 +81,69 @@ std::vector<UnitFlow::Vertex> UnitFlow::compute(const int maxHeight) {
   return levelCut;
 }
 
+std::vector<UnitFlow::Vertex>
+UnitFlow::compute(const int maxHeight,
+                  const std::unordered_set<Vertex> &alive) {
+  typedef std::pair<UnitFlow::Flow, UnitFlow::Vertex> QPair;
+  std::priority_queue<QPair, std::vector<QPair>, std::greater<QPair>> q;
+
+  // TODO: Is '2*alive.size()' correct?
+  const int maxH = std::min(maxHeight, 2 * (int)alive.size() + 1);
+
+  for (auto u : alive)
+    if (excess(u) > 0)
+      q.push({height[u], u});
+
+  while (!q.empty()) {
+    auto [_, u] = q.top();
+
+    if (graph.partitionDegree(u) == 0 || alive.find(u) == alive.end()) {
+      q.pop();
+      continue;
+    }
+
+    Edge &e = graph.partitionEdges(u)[nextEdgeIdx[u]];
+    if (excess(e.from) > 0 && residual(e) > 0 &&
+        height[e.from] == height[e.to] + 1 && alive.find(e.to) != alive.end()) {
+      // push
+      assert(excess(e.to) == 0 && "Pushing to vertex with non-zero excess");
+      UnitFlow::Flow delta =
+          std::min({excess(e.from), residual(e),
+                    (UnitFlow::Flow)graph.partitionDegree(e.to)});
+
+      e.flow += delta;
+      absorbed[e.from] -= delta;
+
+      graph.partitionEdges(e.to)[e.backIdx].flow -= delta;
+      absorbed[e.to] += delta;
+
+      assert(excess(e.from) >= 0 && "Excess after pushing cannot be negative");
+      if (height[e.from] >= maxH || excess(e.from) == 0)
+        q.pop();
+      if (height[e.to] < maxH && excess(e.to) > 0)
+        q.push({height[e.to], e.to});
+    } else if (nextEdgeIdx[e.from] ==
+               (int)graph.partitionEdges(e.from).size() - 1) {
+      // all edges have been tried, relabel
+      q.pop();
+      height[e.from]++;
+      nextEdgeIdx[e.from] = 0;
+
+      if (height[e.from] < maxH)
+        q.push({height[e.from], e.from});
+    } else {
+      nextEdgeIdx[e.from]++;
+    }
+  }
+
+  std::vector<UnitFlow::Vertex> levelCut;
+  for (auto u : alive)
+    if (excess(u) > 0)
+      levelCut.push_back(u);
+
+  return levelCut;
+}
+
 void UnitFlow::reset() {
   for (UnitFlow::Vertex u = 0; u < graph.size(); ++u) {
     for (auto edge : graph.edges(u))
@@ -88,6 +151,16 @@ void UnitFlow::reset() {
     absorbed[u] = 0;
     sink[u] = 0;
     nextEdgeIdx[u] = 0;
+  }
+}
+
+template <typename It> void UnitFlow::reset(It begin, It end) {
+  for (auto it = begin; it != end; ++it) {
+    for (auto edge : graph.edges(*it))
+      edge.flow = 0;
+    absorbed[*it] = 0;
+    sink[*it] = 0;
+    nextEdgeIdx[*it] = 0;
   }
 }
 
