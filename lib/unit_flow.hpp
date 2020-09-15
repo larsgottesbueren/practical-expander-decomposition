@@ -144,7 +144,15 @@ public:
   /**
      Set all flow, sinks and source capacities of a subset of vertices to 0.
    */
-  template <typename It> void reset(It begin, It end);
+  template <typename It> void reset(const It begin, const It end) {
+    for (auto it = begin; it != end; ++it) {
+      for (auto edge : graph.edges(*it))
+        edge.flow = 0;
+      absorbed[*it] = 0;
+      sink[*it] = 0;
+      nextEdgeIdx[*it] = 0;
+    }
+  }
 
   /**
      Compute a matching between vertices using the current state of the flow

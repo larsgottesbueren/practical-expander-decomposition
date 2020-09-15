@@ -154,16 +154,6 @@ void UnitFlow::reset() {
   }
 }
 
-template <typename It> void UnitFlow::reset(It begin, It end) {
-  for (auto it = begin; it != end; ++it) {
-    for (auto edge : graph.edges(*it))
-      edge.flow = 0;
-    absorbed[*it] = 0;
-    sink[*it] = 0;
-    nextEdgeIdx[*it] = 0;
-  }
-}
-
 std::vector<std::pair<UnitFlow::Vertex, UnitFlow::Vertex>>
 UnitFlow::matching(const std::vector<UnitFlow::Vertex> &sources) {
   std::vector<std::pair<UnitFlow::Vertex, UnitFlow::Vertex>> matches;
