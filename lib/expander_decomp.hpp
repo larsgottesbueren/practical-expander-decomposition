@@ -7,6 +7,12 @@
 
 struct ExpanderDecomp {
 private:
+  /**
+     One graph and two flow graphs are maintained. The vertices and edges in
+     'graph' and 'flowGraph' are identical apart from the edges maintaining flow
+     information in the latter. Let 'graph = (V,E)'. Then '{e.id + |V| | e \in
+     E}' is the vertex ids of the split vertices in 'subdivisionFlowGraph'.
+   */
   std::unique_ptr<PartitionGraph<int, Edge>> graph;
   std::unique_ptr<UnitFlow> flowGraph, subdivisionFlowGraph;
   const double phi;

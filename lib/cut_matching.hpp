@@ -9,20 +9,12 @@
 
 struct CutMatching {
 private:
-  const std::unique_ptr<PartitionGraph<int, Edge>> &graph;
+  const PartitionGraph<int, Edge> *graph;
+  UnitFlow *subdivisionFlowGraph;
   const std::vector<int> subset;
-
-  /**
-     Re-maps the vertices in 'subset' to the range '[0,|subset|)'.
-
-     'fromSubset[subset[i]] = i'
-   */
-  std::unordered_map<int, int> fromSubset;
 
   const int graphPartition;
   const double phi;
-
-  UnitFlow flowInstance;
 
   std::mt19937 randomGen;
 
@@ -44,9 +36,9 @@ public:
 
      Precondition: graph should not contain loops.
    */
-  CutMatching(const std::unique_ptr<PartitionGraph<int, Edge>> &g,
-              const std::vector<int> &subset, const int graphPartition,
-              const double phi);
+  CutMatching(const PartitionGraph<int, Edge> *g,
+              UnitFlow *subdivisionFlowGraph, const std::vector<int> &subset,
+              const int graphPartition, const double phi);
 
   Result compute();
 };

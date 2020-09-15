@@ -4,7 +4,7 @@
 #include "expander_decomp.hpp"
 
 void ExpanderDecomp::compute(const std::vector<int> &xs, int partition) {
-  CutMatching cm(graph, xs, partition, phi);
+  CutMatching cm(graph.get(), subdivisionFlowGraph.get(), xs, partition, phi);
   auto result = cm.compute();
 
   switch (result.t) {

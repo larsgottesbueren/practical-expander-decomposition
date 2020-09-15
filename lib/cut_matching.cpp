@@ -2,35 +2,19 @@
 #include <cmath>
 #include <numeric>
 #include <random>
+#include <unordered_set>
 
 #include "cut_matching.hpp"
 #include "unit_flow.hpp"
 
-CutMatching::CutMatching(const std::unique_ptr<PartitionGraph<int, Edge>> &g,
+CutMatching::CutMatching(const PartitionGraph<int, Edge> *g,
+                         UnitFlow *subdivisionFlowGraph,
                          const std::vector<int> &subset,
                          const int graphPartition, const double phi)
-    : graph(g), subset(subset), fromSubset(subset.size()),
-      graphPartition(graphPartition), phi(phi),
-      flowInstance(subset.size() + g->edgeCount(graphPartition)) {
+    : graph(g), subdivisionFlowGraph(subdivisionFlowGraph), subset(subset),
+      graphPartition(graphPartition), phi(phi) {
   std::random_device rd;
   randomGen = std::mt19937(rd());
-
-  for (int i = 0; i < (int)subset.size(); ++i)
-    fromSubset[subset[i]] = i;
-
-  int edgesAdded = 0;
-  const int m = graph->edgeCount(graphPartition);
-  const int cap = (int)std::ceil(1.0 / phi / std::log(m) / std::log(m));
-
-  for (const auto u : subset)
-    for (const auto v : graph->partitionNeighbors(u))
-      if (u < v) {
-        flowInstance.addEdge(fromSubset[u], m + edgesAdded, cap);
-        flowInstance.addEdge(fromSubset[v], m + edgesAdded++, cap);
-      }
-
-  assert(edgesAdded == m &&
-         "Unexpected number of edges added to flow instance.");
 }
 
 /**
@@ -76,25 +60,102 @@ CutMatching::Result CutMatching::compute() {
 
   std::vector<double> r(numSplitNodes);
 
+  std::vector<int> splitNodes;
+  std::unordered_set<int> splitNodeSet;
+  splitNodes.reserve(numSplitNodes);
+  for (const auto u : subset) {
+    for (const auto v :
+         subdivisionFlowGraph->getGraph().partitionNeighbors(u)) {
+      splitNodes.push_back(v);
+      splitNodeSet.insert(v);
+    }
+  }
+  assert((int)splitNodes.size() == numSplitNodes &&
+         "The number of split nodes added did not match");
+
+  // Maintain split node indices: 'fromSplitNode[splitNodes[i]] = i'
+  std::unordered_map<int, int> fromSplitNode;
+  for (size_t i = 0; i < splitNodes.size(); ++i)
+    fromSplitNode[splitNodes[i]] = i;
+
+  std::unordered_set<int> aSet, axSet, rSet;
+
   int iterations = 1;
-  for (; graph->volume(subset.begin(), subset.end()) <=
-             100 + numSplitNodes / 10.0 / T &&
-         iterations <= T;
+  for (; iterations <= T &&
+         subdivisionFlowGraph->getGraph().volume(rSet.begin(), rSet.end()) <=
+             100 + numSplitNodes / 10.0 / T;
        ++iterations) {
 
     fillRandomUnitVector(randomGen, r);
-
     const auto flow = projectFlow(rounds, r);
-    double avgFlow = std::accumulate(flow.begin(), flow.end(), 0) / flow.size();
+    // double avgFlow = std::accumulate(flow.begin(), flow.end(), 0) / flow.size();
+    std::vector<int> axSetByFlow(axSet.begin(), axSet.end());
+    std::sort(axSetByFlow.begin(), axSetByFlow.end(),
+              [&flow, &fromSplitNode](int u, int v) {
+                return flow[fromSplitNode[u]] < flow[fromSplitNode[v]];
+              });
+    const int middle = axSetByFlow.size() / 2;
+    // const double eta = flow[fromSplitNode[axSetByFlow[middle]]];
 
-    flowInstance.reset();
+    subdivisionFlowGraph->reset(aSet.begin(), aSet.end());
+    for (int i = 0; i < (int)axSetByFlow.size(); ++i)
+      if (i < middle)
+        subdivisionFlowGraph->addSource(axSetByFlow[i], 1);
+      else
+        subdivisionFlowGraph->addSink(axSetByFlow[i], 1);
 
     const int h = (int)ceil(1.0 / phi / std::log(numSplitNodes));
+    const auto levelCut = subdivisionFlowGraph->compute(h, aSet);
 
-    for (int u = 0; u < numSplitNodes; ++u)
-      if (flow[u] < avgFlow)
-        flowInstance.addSource(u + numSplitNodes, 1);
-      else
-        flowInstance.addSink(u + numSplitNodes, 1);
+    std::unordered_set<int> removed;
+    for (auto u : levelCut)
+      removed.insert(u);
+    auto isRemoved = [&removed](int u) {
+      return removed.find(u) != removed.end();
+    };
+    for (auto u : axSet) {
+      if (isRemoved(u))
+        continue;
+      int count = 0;
+      assert(subdivisionFlowGraph->getGraph().partitionDegree(u) == 2 &&
+             "Subdivision vertices should have degree two.");
+      for (auto v : subdivisionFlowGraph->getGraph().partitionNeighbors(u))
+        if (isRemoved(v))
+          count++;
+      if (count == 2)
+        removed.insert(u);
+    }
+
+    std::vector<int> sourcesLeft;
+    for (int i = 0; i < middle; ++i) {
+      int u = axSetByFlow[i];
+      if (!isRemoved(u))
+        sourcesLeft.push_back(u);
+    }
+    auto matching = subdivisionFlowGraph->matching(sourcesLeft);
+    rounds.push_back(matching);
+
+    for (auto u : removed)
+      aSet.erase(u), axSet.erase(u), rSet.insert(u);
   }
+
+  CutMatching::ResultType rType;
+  if (iterations <= T)
+    // We have: graph.volume(R) > m / (10 * T)
+    rType = Balanced;
+  else if (rSet.empty())
+    rType = Expander;
+  else
+    rType = NearExpander;
+
+  CutMatching::Result result;
+  result.t = rType;
+  for (auto u : aSet)
+    if (splitNodeSet.find(u) == splitNodeSet.end())
+      result.a.push_back(u);
+  for (auto u : rSet)
+    if (splitNodeSet.find(u) == splitNodeSet.end())
+      result.r.push_back(u);
+
+  return result;
 }
