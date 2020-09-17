@@ -88,7 +88,8 @@ CutMatching::Result CutMatching::compute() {
 
     fillRandomUnitVector(randomGen, r);
     const auto flow = projectFlow(rounds, r);
-    // double avgFlow = std::accumulate(flow.begin(), flow.end(), 0) / flow.size();
+    // double avgFlow = std::accumulate(flow.begin(), flow.end(), 0) /
+    // flow.size();
     std::vector<int> axSetByFlow(axSet.begin(), axSet.end());
     std::sort(axSetByFlow.begin(), axSetByFlow.end(),
               [&flow, &fromSplitNode](int u, int v) {

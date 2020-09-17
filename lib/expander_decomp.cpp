@@ -23,22 +23,17 @@ void ExpanderDecomp::compute(const std::vector<int> &xs, int partition) {
   }
 }
 
-
 ExpanderDecomp::ExpanderDecomp(const PartitionGraph<int, Edge> &g,
                                const double phi)
     : graph(std::make_unique<PartitionGraph<int, Edge>>(g)),
       flowGraph(std::make_unique<UnitFlow>(g.size())),
       subdivisionFlowGraph(std::make_unique<UnitFlow>(g.edgeCount())),
       phi(phi) {
-  auto addFlowGraphEdges =
-    [&]() {
-      assert(false && "TODO: copy g");
-    };
+  auto addFlowGraphEdges = [&]() { assert(false && "TODO: copy g"); };
   addFlowGraphEdges();
-  auto addSubdivisionFlowGraphEdges =
-    [&]() {
-      assert(false && "TODO: make subdivision graph");
-    };
+  auto addSubdivisionFlowGraphEdges = [&]() {
+    assert(false && "TODO: make subdivision graph");
+  };
   addSubdivisionFlowGraphEdges();
 
   std::vector<int> vertices(g.size());
