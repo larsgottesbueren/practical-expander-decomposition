@@ -6,23 +6,23 @@
 #include <numeric>
 
 TEST(UnitFlow, SingleVertex) {
-  UnitFlow uf(1, INT_MAX);
+  UnitFlow uf(1);
   uf.addSource(0, 10);
   uf.addSink(0, 5);
 
-  auto cut = uf.compute();
+  auto cut = uf.compute(INT_MAX);
 
-  EXPECT_EQ(cut, std::vector<Vertex>{0});
+  EXPECT_EQ(cut, std::vector<int>{0});
   EXPECT_EQ(uf.excess(0), 5);
 }
 
 TEST(UnitFlow, TwoVertexFlow) {
-  UnitFlow uf(2, INT_MAX);
+  UnitFlow uf(2);
   uf.addSource(0, 10);
   uf.addSink(1, 10);
   uf.addEdge(0, 1, 10);
 
-  auto cut = uf.compute();
+  auto cut = uf.compute(INT_MAX);
 
   EXPECT_TRUE(cut.empty());
   EXPECT_EQ(uf.flowIn(0), 0);
@@ -30,25 +30,25 @@ TEST(UnitFlow, TwoVertexFlow) {
 }
 
 TEST(UnitFlow, TwoVertexFlowSmallEdge) {
-  UnitFlow uf(2, INT_MAX);
+  UnitFlow uf(2);
   uf.addSource(0, 10);
   uf.addSink(1, 10);
   uf.addEdge(0, 1, 4);
 
-  auto cut = uf.compute();
+  auto cut = uf.compute(INT_MAX);
 
-  EXPECT_EQ(cut, (std::vector<Vertex>{0}));
+  EXPECT_EQ(cut, (std::vector<int>{0}));
   EXPECT_EQ(uf.flowIn(0), 6);
   EXPECT_EQ(uf.flowIn(1), 4);
 }
 
 TEST(UnitFlow, TwoVertexFlowSmallSink) {
-  UnitFlow uf(2, INT_MAX);
+  UnitFlow uf(2);
   uf.addSource(0, 10);
   uf.addSink(1, 2);
   uf.addEdge(0, 1, 9);
 
-  auto cut = uf.compute();
+  auto cut = uf.compute(INT_MAX);
 
   EXPECT_FALSE(cut.empty());
   EXPECT_GT(uf.excess(0), 0);
@@ -63,7 +63,7 @@ TEST(UnitFlow, CanRouteBipartite) {
   const int n = 5;
   const int m = 10;
 
-  UnitFlow uf(n + m, INT_MAX);
+  UnitFlow uf(n + m);
 
   for (int u = 0; u < n; ++u)
     uf.addSink(u, 10);
@@ -74,7 +74,7 @@ TEST(UnitFlow, CanRouteBipartite) {
     for (int v = 0; v < m; ++v)
       uf.addEdge(u, n + v, 2);
 
-  auto cut = uf.compute();
+  auto cut = uf.compute(INT_MAX);
 
   EXPECT_TRUE(cut.empty());
   for (int u = 0; u < n; ++u)
@@ -87,7 +87,7 @@ TEST(UnitFlow, CanRouteBipartite) {
 TEST(UnitFlow, CannotRouteBottleneck) {
   const int n = 10;
 
-  UnitFlow uf(n, INT_MAX);
+  UnitFlow uf(n);
 
   for (int u = 0; u < 3; ++u) {
     uf.addSource(u, 10);
@@ -102,9 +102,9 @@ TEST(UnitFlow, CannotRouteBottleneck) {
       uf.addEdge(u, v, 10);
   }
 
-  auto cut = uf.compute();
+  auto cut = uf.compute(INT_MAX);
   std::sort(cut.begin(), cut.end());
-  std::vector<Vertex> expected = {0, 1, 2};
+  std::vector<int> expected = {0, 1, 2};
   EXPECT_EQ(cut, expected) << "Expected source nodes be part of the level cut";
 
   for (int u = 0; u < 3; ++u)
@@ -115,17 +115,17 @@ TEST(UnitFlow, CannotRouteBottleneck) {
 }
 
 TEST(UnitFlow, CanMatchSimple) {
-  UnitFlow uf(2, 10);
+  UnitFlow uf(2);
   uf.addSource(0, 5);
   uf.addSink(1, 5);
   uf.addEdge(0, 1, 5);
-  uf.compute();
+  uf.compute(10);
   auto matches = uf.matching({0});
-  EXPECT_EQ(matches, (std::vector<std::pair<Vertex, Vertex>>{{0, 1}}));
+  EXPECT_EQ(matches, (std::vector<std::pair<int, int>>{{0, 1}}));
 }
 
 TEST(UnitFlow, WontMatchBeforeFlowComputed) {
-  UnitFlow uf(2, 10);
+  UnitFlow uf(2);
   uf.addSource(0, 5);
   uf.addSink(1, 5);
   uf.addEdge(0, 1, 5);
@@ -144,7 +144,7 @@ TEST(UnitFlow, CanMatchMultiple) {
   const int rightN = 20;
   const int n = leftN + rightN;
 
-  UnitFlow uf(n, INT_MAX);
+  UnitFlow uf(n);
 
   for (int u = 0; u < leftN; ++u) {
     uf.addSource(u, 2);
@@ -158,7 +158,7 @@ TEST(UnitFlow, CanMatchMultiple) {
   }
   uf.addEdge(0, leftN, 1000);
 
-  uf.compute();
+  uf.compute(INT_MAX);
 
   for (int u = 0; u < leftN; ++u)
     ASSERT_TRUE(uf.flowOut(u) > 0) << "Expected flow out of u.";
@@ -166,7 +166,7 @@ TEST(UnitFlow, CanMatchMultiple) {
     ASSERT_EQ(uf.flowIn(u), 0)
         << "Did not expect a left partition vertex absorbing flow.";
 
-  std::vector<Vertex> sources(leftN);
+  std::vector<int> sources(leftN);
   std::iota(sources.begin(), sources.end(), 0);
 
   auto matches = uf.matching(sources);
@@ -188,7 +188,7 @@ TEST(UnitFlow, CanMatchMultiple) {
    matchings.
  */
 TEST(UnitFlow, CanRoutePathGraph) {
-  UnitFlow uf(5, INT_MAX);
+  UnitFlow uf(5);
   uf.addSource(0, 1);
   uf.addSource(1, 1);
 
@@ -200,15 +200,15 @@ TEST(UnitFlow, CanRoutePathGraph) {
   uf.addEdge(2, 3, 2);
   uf.addEdge(3, 4, 2);
 
-  uf.compute();
+  uf.compute(INT_MAX);
   auto matches = uf.matching({0, 1});
 
   ASSERT_EQ((int)matches.size(), 2);
 
-  std::set<Vertex> left, right;
+  std::set<int> left, right;
   for (auto [u, v] : matches)
     left.insert(u), right.insert(v);
 
-  EXPECT_EQ(left, (std::set<Vertex>{0, 1}));
-  EXPECT_EQ(right, (std::set<Vertex>{3, 4}));
+  EXPECT_EQ(left, (std::set<int>{0, 1}));
+  EXPECT_EQ(right, (std::set<int>{3, 4}));
 }

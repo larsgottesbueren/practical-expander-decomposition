@@ -20,7 +20,7 @@ TEST(PartitionGraph, AddEdge) {
   EXPECT_EQ(g.edgeCount(), 0);
   EXPECT_EQ(g.edgeCount(0), 0);
 
-  g.addEdge(0, 1);
+  g.addEdge({0, 1});
 
   EXPECT_EQ(g.edgeCount(), 1);
   EXPECT_EQ(g.edgeCount(0), 1);
@@ -36,7 +36,7 @@ TEST(PartitionGraph, AddEdgeAndPartition) {
   EXPECT_EQ(g.edgeCount(), 0);
   EXPECT_EQ(g.edgeCount(0), 0);
 
-  g.addEdge(0, 1);
+  g.addEdge({0, 1});
 
   EXPECT_EQ(g.edgeCount(), 1);
   EXPECT_EQ(g.edgeCount(0), 1);
@@ -66,9 +66,9 @@ TEST(PartitionGraph, AddEdgeAndPartition) {
 
 TEST(PartitionGraph, NewPartitionMaintainsEdges) {
   PartitionGraph<int, Edge> g(6);
-  g.addEdge(0, 1), g.addEdge(1, 2), g.addEdge(2, 0);
-  g.addEdge(3, 4), g.addEdge(4, 5), g.addEdge(5, 3);
-  g.addEdge(0, 3);
+  g.addEdge({0, 1}), g.addEdge({1, 2}), g.addEdge({2, 0});
+  g.addEdge({3, 4}), g.addEdge({4, 5}), g.addEdge({5, 3});
+  g.addEdge({0, 3});
 
   g.newPartition({3, 4, 5}, {0, 1, 2, 3, 4, 5});
   EXPECT_EQ(g.size(), 6);

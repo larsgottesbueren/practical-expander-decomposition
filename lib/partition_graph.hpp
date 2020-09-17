@@ -169,7 +169,7 @@ public:
   std::vector<V> neighbors(const int u) const {
     std::vector<V> vs(graph[u].size());
     for (int i = 0; i < (int)graph[u].size(); ++i)
-      vs[i] = graph[u].to;
+      vs[i] = graph[u][i].to;
 
     return vs;
   };
