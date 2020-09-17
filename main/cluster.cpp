@@ -13,7 +13,7 @@ int main() {
   string graphType;
   cin >> graphType;
 
-  PartitionGraph<int,Edge> g(n);
+  PartitionGraph<int, Edge> g(n);
 
   if (graphType == "random") {
     cerr << "Generating random graph with O(n) edges" << endl;
