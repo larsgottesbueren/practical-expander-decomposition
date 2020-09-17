@@ -182,27 +182,30 @@ TEST(UnitFlow, CanMatchMultiple) {
 
 /**
    Consider a path graph where one side contains sources and the other sinks:
-     (Source)--(Source)--()--()--()--(Sink)--(Sink)
+     (0: Source)--(1: Source)--(2)--(3)--(4)--(5: Sink)--(6: Sink)
 
    Assuming edge capacities are large enough it should be possible to find two
    matchings.
  */
-TEST(UnitFlow, CanRoutePathGraph) {
-  UnitFlow uf(5);
+TEST(UnitFlow, CanRouteAndMatchPathGraph) {
+  UnitFlow uf(7);
   uf.addSource(0, 1);
   uf.addSource(1, 1);
 
-  uf.addSink(3, 1);
-  uf.addSink(4, 1);
+  uf.addSink(5, 1);
+  uf.addSink(6, 1);
 
   uf.addEdge(0, 1, 2);
   uf.addEdge(1, 2, 2);
   uf.addEdge(2, 3, 2);
   uf.addEdge(3, 4, 2);
+  uf.addEdge(4, 5, 2);
+  uf.addEdge(5, 6, 2);
 
-  uf.compute(INT_MAX);
+  auto levelCut = uf.compute(INT_MAX);
+  ASSERT_TRUE(levelCut.empty());
+
   auto matches = uf.matching({0, 1});
-
   ASSERT_EQ((int)matches.size(), 2);
 
   std::set<int> left, right;
@@ -210,5 +213,5 @@ TEST(UnitFlow, CanRoutePathGraph) {
     left.insert(u), right.insert(v);
 
   EXPECT_EQ(left, (std::set<int>{0, 1}));
-  EXPECT_EQ(right, (std::set<int>{3, 4}));
+  EXPECT_EQ(right, (std::set<int>{5, 6}));
 }

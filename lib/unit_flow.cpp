@@ -156,24 +156,20 @@ void UnitFlow::reset() {
 
 std::vector<std::pair<UnitFlow::Vertex, UnitFlow::Vertex>>
 UnitFlow::matching(const std::vector<UnitFlow::Vertex> &sources) {
-  std::vector<std::pair<UnitFlow::Vertex, UnitFlow::Vertex>> matches;
-
-#ifdef DEBUG_UNIT_FLOW
-  std::cerr << "Starting matching" << std::endl;
-  for (UnitFlow::Vertex u = 0; u < size(); ++u)
-    std::cerr << "UnitFlow::Vertex " << u << "\n\tflowIn = " << flowIn(u)
-              << "\n\tabsorbed = " << absorbed[u] << "\n\tsink = " << sink[u]
-              << std::endl;
-#endif
+  using Match = std::pair<UnitFlow::Vertex, UnitFlow::Vertex>;
+  std::vector<Match> matches;
 
   std::function<UnitFlow::Vertex(UnitFlow::Vertex)> search =
       [&](UnitFlow::Vertex start) {
-        std::vector<bool> visited(graph.size());
+        std::unordered_set<UnitFlow::Vertex> visited;
+        auto isVisited = [&visited](UnitFlow::Vertex u) {
+          return visited.find(u) != visited.end();
+        };
         std::function<UnitFlow::Vertex(UnitFlow::Vertex)> dfs =
             [&](UnitFlow::Vertex u) {
-              if (visited[u])
+              if (isVisited(u))
                 return -1;
-              visited[u] = true;
+              visited.insert(u);
               for (auto &e : graph.edges(u)) {
                 if (e.flow <= 0)
                   continue;
