@@ -5,6 +5,35 @@
 #include <algorithm>
 #include <numeric>
 
+/**
+   Make sure 'addEdge' adds an edge in both ways with the correct 'backIdx'.
+ */
+TEST(UnitFlow, AddEdge) {
+  UnitFlow uf(3);
+
+  uf.addEdge(0, 1, 5);
+  uf.addEdge(0, 2, 10);
+
+  const auto &g = uf.getGraph();
+
+  EXPECT_EQ(g.neighbors(0), (std::vector<int>{1, 2}));
+  EXPECT_EQ(g.neighbors(1), (std::vector<int>{0}));
+  EXPECT_EQ(g.neighbors(1), (std::vector<int>{0}));
+
+  const auto e01 = g.edges(0)[0];
+  const auto e02 = g.edges(0)[1];
+  const auto e10 = g.edges(1)[0];
+  const auto e20 = g.edges(2)[0];
+
+  EXPECT_EQ(e01.capacity, 5);
+  EXPECT_EQ(e02.capacity, 10);
+
+  EXPECT_EQ(e01.backIdx, 0);
+  EXPECT_EQ(e02.backIdx, 0);
+  EXPECT_EQ(e10.backIdx, 0);
+  EXPECT_EQ(e20.backIdx, 1);
+}
+
 TEST(UnitFlow, SingleVertex) {
   UnitFlow uf(1);
   uf.addSource(0, 10);

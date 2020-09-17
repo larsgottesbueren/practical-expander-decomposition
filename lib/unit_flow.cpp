@@ -19,8 +19,10 @@ void UnitFlow::addEdge(UnitFlow::Vertex u, UnitFlow::Vertex v,
   if (u == v)
     return;
 
-  graph.addEdge({u, v, graph.degree(u), 0, capacity});
-  graph.addEdge({v, u, graph.degree(v), 0, capacity});
+  int uBackIdx = graph.degree(u), vBackIdx = graph.degree(v);
+
+  graph.addEdge({u, v, vBackIdx, 0, capacity});
+  graph.addEdge({v, u, uBackIdx, 0, capacity});
 }
 
 std::vector<UnitFlow::Vertex> UnitFlow::compute(const int maxHeight) {
