@@ -71,10 +71,11 @@ public:
    */
   UnitFlow(int n);
 
-  /**
-     Access the flow graph. Should not be possible to modify.
-   */
   const PartitionGraph<int, Edge> &getGraph() const { return graph; }
+  const std::vector<Flow> &getAbsorbed() const { return absorbed; }
+  const std::vector<Flow> &getSink() const { return sink; }
+  const std::vector<Vertex> &getHeight() const { return height; }
+  const std::vector<int> &getNextEdgeIdx() const { return nextEdgeIdx; }
 
   /**
      Add an undirected edge between two vertices with a certain capacity.

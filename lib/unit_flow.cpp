@@ -146,10 +146,13 @@ UnitFlow::compute(const int maxHeight,
 
 void UnitFlow::reset() {
   for (UnitFlow::Vertex u = 0; u < graph.size(); ++u) {
-    for (auto edge : graph.edges(u))
+    for (auto &edge : graph.edges(u))
+      edge.flow = 0;
+    for (auto &edge : graph.partitionEdges(u))
       edge.flow = 0;
     absorbed[u] = 0;
     sink[u] = 0;
+    height[u] = 0;
     nextEdgeIdx[u] = 0;
   }
 }
