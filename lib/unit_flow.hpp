@@ -9,37 +9,33 @@
 
 #include "partition_graph.hpp"
 
+namespace UnitFlow {
+
+using Vertex = int;
+using Flow = long long;
+
+struct Edge {
+  const Vertex from, to;
+  /**
+      Index such that graph[to][backIdx] = edge to->from
+  */
+  Edge *reverse;
+  Flow flow, capacity;
+
+  Edge(const Vertex from, const Vertex to, Flow flow, Flow capacity);
+
+  /**
+     Reverse 'from' and 'to'.
+   */
+  Edge rev() const { return *reverse; };
+};
+
 /**
    Push relabel based unit flow algorithm. Based on push relabel in KACTL.
  */
 
-struct UnitFlow {
-public:
-  using Vertex = int;
-  using Flow = long long;
-
-  struct Edge {
-    const Vertex from, to;
-    /**
-        Index such that graph[to][backIdx] = edge to->from
-    */
-    const int backIdx;
-    Flow flow, capacity;
-
-    Edge(const Vertex from, const Vertex to, const int backIdx, Flow flow,
-         Flow capacity);
-
-    /**
-       Reverse 'from' and 'to'.
-     */
-    Edge rev() const;
-  };
-
+struct Graph : public PartitionGraph<int, Edge> {
 private:
-  /**
-     For each vertex maintain a neighbor list.
-   */
-  PartitionGraph<int, Edge> graph;
   /**
      The amount of flow a vertex is absorbing. In the beginning, before any flow
      has been moved, this corresponds to the source function '\Delta(v)'.
@@ -69,20 +65,21 @@ public:
   /**
      Construct a unit flow problem with n vertices and maximum label height h.
    */
-  UnitFlow(int n);
+  Graph(int n);
 
-  const PartitionGraph<int, Edge> &getGraph() const { return graph; }
   const std::vector<Flow> &getAbsorbed() const { return absorbed; }
   const std::vector<Flow> &getSink() const { return sink; }
   const std::vector<Vertex> &getHeight() const { return height; }
   const std::vector<int> &getNextEdgeIdx() const { return nextEdgeIdx; }
 
   /**
-     Add an undirected edge between two vertices with a certain capacity.
+     Add an undirected edge '{u,v}' with a certain capacity. If 'u = v' do
+     nothing. If vertices are in separate partitions, edge is not added but
+     global degree of 'u' is incremented.
 
-     If the edge forms a loop it is ignored.
+     Return true if an edge was added or false otherwise.
    */
-  void addEdge(Vertex u, Vertex v, Flow capacity);
+  bool addEdge(Vertex u, Vertex v, Flow capacity);
 
   /**
      Increase the amount of flow a vertex is currently absorbing.
@@ -108,9 +105,9 @@ public:
    */
   Flow flowOut(Vertex u) const {
     Flow f = 0;
-    for (const auto &e : graph.edges(u))
-      if (e.flow > 0)
-        f += e.flow;
+    for (const auto &e : edges(u))
+      if (e->flow > 0)
+        f += e->flow;
     return f;
   }
 
@@ -147,8 +144,8 @@ public:
    */
   template <typename It> void reset(const It begin, const It end) {
     for (auto it = begin; it != end; ++it) {
-      for (auto edge : graph.edges(*it))
-        edge.flow = 0;
+      for (auto &edge : edges(*it))
+        edge->flow = 0;
       absorbed[*it] = 0;
       sink[*it] = 0;
       nextEdgeIdx[*it] = 0;
@@ -166,3 +163,4 @@ public:
   std::vector<std::pair<Vertex, Vertex>>
   matching(const std::vector<Vertex> &sources);
 };
+} // namespace UnitFlow

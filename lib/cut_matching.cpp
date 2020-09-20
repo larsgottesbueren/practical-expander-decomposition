@@ -7,8 +7,8 @@
 #include "cut_matching.hpp"
 #include "unit_flow.hpp"
 
-CutMatching::CutMatching(const PartitionGraph<int, Edge> *g,
-                         UnitFlow *subdivisionFlowGraph,
+CutMatching::CutMatching(const Undirected::Graph *g,
+                         UnitFlow::Graph *subdivisionFlowGraph,
                          const std::vector<int> &subset,
                          const int graphPartition, const double phi)
     : graph(g), subdivisionFlowGraph(subdivisionFlowGraph), subset(subset),
@@ -28,7 +28,7 @@ std::vector<double> projectFlow(const std::vector<Matching> &rounds,
                                 std::vector<double> start) {
   std::vector<double> result = start;
   for (auto it = rounds.rbegin(); it != rounds.rend(); ++it) {
-    for (const auto [u, v] : *it) {
+    for (const auto &[u, v] : *it) {
       start[u] = 0.5 * (result[u] + result[v]);
       start[v] = start[u];
     }
@@ -64,10 +64,9 @@ CutMatching::Result CutMatching::compute() {
   std::unordered_set<int> splitNodeSet;
   splitNodes.reserve(numSplitNodes);
   for (const auto u : subset) {
-    for (const auto v :
-         subdivisionFlowGraph->getGraph().partitionNeighbors(u)) {
-      splitNodes.push_back(v);
-      splitNodeSet.insert(v);
+    for (const auto &e : subdivisionFlowGraph->edges(u)) {
+      splitNodes.push_back(e->to);
+      splitNodeSet.insert(e->to);
     }
   }
   assert((int)splitNodes.size() == numSplitNodes &&
@@ -82,7 +81,7 @@ CutMatching::Result CutMatching::compute() {
 
   int iterations = 1;
   for (; iterations <= T &&
-         subdivisionFlowGraph->getGraph().volume(rSet.begin(), rSet.end()) <=
+         subdivisionFlowGraph->globalVolume(rSet.begin(), rSet.end()) <=
              100 + numSplitNodes / 10.0 / T;
        ++iterations) {
 
@@ -118,10 +117,10 @@ CutMatching::Result CutMatching::compute() {
       if (isRemoved(u))
         continue;
       int count = 0;
-      assert(subdivisionFlowGraph->getGraph().partitionDegree(u) == 2 &&
+      assert(subdivisionFlowGraph->degree(u) == 2 &&
              "Subdivision vertices should have degree two.");
-      for (auto v : subdivisionFlowGraph->getGraph().partitionNeighbors(u))
-        if (isRemoved(v))
+      for (const auto &e : subdivisionFlowGraph->edges(u))
+        if (isRemoved(e->to))
           count++;
       if (count == 2)
         removed.insert(u);

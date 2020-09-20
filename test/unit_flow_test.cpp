@@ -9,33 +9,31 @@
    Make sure 'addEdge' adds an edge in both ways with the correct 'backIdx'.
  */
 TEST(UnitFlow, AddEdge) {
-  UnitFlow uf(3);
+  UnitFlow::Graph uf(3);
 
-  uf.addEdge(0, 1, 5);
-  uf.addEdge(0, 2, 10);
+  ASSERT_TRUE(uf.addEdge(0, 1, 5));
+  ASSERT_TRUE(uf.addEdge(0, 2, 10));
 
-  const auto &g = uf.getGraph();
+  EXPECT_EQ(uf.neighbors(0), (std::vector<int>{1, 2}));
+  EXPECT_EQ(uf.neighbors(1), (std::vector<int>{0}));
+  EXPECT_EQ(uf.neighbors(1), (std::vector<int>{0}));
 
-  EXPECT_EQ(g.neighbors(0), (std::vector<int>{1, 2}));
-  EXPECT_EQ(g.neighbors(1), (std::vector<int>{0}));
-  EXPECT_EQ(g.neighbors(1), (std::vector<int>{0}));
+  const auto &e01 = uf.edges(0)[0];
+  const auto &e02 = uf.edges(0)[1];
+  const auto &e10 = uf.edges(1)[0];
+  const auto &e20 = uf.edges(2)[0];
 
-  const auto e01 = g.edges(0)[0];
-  const auto e02 = g.edges(0)[1];
-  const auto e10 = g.edges(1)[0];
-  const auto e20 = g.edges(2)[0];
+  EXPECT_EQ(e01->capacity, 5);
+  EXPECT_EQ(e10->capacity, 5);
+  EXPECT_EQ(e02->capacity, 10);
+  EXPECT_EQ(e20->capacity, 10);
 
-  EXPECT_EQ(e01.capacity, 5);
-  EXPECT_EQ(e02.capacity, 10);
-
-  EXPECT_EQ(e01.backIdx, 0);
-  EXPECT_EQ(e02.backIdx, 0);
-  EXPECT_EQ(e10.backIdx, 0);
-  EXPECT_EQ(e20.backIdx, 1);
+  EXPECT_EQ(e01->reverse, e10.get());
+  EXPECT_EQ(e02->reverse, e20.get());
 }
 
 TEST(UnitFlow, SingleVertex) {
-  UnitFlow uf(1);
+  UnitFlow::Graph uf(1);
   uf.addSource(0, 10);
   uf.addSink(0, 5);
 
@@ -46,7 +44,7 @@ TEST(UnitFlow, SingleVertex) {
 }
 
 TEST(UnitFlow, TwoVertexFlow) {
-  UnitFlow uf(2);
+  UnitFlow::Graph uf(2);
   uf.addSource(0, 10);
   uf.addSink(1, 10);
   uf.addEdge(0, 1, 10);
@@ -59,7 +57,7 @@ TEST(UnitFlow, TwoVertexFlow) {
 }
 
 TEST(UnitFlow, TwoVertexFlowSmallEdge) {
-  UnitFlow uf(2);
+  UnitFlow::Graph uf(2);
   uf.addSource(0, 10);
   uf.addSink(1, 10);
   uf.addEdge(0, 1, 4);
@@ -72,7 +70,7 @@ TEST(UnitFlow, TwoVertexFlowSmallEdge) {
 }
 
 TEST(UnitFlow, TwoVertexFlowSmallSink) {
-  UnitFlow uf(2);
+  UnitFlow::Graph uf(2);
   uf.addSource(0, 10);
   uf.addSink(1, 2);
   uf.addEdge(0, 1, 9);
@@ -92,7 +90,7 @@ TEST(UnitFlow, CanRouteBipartite) {
   const int n = 5;
   const int m = 10;
 
-  UnitFlow uf(n + m);
+  UnitFlow::Graph uf(n + m);
 
   for (int u = 0; u < n; ++u)
     uf.addSink(u, 10);
@@ -116,7 +114,7 @@ TEST(UnitFlow, CanRouteBipartite) {
 TEST(UnitFlow, CannotRouteBottleneck) {
   const int n = 10;
 
-  UnitFlow uf(n);
+  UnitFlow::Graph uf(n);
 
   for (int u = 0; u < 3; ++u) {
     uf.addSource(u, 10);
@@ -144,7 +142,7 @@ TEST(UnitFlow, CannotRouteBottleneck) {
 }
 
 TEST(UnitFlow, CanMatchSimple) {
-  UnitFlow uf(2);
+  UnitFlow::Graph uf(2);
   uf.addSource(0, 5);
   uf.addSink(1, 5);
   uf.addEdge(0, 1, 5);
@@ -154,7 +152,7 @@ TEST(UnitFlow, CanMatchSimple) {
 }
 
 TEST(UnitFlow, WontMatchBeforeFlowComputed) {
-  UnitFlow uf(2);
+  UnitFlow::Graph uf(2);
   uf.addSource(0, 5);
   uf.addSink(1, 5);
   uf.addEdge(0, 1, 5);
@@ -173,7 +171,7 @@ TEST(UnitFlow, CanMatchMultiple) {
   const int rightN = 20;
   const int n = leftN + rightN;
 
-  UnitFlow uf(n);
+  UnitFlow::Graph uf(n);
 
   for (int u = 0; u < leftN; ++u) {
     uf.addSource(u, 2);
@@ -217,7 +215,7 @@ TEST(UnitFlow, CanMatchMultiple) {
    matchings.
  */
 TEST(UnitFlow, CanRouteAndMatchPathGraph) {
-  UnitFlow uf(7);
+  UnitFlow::Graph uf(7);
   uf.addSource(0, 1);
   uf.addSource(1, 1);
 
@@ -249,7 +247,7 @@ TEST(UnitFlow, CanRouteAndMatchPathGraph) {
    'reset' should set all flow, height, absorbtion and sinks to 0.
  */
 TEST(UnitFlow, Reset) {
-  UnitFlow uf(5);
+  UnitFlow::Graph uf(5);
   uf.addSource(0, 5);
   uf.addSink(4, 5);
 
@@ -269,9 +267,7 @@ TEST(UnitFlow, Reset) {
     EXPECT_EQ(uf.getSink()[u], 0);
     EXPECT_EQ(uf.getHeight()[u], 0);
     EXPECT_EQ(uf.getNextEdgeIdx()[u], 0);
-    for (const auto &e : uf.getGraph().edges(u))
-      EXPECT_EQ(e.flow, 0);
-    for (const auto &e : uf.getGraph().partitionEdges(u))
-      EXPECT_EQ(e.flow, 0);
+    for (const auto &e : uf.edges(u))
+      EXPECT_EQ(e->flow, 0);
   }
 }

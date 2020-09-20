@@ -4,13 +4,13 @@
 #include <unordered_map>
 #include <vector>
 
-#include "partition_graph.hpp"
+#include "ugraph.hpp"
 #include "unit_flow.hpp"
 
 struct CutMatching {
 private:
-  const PartitionGraph<int, Edge> *graph;
-  UnitFlow *subdivisionFlowGraph;
+  const Undirected::Graph *graph;
+  UnitFlow::Graph *subdivisionFlowGraph;
   const std::vector<int> subset;
 
   const int graphPartition;
@@ -36,9 +36,9 @@ public:
 
      Precondition: graph should not contain loops.
    */
-  CutMatching(const PartitionGraph<int, Edge> *g,
-              UnitFlow *subdivisionFlowGraph, const std::vector<int> &subset,
-              const int graphPartition, const double phi);
+  CutMatching(const Undirected::Graph *g, UnitFlow::Graph *subdivisionFlowGraph,
+              const std::vector<int> &subset, const int graphPartition,
+              const double phi);
 
   Result compute();
 };

@@ -1,92 +1,90 @@
 #include "unit_flow.hpp"
 #include <iostream>
 
-UnitFlow::Edge::Edge(const UnitFlow::Vertex from, const UnitFlow::Vertex to,
-                     const int backIdx, UnitFlow::Flow flow = 0,
-                     UnitFlow::Flow capacity = 0)
-    : from(from), to(to), backIdx(backIdx), flow(flow), capacity(capacity) {}
+namespace UnitFlow {
 
-UnitFlow::Edge UnitFlow::Edge::rev() const {
-  Edge e(to, from, 0, flow, capacity);
-  return e;
+Edge::Edge(const UnitFlow::Vertex from, const UnitFlow::Vertex to, Flow flow,
+           Flow capacity)
+    : from(from), to(to), reverse(nullptr), flow(flow), capacity(capacity) {}
+
+Graph::Graph(int n)
+    : PartitionGraph<int, Edge>(n), absorbed(n), sink(n), height(n),
+      nextEdgeIdx(n) {}
+
+bool Graph::addEdge(Vertex u, Vertex v, Flow capacity) {
+  auto p = addDirectedEdge({u, v, 0, capacity}, true);
+  if (p) {
+    auto rp = addDirectedEdge({v, u, 0, capacity}, false);
+    assert(rp && "Reverse edge should exist if regular edge exists.");
+    p->reverse = rp;
+    rp->reverse = p;
+    return true;
+  } else {
+    return false;
+  }
 }
 
-UnitFlow::UnitFlow(int n)
-    : graph(n), absorbed(n), sink(n), height(n), nextEdgeIdx(n) {}
-
-void UnitFlow::addEdge(UnitFlow::Vertex u, UnitFlow::Vertex v,
-                       UnitFlow::Flow capacity) {
-  if (u == v)
-    return;
-
-  int uBackIdx = graph.degree(u), vBackIdx = graph.degree(v);
-
-  graph.addEdge({u, v, vBackIdx, 0, capacity});
-  graph.addEdge({v, u, uBackIdx, 0, capacity});
-}
-
-std::vector<UnitFlow::Vertex> UnitFlow::compute(const int maxHeight) {
+std::vector<Vertex> Graph::compute(const int maxHeight) {
   typedef std::pair<UnitFlow::Flow, UnitFlow::Vertex> QPair;
   std::priority_queue<QPair, std::vector<QPair>, std::greater<QPair>> q;
 
-  const int maxH = std::min(maxHeight, 2 * graph.size() + 1);
+  const int maxH = std::min(maxHeight, 2 * size() + 1);
 
-  for (UnitFlow::Vertex u = 0; u < graph.size(); ++u)
+  for (UnitFlow::Vertex u = 0; u < size(); ++u)
     if (excess(u) > 0)
       q.push({height[u], u});
 
   while (!q.empty()) {
     auto [_, u] = q.top();
 
-    if (graph.degree(u) == 0) {
+    if (degree(u) == 0) {
       q.pop();
       continue;
     }
 
-    Edge &e = graph.edges(u)[nextEdgeIdx[u]];
-    if (excess(e.from) > 0 && residual(e) > 0 &&
-        height[e.from] == height[e.to] + 1) {
+    auto &e = edges(u)[nextEdgeIdx[u]];
+    if (excess(e->from) > 0 && residual(*e) > 0 &&
+        height[e->from] == height[e->to] + 1) {
       // push
-      assert(excess(e.to) == 0 && "Pushing to vertex with non-zero excess");
-      UnitFlow::Flow delta = std::min(
-          {excess(e.from), residual(e), (UnitFlow::Flow)graph.degree(e.to)});
+      assert(excess(e->to) == 0 && "Pushing to vertex with non-zero excess");
+      UnitFlow::Flow delta =
+          std::min({excess(e->from), residual(*e), (Flow)degree(e->to)});
 
-      e.flow += delta;
-      absorbed[e.from] -= delta;
+      e->flow += delta;
+      absorbed[e->from] -= delta;
 
-      graph.edges(e.to)[e.backIdx].flow -= delta;
-      absorbed[e.to] += delta;
+      e->reverse->flow -= delta;
+      absorbed[e->to] += delta;
 
-      assert(excess(e.from) >= 0 && "Excess after pushing cannot be negative");
-      if (height[e.from] >= maxH || excess(e.from) == 0)
+      assert(excess(e->from) >= 0 && "Excess after pushing cannot be negative");
+      if (height[e->from] >= maxH || excess(e->from) == 0)
         q.pop();
-      if (height[e.to] < maxH && excess(e.to) > 0)
-        q.push({height[e.to], e.to});
-    } else if (nextEdgeIdx[e.from] == (int)graph.edges(e.from).size() - 1) {
+      if (height[e->to] < maxH && excess(e->to) > 0)
+        q.push({height[e->to], e->to});
+    } else if (nextEdgeIdx[e->from] == (int)edges(e->from).size() - 1) {
       // all edges have been tried, relabel
       q.pop();
-      height[e.from]++;
-      nextEdgeIdx[e.from] = 0;
+      height[e->from]++;
+      nextEdgeIdx[e->from] = 0;
 
-      if (height[e.from] < maxH)
-        q.push({height[e.from], e.from});
+      if (height[e->from] < maxH)
+        q.push({height[e->from], e->from});
     } else {
-      nextEdgeIdx[e.from]++;
+      nextEdgeIdx[e->from]++;
     }
   }
 
-  std::vector<UnitFlow::Vertex> levelCut;
-  for (UnitFlow::Vertex u = 0; u < graph.size(); ++u)
+  std::vector<Vertex> levelCut;
+  for (Vertex u = 0; u < size(); ++u)
     if (excess(u) > 0)
       levelCut.push_back(u);
 
   return levelCut;
 }
 
-std::vector<UnitFlow::Vertex>
-UnitFlow::compute(const int maxHeight,
-                  const std::unordered_set<Vertex> &alive) {
-  typedef std::pair<UnitFlow::Flow, UnitFlow::Vertex> QPair;
+std::vector<Vertex> Graph::compute(const int maxHeight,
+                                   const std::unordered_set<Vertex> &alive) {
+  typedef std::pair<Flow, Vertex> QPair;
   std::priority_queue<QPair, std::vector<QPair>, std::greater<QPair>> q;
 
   // TODO: Is '2*alive.size()' correct?
@@ -99,42 +97,41 @@ UnitFlow::compute(const int maxHeight,
   while (!q.empty()) {
     auto [_, u] = q.top();
 
-    if (graph.partitionDegree(u) == 0 || alive.find(u) == alive.end()) {
+    if (degree(u) == 0 || alive.find(u) == alive.end()) {
       q.pop();
       continue;
     }
 
-    Edge &e = graph.partitionEdges(u)[nextEdgeIdx[u]];
-    if (excess(e.from) > 0 && residual(e) > 0 &&
-        height[e.from] == height[e.to] + 1 && alive.find(e.to) != alive.end()) {
+    auto &e = edges(u)[nextEdgeIdx[u]];
+    if (excess(e->from) > 0 && residual(*e) > 0 &&
+        height[e->from] == height[e->to] + 1 &&
+        alive.find(e->to) != alive.end()) {
       // push
-      assert(excess(e.to) == 0 && "Pushing to vertex with non-zero excess");
-      UnitFlow::Flow delta =
-          std::min({excess(e.from), residual(e),
-                    (UnitFlow::Flow)graph.partitionDegree(e.to)});
+      assert(excess(e->to) == 0 && "Pushing to vertex with non-zero excess");
+      UnitFlow::Flow delta = std::min(
+          {excess(e->from), residual(*e), (UnitFlow::Flow)degree(e->to)});
 
-      e.flow += delta;
-      absorbed[e.from] -= delta;
+      e->flow += delta;
+      absorbed[e->from] -= delta;
 
-      graph.partitionEdges(e.to)[e.backIdx].flow -= delta;
-      absorbed[e.to] += delta;
+      e->reverse->flow -= delta;
+      absorbed[e->to] += delta;
 
-      assert(excess(e.from) >= 0 && "Excess after pushing cannot be negative");
-      if (height[e.from] >= maxH || excess(e.from) == 0)
+      assert(excess(e->from) >= 0 && "Excess after pushing cannot be negative");
+      if (height[e->from] >= maxH || excess(e->from) == 0)
         q.pop();
-      if (height[e.to] < maxH && excess(e.to) > 0)
-        q.push({height[e.to], e.to});
-    } else if (nextEdgeIdx[e.from] ==
-               (int)graph.partitionEdges(e.from).size() - 1) {
+      if (height[e->to] < maxH && excess(e->to) > 0)
+        q.push({height[e->to], e->to});
+    } else if (nextEdgeIdx[e->from] == (int)edges(e->from).size() - 1) {
       // all edges have been tried, relabel
       q.pop();
-      height[e.from]++;
-      nextEdgeIdx[e.from] = 0;
+      height[e->from]++;
+      nextEdgeIdx[e->from] = 0;
 
-      if (height[e.from] < maxH)
-        q.push({height[e.from], e.from});
+      if (height[e->from] < maxH)
+        q.push({height[e->from], e->from});
     } else {
-      nextEdgeIdx[e.from]++;
+      nextEdgeIdx[e->from]++;
     }
   }
 
@@ -146,12 +143,10 @@ UnitFlow::compute(const int maxHeight,
   return levelCut;
 }
 
-void UnitFlow::reset() {
-  for (UnitFlow::Vertex u = 0; u < graph.size(); ++u) {
-    for (auto &edge : graph.edges(u))
-      edge.flow = 0;
-    for (auto &edge : graph.partitionEdges(u))
-      edge.flow = 0;
+void Graph::reset() {
+  for (Vertex u = 0; u < size(); ++u) {
+    for (auto &edge : edges(u))
+      edge->flow = 0;
     absorbed[u] = 0;
     sink[u] = 0;
     height[u] = 0;
@@ -159,46 +154,45 @@ void UnitFlow::reset() {
   }
 }
 
-std::vector<std::pair<UnitFlow::Vertex, UnitFlow::Vertex>>
-UnitFlow::matching(const std::vector<UnitFlow::Vertex> &sources) {
-  using Match = std::pair<UnitFlow::Vertex, UnitFlow::Vertex>;
+std::vector<std::pair<Vertex, Vertex>>
+Graph::matching(const std::vector<Vertex> &sources) {
+  using Match = std::pair<Vertex, Vertex>;
   std::vector<Match> matches;
 
-  std::function<UnitFlow::Vertex(UnitFlow::Vertex)> search =
-      [&](UnitFlow::Vertex start) {
-        std::unordered_set<UnitFlow::Vertex> visited;
-        auto isVisited = [&visited](UnitFlow::Vertex u) {
-          return visited.find(u) != visited.end();
-        };
-        std::function<UnitFlow::Vertex(UnitFlow::Vertex)> dfs =
-            [&](UnitFlow::Vertex u) {
-              if (isVisited(u))
-                return -1;
-              visited.insert(u);
-              for (auto &e : graph.edges(u)) {
-                if (e.flow <= 0)
-                  continue;
-                else if (flowIn(e.to) > 0 && sink[e.to] > 0) {
-                  e.flow--, absorbed[e.to]--;
-                  return e.to;
-                } else {
-                  const UnitFlow::Vertex match = dfs(e.to);
-                  if (match != -1) {
-                    e.flow--;
-                    return match;
-                  }
-                }
-              }
-              return -1;
-            };
-        return dfs(start);
-      };
+  std::function<Vertex(Vertex)> search = [&](Vertex start) {
+    std::unordered_set<Vertex> visited;
+    auto isVisited = [&visited](Vertex u) {
+      return visited.find(u) != visited.end();
+    };
+    std::function<Vertex(Vertex)> dfs = [&](Vertex u) {
+      if (isVisited(u))
+        return -1;
+      visited.insert(u);
+      for (auto &e : edges(u)) {
+        if (e->flow <= 0)
+          continue;
+        else if (flowIn(e->to) > 0 && sink[e->to] > 0) {
+          e->flow--, absorbed[e->to]--;
+          return e->to;
+        } else {
+          const Vertex match = dfs(e->to);
+          if (match != -1) {
+            e->flow--;
+            return match;
+          }
+        }
+      }
+      return -1;
+    };
+    return dfs(start);
+  };
 
   for (auto u : sources) {
-    const UnitFlow::Vertex v = search(u);
+    const Vertex v = search(u);
     if (v != -1)
       matches.push_back({u, v});
   }
 
   return matches;
 }
+} // namespace UnitFlow

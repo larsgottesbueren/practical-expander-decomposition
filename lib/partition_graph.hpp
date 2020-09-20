@@ -3,18 +3,6 @@
 #include <vector>
 
 /**
-   A simple directed edge.
- */
-struct Edge {
-  int from, to;
-  Edge(int from, int to) : from(from), to(to) {}
-  Edge rev() const {
-    Edge e(to, from);
-    return e;
-  }
-};
-
-/**
    A graph which supports partitioning vertices into separate sub-graphs.
 
    Parameterised over vertex type <V> and edge type <E>. An edge must have
@@ -33,6 +21,7 @@ private:
   int numPartitions;
   const int numVertices;
   int numEdges;
+  std::vector<int> originalDegree;
   std::vector<int> numEdgesInPartition;
   std::vector<int> numVerticesInPartition;
 
@@ -42,24 +31,48 @@ private:
   std::vector<int> partition;
 
   /**
-     Entire graph as a neighbor list.
+     Graph where only valid edges are kept. An edge is valid if it does not
+     cross a partition boundary.
    */
-  std::vector<std::vector<E>> graph;
+  std::vector<std::vector<std::unique_ptr<E>>> graph;
 
+protected:
   /**
-     Subgraph where edges have been deleted if they belong to separate
-     partitions.
+     Add directed edge '(u,v)'. If 'u = v' do nothing. If vertices are in
+     separate partitions, edge is not added but global degree of 'u' is
+     incremented.
+
+     Returns a pointer to the edge which was added or null otherwise.
+
+     Time complexity: O(1)
    */
-  std::vector<std::vector<E>> pGraph;
+  E *addDirectedEdge(E e, bool incrementEdgeCount) {
+    V u = e.from, v = e.to;
+
+    assert(u < numVertices && v < numVertices && "Vertex out of bounds.");
+    if (u == v)
+      return nullptr;
+
+    originalDegree[u]++;
+    if (partition[u] != partition[v]) {
+      return nullptr;
+    } else {
+      if (incrementEdgeCount)
+        numEdges++, numEdgesInPartition[partition[u]]++;
+      graph[u].emplace_back(std::make_unique<E>(e));
+
+      return graph[u].back().get();
+    }
+  }
 
 public:
   /**
      Construct an empty graph with a single partition.
    */
   PartitionGraph(const int n)
-      : numPartitions(1), numVertices(n), numEdges(0),
+      : numPartitions(1), numVertices(n), numEdges(0), originalDegree(n),
         numEdgesInPartition(1, 0), numVerticesInPartition(1, n), partition(n),
-        graph(n), pGraph(n) {}
+        graph(n) {}
 
   /**
      Number of vertices in entire graph.
@@ -97,21 +110,21 @@ public:
   int partitionCount() const { return numPartitions; }
 
   /**
-     Degree of vertex 'u' in entire graph.
+     Degree of vertex 'u' in sub-graph.
 
      Time complexity: O(1)
    */
   int degree(const int u) const { return graph[u].size(); };
 
   /**
-     Degree of vertex 'u' in its partition.
+     Degree of vertex 'u' in entire graph.
 
      Time complexity: O(1)
    */
-  int partitionDegree(const int u) const { return pGraph[u].size(); };
+  int globalDegree(const int u) const { return originalDegree[u]; };
 
   /**
-     The volume of a subset of nodes is the sum of their degrees.
+     The volume of a subset of nodes in their subgraph.
 
      Time complexity: O(|xs|)
    */
@@ -123,15 +136,15 @@ public:
   };
 
   /**
-     The volume of a subset of nodes in their partition.
+     The volume of a subset of nodes in the entire graph.
 
      Time complexity: O(|xs|)
    */
   template <typename It>
-  int partitionVolume(const It &begin, const It &end) const {
+  int globalVolume(const It &begin, const It &end) const {
     int result = 0;
     for (It it = begin; it != end; ++it)
-      result += partitionDegree(*it);
+      result += globalDegree(*it);
     return result;
   };
 
@@ -143,95 +156,28 @@ public:
   int getPartition(const int u) const { return partition[u]; };
 
   /**
-     Edges from 'u' in entire graph.
-
-     Size of result: O(|E|)
-     Time complexity: O(1)
-   */
-  std::vector<E> &edges(const int u) { return graph[u]; };
-  const std::vector<E> &edges(const int u) const { return graph[u]; };
-
-  /**
-     Edges from 'u' in its partition.
+     Edges from 'u' in sub-graph.
 
      Size of result: O(|E_i|), where u \in V_i.
      Time complexity: O(1)
    */
-  std::vector<E> &partitionEdges(const int u) { return pGraph[u]; };
-  const std::vector<E> &partitionEdges(const int u) const { return pGraph[u]; };
+  std::vector<std::unique_ptr<E>> &edges(const int u) { return graph[u]; };
+  const std::vector<std::unique_ptr<E>> &edges(const int u) const {
+    return graph[u];
+  };
 
   /**
-     Edges from 'u' in entire graph.
+     Edges from 'u' in its partition.
 
-     Size of result: O(|E|)
-     Time complexity: O(1)
+     Time complexity: O(|E_i|), where u \in V_i.
    */
   std::vector<V> neighbors(const int u) const {
     std::vector<V> vs(graph[u].size());
     for (int i = 0; i < (int)graph[u].size(); ++i)
-      vs[i] = graph[u][i].to;
+      vs[i] = graph[u][i]->to;
 
     return vs;
   };
-
-  /**
-     Edges from 'u' in its partition.
-
-     Size of result: O(|E_i|), where u \in V_i.
-     Time complexity: O(1)
-   */
-  std::vector<V> partitionNeighbors(const int u) const {
-    std::vector<V> vs(pGraph[u].size());
-    for (int i = 0; i < (int)pGraph[u].size(); ++i)
-      vs[i] = pGraph[u][i].to;
-
-    return vs;
-  };
-
-  /**
-     Add directed edge '{u,v}'. If 'u = v' do nothing.
-
-     Time complexity: O(1)
-   */
-  void addEdge(const E &e) {
-    V u = e.from, v = e.to;
-
-    assert(u < numVertices && v < numVertices && "Vertex out of bounds.");
-    if (u == v)
-      return;
-
-    numEdges++;
-    graph[u].push_back(e);
-    if (partition[u] == partition[v]) {
-      numEdgesInPartition[partition[u]]++;
-
-      pGraph[u].push_back(e);
-    }
-  }
-
-  /**
-     Add undirected edge '{u,v}'. If 'u = v' do nothing.
-
-     Time complexity: O(1)
-   */
-  void addUEdge(const E &e) {
-    V u = e.from, v = e.to;
-
-    assert(u < numVertices && v < numVertices && "Vertex out of bounds.");
-    if (u == v)
-      return;
-
-    numEdges++;
-    graph[u].push_back(e);
-    graph[v].push_back(e.rev());
-
-    if (partition[u] == partition[v]) {
-      numEdgesInPartition[partition[u]]++;
-
-      pGraph[u].push_back(e);
-      pGraph[v].push_back(e.rev());
-    }
-  }
 
   /**
      Create a new partition for the nodes 'xs' given the current nodes in the
@@ -253,24 +199,24 @@ public:
     numVerticesInPartition[oldP] -= numVerticesInPartition[newP];
 
     for (const auto u : xs) {
-      pGraph[u].erase(std::remove_if(pGraph[u].begin(), pGraph[u].end(),
-                                     [&newP, this](const auto &e) {
-                                       return partition[e.to] != newP;
-                                     }),
-                      pGraph[u].end());
-      numEdgesInPartition[newP] += pGraph[u].size();
+      graph[u].erase(std::remove_if(graph[u].begin(), graph[u].end(),
+                                    [&newP, this](const auto &e) {
+                                      return partition[e->to] != newP;
+                                    }),
+                     graph[u].end());
+      numEdgesInPartition[newP] += graph[u].size();
     }
     numEdgesInPartition[newP] /= 2; // Edges are double counted above
 
     numEdgesInPartition[oldP] = 0;
     for (const auto u : ys)
       if (partition[u] == oldP) {
-        pGraph[u].erase(std::remove_if(pGraph[u].begin(), pGraph[u].end(),
-                                       [&oldP, this](const auto &e) {
-                                         return partition[e.to] != oldP;
-                                       }),
-                        pGraph[u].end());
-        numEdgesInPartition[oldP] += pGraph[u].size();
+        graph[u].erase(std::remove_if(graph[u].begin(), graph[u].end(),
+                                      [&oldP, this](const auto &e) {
+                                        return partition[e->to] != oldP;
+                                      }),
+                       graph[u].end());
+        numEdgesInPartition[oldP] += graph[u].size();
       }
     numEdgesInPartition[oldP] /= 2; // Edges are double counted above
 

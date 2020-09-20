@@ -3,7 +3,7 @@
 #include <vector>
 
 #include "cut_matching.hpp"
-#include "partition_graph.hpp"
+#include "ugraph.hpp"
 
 struct ExpanderDecomp {
 private:
@@ -13,8 +13,8 @@ private:
      information in the latter. Let 'graph = (V,E)'. Then '{e.id + |V| | e \in
      E}' is the vertex ids of the split vertices in 'subdivisionFlowGraph'.
    */
-  std::unique_ptr<PartitionGraph<int, Edge>> graph;
-  std::unique_ptr<UnitFlow> flowGraph, subdivisionFlowGraph;
+  std::unique_ptr<Undirected::Graph> graph;
+  std::unique_ptr<UnitFlow::Graph> flowGraph, subdivisionFlowGraph;
   const double phi;
 
   /**
@@ -26,7 +26,7 @@ public:
   /**
      Create a decomposition problem with n vertices.
    */
-  ExpanderDecomp(const PartitionGraph<int, Edge> &g, const double phi);
+  ExpanderDecomp(std::unique_ptr<Undirected::Graph> g, const double phi);
 
   /**
      Return the computed partition as a vector of disjoint vertex vectors.
