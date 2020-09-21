@@ -16,7 +16,11 @@ struct Edge {
 /**
    An undirected graph.
  */
-struct Graph : public PartitionGraph<int, Edge> {
+class Graph : public PartitionGraph<int, Edge> {
+public:
+  /**
+     Construct an undirected graph with 'n' vertices.
+   */
   Graph(int n);
 
   /**

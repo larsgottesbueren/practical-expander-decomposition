@@ -21,7 +21,7 @@ struct Result {
   std::vector<int> a, r;
 };
 
-struct Solver {
+class Solver {
 private:
   const Undirected::Graph *graph;
   UnitFlow::Graph *subdivisionFlowGraph;

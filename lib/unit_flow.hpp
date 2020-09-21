@@ -34,7 +34,7 @@ struct Edge {
    Push relabel based unit flow algorithm. Based on push relabel in KACTL.
  */
 
-struct Graph : public PartitionGraph<int, Edge> {
+class Graph : public PartitionGraph<int, Edge> {
 private:
   /**
      The amount of flow a vertex is absorbing. In the beginning, before any flow

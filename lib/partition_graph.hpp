@@ -15,7 +15,7 @@
    - E = E_1 + E_2 + ... + E_k
    - n = |V|, m = |E|, n_i = |V_i|, m_i = |E_i|
  */
-template <typename V, typename E> struct PartitionGraph {
+template <typename V, typename E> class PartitionGraph {
 
 private:
   int numPartitions;
