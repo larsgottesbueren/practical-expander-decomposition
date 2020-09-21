@@ -23,21 +23,21 @@ Solver::Solver(const Undirected::Graph *g,
    Given a number of matchings 'M_i' and a start state, compute the flow
    projection.
 
+   Assumes no pairs of vertices in single round overlap.
+
    Time complexity: O(|rounds| + |start|)
  */
 using Matching = std::vector<std::pair<int, int>>;
 std::vector<double> projectFlow(const std::vector<Matching> &rounds,
                                 std::vector<double> start) {
-  std::vector<double> result = start;
-  for (auto it = rounds.rbegin(); it != rounds.rend(); ++it) {
+  for (auto it = rounds.begin(); it != rounds.end(); ++it) {
     for (const auto &[u, v] : *it) {
-      start[u] = 0.5 * (result[u] + result[v]);
+      start[u] = 0.5 * (start[u] + start[v]);
       start[v] = start[u];
     }
-    std::swap(result, start);
   }
 
-  return result;
+  return start;
 }
 
 /**
