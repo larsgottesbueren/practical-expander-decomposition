@@ -65,14 +65,12 @@ int main() {
 
   double phi;
   cin >> phi;
-  ExpanderDecomposition::Solver decomp(move(g), phi);
+
+  cerr << "Computing decomposition" << endl;
+  ExpanderDecomposition::Solver solver(move(g), phi);
 
   cout << "Partition with phi = " << phi << endl;
-  auto partitions = decomp.getPartition();
-  for (int i = 0; i < (int)partitions.size(); ++i) {
-    cout << "i:";
-    for (int j = 0; j < (int)partitions[i].size(); ++j)
-      cout << " " << partitions[i][j];
-    cout << endl;
-  }
+  auto partitions = solver.getPartition();
+  for (const auto &p : partitions)
+    cout << p.size() << endl;
 }
