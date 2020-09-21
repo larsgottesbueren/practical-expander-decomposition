@@ -17,6 +17,13 @@ Solver::Solver(const Undirected::Graph *g,
       graphPartition(graphPartition), phi(phi) {
   std::random_device rd;
   randomGen = std::mt19937(rd());
+
+  const int splitNodes = graph->edgeCount();
+  const UnitFlow::Flow capacity =
+      std::round(1.0 / phi / std::log(splitNodes) / std::log(splitNodes));
+  for (const auto u : subset)
+    for (auto &e : subdivisionFlowGraph->edges(u))
+      e->capacity = capacity;
 }
 
 /**
@@ -79,7 +86,12 @@ Result Solver::compute() {
   for (size_t i = 0; i < splitNodes.size(); ++i)
     fromSplitNode[splitNodes[i]] = i;
 
-  std::unordered_set<int> aSet, axSet, rSet;
+  std::unordered_set<int> aSet, axSet, aAndAxSet, rSet;
+  for (auto u : subset) {
+    aSet.insert(u), aAndAxSet.insert(u);
+    for (const auto &e : subdivisionFlowGraph->edges(u))
+      axSet.insert(e->to), aAndAxSet.insert(e->to);
+  }
 
   int iterations = 1;
   for (; iterations <= T &&
@@ -99,7 +111,7 @@ Result Solver::compute() {
     const int middle = axSetByFlow.size() / 2;
     // const double eta = flow[fromSplitNode[axSetByFlow[middle]]];
 
-    subdivisionFlowGraph->reset(aSet.begin(), aSet.end());
+    subdivisionFlowGraph->reset(aAndAxSet.begin(), aAndAxSet.end());
     for (int i = 0; i < (int)axSetByFlow.size(); ++i)
       if (i < middle)
         subdivisionFlowGraph->addSource(axSetByFlow[i], 1);
@@ -107,7 +119,7 @@ Result Solver::compute() {
         subdivisionFlowGraph->addSink(axSetByFlow[i], 1);
 
     const int h = (int)ceil(1.0 / phi / std::log(numSplitNodes));
-    const auto levelCut = subdivisionFlowGraph->compute(h, aSet);
+    const auto levelCut = subdivisionFlowGraph->compute(h, aAndAxSet);
 
     std::unordered_set<int> removed;
     for (auto u : levelCut)
@@ -116,16 +128,20 @@ Result Solver::compute() {
       return removed.find(u) != removed.end();
     };
     for (auto u : axSet) {
-      if (isRemoved(u))
-        continue;
-      int count = 0;
       assert(subdivisionFlowGraph->degree(u) == 2 &&
              "Subdivision vertices should have degree two.");
+      int count = 0;
       for (const auto &e : subdivisionFlowGraph->edges(u))
         if (isRemoved(e->to))
           count++;
-      if (count == 2)
-        removed.insert(u);
+
+      if (isRemoved(u)) {
+        if (count == 0)
+          removed.erase(u);
+      } else {
+        if (count == 2)
+          removed.insert(u);
+      }
     }
 
     std::vector<int> sourcesLeft;
@@ -138,7 +154,7 @@ Result Solver::compute() {
     rounds.push_back(matching);
 
     for (auto u : removed)
-      aSet.erase(u), axSet.erase(u), rSet.insert(u);
+      aSet.erase(u), axSet.erase(u), aAndAxSet.erase(u), rSet.insert(u);
   }
 
   ResultType rType;

@@ -39,6 +39,7 @@ void Solver::compute(const std::vector<int> &xs, int partition) {
 
   switch (result.t) {
   case CutMatching::Balanced: {
+    assert(!result.r.empty() && "Cut should be balanced");
     int newPartition = graph->newPartition(result.a, xs);
     compute(result.a, newPartition);
     compute(result.r, partition);
