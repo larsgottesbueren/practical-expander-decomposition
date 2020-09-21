@@ -65,7 +65,7 @@ int main() {
 
   double phi;
   cin >> phi;
-  ExpanderDecomp decomp(move(g), phi);
+  ExpanderDecomposition::Solver decomp(move(g), phi);
 
   cout << "Partition with phi = " << phi << endl;
   auto partitions = decomp.getPartition();

@@ -3,7 +3,9 @@
 
 #include "expander_decomp.hpp"
 
-void ExpanderDecomp::compute(const std::vector<int> &xs, int partition) {
+namespace ExpanderDecomposition {
+
+void Solver::compute(const std::vector<int> &xs, int partition) {
   CutMatching cm(graph.get(), subdivisionFlowGraph.get(), xs, partition, phi);
   auto result = cm.compute();
 
@@ -23,8 +25,7 @@ void ExpanderDecomp::compute(const std::vector<int> &xs, int partition) {
   }
 }
 
-ExpanderDecomp::ExpanderDecomp(std::unique_ptr<Undirected::Graph> g,
-                               const double phi)
+Solver::Solver(std::unique_ptr<Undirected::Graph> g, const double phi)
     : graph(std::move(g)),
       flowGraph(std::make_unique<UnitFlow::Graph>(g->size())),
       subdivisionFlowGraph(std::make_unique<UnitFlow::Graph>(g->edgeCount())),
@@ -41,9 +42,11 @@ ExpanderDecomp::ExpanderDecomp(std::unique_ptr<Undirected::Graph> g,
   compute(vertices, 0);
 }
 
-std::vector<std::vector<int>> ExpanderDecomp::getPartition() const {
+std::vector<std::vector<int>> Solver::getPartition() const {
   std::vector<std::vector<int>> result(graph->partitionCount());
   for (int u = 0; u < graph->size(); ++u)
     result[graph->getPartition(u)].push_back(u);
   return result;
 }
+
+} // namespace ExpanderDecomposition

@@ -5,7 +5,25 @@
 #include "cut_matching.hpp"
 #include "ugraph.hpp"
 
-struct ExpanderDecomp {
+namespace ExpanderDecomposition {
+
+/**
+   Construct a flow graph equivalent to 'g' with all edge capacities set to 0.
+ */
+std::unique_ptr<UnitFlow::Graph>
+constructFlowGraph(std::unique_ptr<Undirected::Graph> g);
+
+/**
+   Construct a subdivision flow graph from 'g' with all edge capacities set to
+   0.
+ */
+std::unique_ptr<UnitFlow::Graph>
+constructSubdivisionFlowGraph(std::unique_ptr<Undirected::Graph> g);
+
+/**
+   Constructs and solves a expander decomposition problem.
+ */
+class Solver {
 private:
   /**
      One graph and two flow graphs are maintained. The vertices and edges in
@@ -26,10 +44,11 @@ public:
   /**
      Create a decomposition problem with n vertices.
    */
-  ExpanderDecomp(std::unique_ptr<Undirected::Graph> g, const double phi);
+  Solver(std::unique_ptr<Undirected::Graph> g, const double phi);
 
   /**
      Return the computed partition as a vector of disjoint vertex vectors.
    */
   std::vector<std::vector<int>> getPartition() const;
 };
+} // namespace ExpanderDecomposition
