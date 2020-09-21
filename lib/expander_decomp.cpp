@@ -5,6 +5,18 @@
 
 namespace ExpanderDecomposition {
 
+std::unique_ptr<UnitFlow::Graph>
+constructFlowGraph(const std::unique_ptr<Undirected::Graph> &g) {
+  auto f = std::make_unique<UnitFlow::Graph>(g->size());
+
+  for (UnitFlow::Vertex u = 0; u < g->size(); ++u)
+    for (const auto &e : g->edges(u))
+      if (e->from < e->to)
+        f->addEdge(e->from, e->to, 0);
+
+  return f;
+}
+
 void Solver::compute(const std::vector<int> &xs, int partition) {
   CutMatching cm(graph.get(), subdivisionFlowGraph.get(), xs, partition, phi);
   auto result = cm.compute();
@@ -26,12 +38,10 @@ void Solver::compute(const std::vector<int> &xs, int partition) {
 }
 
 Solver::Solver(std::unique_ptr<Undirected::Graph> g, const double phi)
-    : graph(std::move(g)),
-      flowGraph(std::make_unique<UnitFlow::Graph>(g->size())),
+    : graph(std::move(g)), flowGraph(nullptr),
       subdivisionFlowGraph(std::make_unique<UnitFlow::Graph>(g->edgeCount())),
       phi(phi) {
-  auto addFlowGraphEdges = [&]() { assert(false && "TODO: copy g"); };
-  addFlowGraphEdges();
+  flowGraph = constructFlowGraph(graph);
   auto addSubdivisionFlowGraphEdges = [&]() {
     assert(false && "TODO: make subdivision graph");
   };
