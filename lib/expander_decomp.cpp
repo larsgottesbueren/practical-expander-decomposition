@@ -33,8 +33,9 @@ constructSubdivisionFlowGraph(const std::unique_ptr<Undirected::Graph> &g) {
 }
 
 void Solver::compute(const std::vector<int> &xs, int partition) {
-  CutMatching cm(graph.get(), subdivisionFlowGraph.get(), xs, partition, phi);
-  auto result = cm.compute();
+  CutMatching::Solver cmSolver(graph.get(), subdivisionFlowGraph.get(), xs,
+                               partition, phi);
+  const auto result = cmSolver.compute();
 
   switch (result.t) {
   case CutMatching::Balanced: {

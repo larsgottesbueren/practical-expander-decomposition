@@ -7,10 +7,12 @@
 #include "cut_matching.hpp"
 #include "unit_flow.hpp"
 
-CutMatching::CutMatching(const Undirected::Graph *g,
-                         UnitFlow::Graph *subdivisionFlowGraph,
-                         const std::vector<int> &subset,
-                         const int graphPartition, const double phi)
+namespace CutMatching {
+
+Solver::Solver(const Undirected::Graph *g,
+               UnitFlow::Graph *subdivisionFlowGraph,
+               const std::vector<int> &subset, const int graphPartition,
+               const double phi)
     : graph(g), subdivisionFlowGraph(subdivisionFlowGraph), subset(subset),
       graphPartition(graphPartition), phi(phi) {
   std::random_device rd;
@@ -51,7 +53,7 @@ void fillRandomUnitVector(std::mt19937 &gen, std::vector<double> &xs) {
   std::shuffle(xs.begin(), xs.end(), gen);
 }
 
-CutMatching::Result CutMatching::compute() {
+Result Solver::compute() {
   std::vector<Matching> rounds;
 
   const int numSplitNodes = graph->edgeCount(graphPartition);
@@ -139,7 +141,7 @@ CutMatching::Result CutMatching::compute() {
       aSet.erase(u), axSet.erase(u), rSet.insert(u);
   }
 
-  CutMatching::ResultType rType;
+  ResultType rType;
   if (iterations <= T)
     // We have: graph.volume(R) > m / (10 * T)
     rType = Balanced;
@@ -148,7 +150,7 @@ CutMatching::Result CutMatching::compute() {
   else
     rType = NearExpander;
 
-  CutMatching::Result result;
+  Result result;
   result.t = rType;
   for (auto u : aSet)
     if (splitNodeSet.find(u) == splitNodeSet.end())
@@ -159,3 +161,4 @@ CutMatching::Result CutMatching::compute() {
 
   return result;
 }
+} // namespace CutMatching

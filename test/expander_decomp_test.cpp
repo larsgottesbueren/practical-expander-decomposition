@@ -134,7 +134,7 @@ TEST(ExpanderDecomposition, BasicGraph) {
 
   const double phi = 0.1;
   const auto solver = ExpanderDecomposition::Solver(std::move(g), phi);
-  for (const auto & partition : solver.getPartition())
-    for (const auto & u : partition)
+  for (const auto &partition : solver.getPartition())
+    for (const auto &u : partition)
       EXPECT_TRUE(u >= 0 && u < n);
 }
