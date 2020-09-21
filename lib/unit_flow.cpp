@@ -25,61 +25,10 @@ bool Graph::addEdge(Vertex u, Vertex v, Flow capacity) {
 }
 
 std::vector<Vertex> Graph::compute(const int maxHeight) {
-  typedef std::pair<UnitFlow::Flow, UnitFlow::Vertex> QPair;
-  std::priority_queue<QPair, std::vector<QPair>, std::greater<QPair>> q;
-
-  const int maxH = std::min(maxHeight, 2 * size() + 1);
-
+  std::unordered_set<int> vertices;
   for (UnitFlow::Vertex u = 0; u < size(); ++u)
-    if (excess(u) > 0)
-      q.push({height[u], u});
-
-  while (!q.empty()) {
-    auto [_, u] = q.top();
-
-    if (degree(u) == 0) {
-      q.pop();
-      continue;
-    }
-
-    auto &e = edges(u)[nextEdgeIdx[u]];
-    if (excess(e->from) > 0 && residual(*e) > 0 &&
-        height[e->from] == height[e->to] + 1) {
-      // push
-      assert(excess(e->to) == 0 && "Pushing to vertex with non-zero excess");
-      UnitFlow::Flow delta =
-          std::min({excess(e->from), residual(*e), (Flow)degree(e->to)});
-
-      e->flow += delta;
-      absorbed[e->from] -= delta;
-
-      e->reverse->flow -= delta;
-      absorbed[e->to] += delta;
-
-      assert(excess(e->from) >= 0 && "Excess after pushing cannot be negative");
-      if (height[e->from] >= maxH || excess(e->from) == 0)
-        q.pop();
-      if (height[e->to] < maxH && excess(e->to) > 0)
-        q.push({height[e->to], e->to});
-    } else if (nextEdgeIdx[e->from] == (int)edges(e->from).size() - 1) {
-      // all edges have been tried, relabel
-      q.pop();
-      height[e->from]++;
-      nextEdgeIdx[e->from] = 0;
-
-      if (height[e->from] < maxH)
-        q.push({height[e->from], e->from});
-    } else {
-      nextEdgeIdx[e->from]++;
-    }
-  }
-
-  std::vector<Vertex> levelCut;
-  for (Vertex u = 0; u < size(); ++u)
-    if (excess(u) > 0)
-      levelCut.push_back(u);
-
-  return levelCut;
+    vertices.insert(u);
+  return compute(maxHeight, vertices);
 }
 
 std::vector<Vertex> Graph::compute(const int maxHeight,
