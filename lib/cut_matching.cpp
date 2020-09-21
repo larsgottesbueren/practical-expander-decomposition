@@ -63,12 +63,12 @@ CutMatching::Result CutMatching::compute() {
   std::vector<int> splitNodes;
   std::unordered_set<int> splitNodeSet;
   splitNodes.reserve(numSplitNodes);
-  for (const auto u : subset) {
-    for (const auto &e : subdivisionFlowGraph->edges(u)) {
-      splitNodes.push_back(e->to);
-      splitNodeSet.insert(e->to);
-    }
-  }
+  for (const auto u : subset)
+    for (const auto &e : subdivisionFlowGraph->edges(u))
+      if (splitNodeSet.find(e->to) == splitNodeSet.end()) {
+        splitNodes.push_back(e->to);
+        splitNodeSet.insert(e->to);
+      }
   assert((int)splitNodes.size() == numSplitNodes &&
          "The number of split nodes added did not match");
 

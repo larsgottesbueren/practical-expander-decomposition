@@ -58,7 +58,7 @@ Solver::Solver(std::unique_ptr<Undirected::Graph> g, const double phi)
   flowGraph = constructFlowGraph(graph);
   subdivisionFlowGraph = constructSubdivisionFlowGraph(graph);
 
-  std::vector<int> vertices(g->size());
+  std::vector<int> vertices(graph->size());
   std::iota(vertices.begin(), vertices.end(), 0);
   compute(vertices, 0);
 }
