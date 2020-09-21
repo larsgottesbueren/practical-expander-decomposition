@@ -17,6 +17,21 @@ constructFlowGraph(const std::unique_ptr<Undirected::Graph> &g) {
   return f;
 }
 
+std::unique_ptr<UnitFlow::Graph>
+constructSubdivisionFlowGraph(const std::unique_ptr<Undirected::Graph> &g) {
+  auto f = std::make_unique<UnitFlow::Graph>(g->size() + g->edgeCount());
+
+  for (UnitFlow::Vertex u = 0; u < g->size(); ++u)
+    for (const auto &e : g->edges(u))
+      if (e->from < e->to) {
+        UnitFlow::Vertex splitVertex = g->size() + f->edgeCount() / 2;
+        f->addEdge(e->from, splitVertex, 0);
+        f->addEdge(e->to, splitVertex, 0);
+      }
+
+  return f;
+}
+
 void Solver::compute(const std::vector<int> &xs, int partition) {
   CutMatching cm(graph.get(), subdivisionFlowGraph.get(), xs, partition, phi);
   auto result = cm.compute();
@@ -38,14 +53,10 @@ void Solver::compute(const std::vector<int> &xs, int partition) {
 }
 
 Solver::Solver(std::unique_ptr<Undirected::Graph> g, const double phi)
-    : graph(std::move(g)), flowGraph(nullptr),
-      subdivisionFlowGraph(std::make_unique<UnitFlow::Graph>(g->edgeCount())),
+    : graph(std::move(g)), flowGraph(nullptr), subdivisionFlowGraph(nullptr),
       phi(phi) {
   flowGraph = constructFlowGraph(graph);
-  auto addSubdivisionFlowGraphEdges = [&]() {
-    assert(false && "TODO: make subdivision graph");
-  };
-  addSubdivisionFlowGraphEdges();
+  subdivisionFlowGraph = constructSubdivisionFlowGraph(graph);
 
   std::vector<int> vertices(g->size());
   std::iota(vertices.begin(), vertices.end(), 0);
