@@ -23,7 +23,7 @@ Solver::Solver(const Undirected::Graph *g,
       std::round(1.0 / phi / std::log(splitNodes) / std::log(splitNodes));
   for (const auto u : subset)
     for (auto &e : subdivisionFlowGraph->edges(u))
-      e->capacity = capacity;
+      e->capacity = capacity, e->reverse->capacity = capacity;
 }
 
 /**
@@ -36,11 +36,15 @@ Solver::Solver(const Undirected::Graph *g,
  */
 using Matching = std::vector<std::pair<int, int>>;
 std::vector<double> projectFlow(const std::vector<Matching> &rounds,
+                                const std::unordered_map<int,int> & fromSplitNode,
                                 std::vector<double> start) {
   for (auto it = rounds.begin(); it != rounds.end(); ++it) {
     for (const auto &[u, v] : *it) {
-      start[u] = 0.5 * (start[u] + start[v]);
-      start[v] = start[u];
+      auto uIt = fromSplitNode.find(u), vIt = fromSplitNode.find(v);
+      assert(uIt != fromSplitNode.end() && vIt != fromSplitNode.end());
+      int i = uIt->second, j = vIt->second;
+      start[i] = 0.5 * (start[i] + start[j]);
+      start[j] = start[i];
     }
   }
 
@@ -100,7 +104,7 @@ Result Solver::compute() {
        ++iterations) {
 
     fillRandomUnitVector(randomGen, r);
-    const auto flow = projectFlow(rounds, r);
+    const auto flow = projectFlow(rounds, fromSplitNode, r);
     // double avgFlow = std::accumulate(flow.begin(), flow.end(), 0) /
     // flow.size();
     std::vector<int> axSetByFlow(axSet.begin(), axSet.end());
@@ -144,6 +148,7 @@ Result Solver::compute() {
       }
     }
 
+    assert(middle < (int)axSetByFlow.size() && "Set of split vertices smaller than expected.");
     std::vector<int> sourcesLeft;
     for (int i = 0; i < middle; ++i) {
       int u = axSetByFlow[i];
