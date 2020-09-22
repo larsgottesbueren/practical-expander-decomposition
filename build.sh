@@ -1,1 +1,1 @@
-bazel build --config c++17 //main:cluster
+bazel build --config default //main:cluster

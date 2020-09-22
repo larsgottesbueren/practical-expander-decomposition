@@ -1,4 +1,7 @@
-build:c++17 --cxxopt=-std=c++1z
-build:c++17 --cxxopt=-stdlib=libc++
-build:c++1z --cxxopt=-std=c++1z
-build:c++1z --cxxopt=-stdlib=libc++
+build:default --cxxopt=-std=c++1z
+build:default --cxxopt=-stdlib=libc++
+
+build:debug --cxxopt=-std=c++1z
+build:debug --cxxopt=-O0
+build:debug --cxxopt=-fsanitize=address,undefined
+build:debug --linkopt -fsanitize=address,undefined
