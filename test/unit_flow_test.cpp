@@ -271,3 +271,33 @@ TEST(UnitFlow, Reset) {
       EXPECT_EQ(e->flow, 0);
   }
 }
+
+/**
+   'reset' should set all flow, height, absorbtion and sinks to 0.
+ */
+TEST(UnitFlow, ResetSubset) {
+  UnitFlow::Graph uf(5);
+  uf.addSource(0, 5);
+  uf.addSink(4, 5);
+
+  uf.addEdge(0, 1, 10);
+  uf.addEdge(0, 2, 10);
+  uf.addEdge(1, 2, 10);
+  uf.addEdge(1, 3, 10);
+  uf.addEdge(1, 2, 10);
+  uf.addEdge(2, 4, 10);
+
+  uf.compute(INT_MAX);
+
+  std::vector<int> subset = {1, 2, 3};
+  uf.reset(subset.begin(), subset.end());
+
+  for (auto u : subset) {
+    EXPECT_EQ(uf.getAbsorbed()[u], 0);
+    EXPECT_EQ(uf.getSink()[u], 0);
+    EXPECT_EQ(uf.getHeight()[u], 0);
+    EXPECT_EQ(uf.getNextEdgeIdx()[u], 0);
+    for (const auto &e : uf.edges(u))
+      EXPECT_EQ(e->flow, 0);
+  }
+}

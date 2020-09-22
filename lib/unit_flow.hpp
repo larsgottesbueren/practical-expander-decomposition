@@ -148,6 +148,7 @@ public:
         edge->flow = 0;
       absorbed[*it] = 0;
       sink[*it] = 0;
+      height[*it] = 0;
       nextEdgeIdx[*it] = 0;
     }
   }
