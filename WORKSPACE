@@ -1,13 +1,4 @@
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
-git_repository(
-  name = "com_github_nelhage_rules_boost",
-  commit = "1e3a69bf2d5cd10c34b74f066054cd335d033d71",
-  remote = "https://github.com/nelhage/rules_boost",
-  shallow_since = "1591047380 -0700",
-)
-
-load("@com_github_nelhage_rules_boost//:boost/boost.bzl", "boost_deps")
-boost_deps()
 
 git_repository(
   name = "googletest",
@@ -16,11 +7,14 @@ git_repository(
   shallow_since = "1570114335 -0400",
 )
 
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
-new_git_repository(
-  name = "eigen",
-  remote = "https://gitlab.com/libeigen/eigen",
-  commit = "25424d91f60a9f858e7dc1c7936021cc1dd72019",
-  build_file = "//:eigen.BUILD",
-  shallow_since = "1598437940 +0200",
+git_repository(
+  name = "com_google_glog",
+  remote = "https://github.com/google/glog",
+  commit = "96a2f23dca4cc7180821ca5f32e526314395d26a", shallow_since = "1553223106 +0900",
+)
+
+git_repository(
+  name = "com_github_gflags_gflags",
+  remote = "https://github.com/gflags/gflags.git",
+  commit = "a386bd0f204cf99db253b3e84c56795dea8c397f", shallow_since = "1600856796 +0100",
 )

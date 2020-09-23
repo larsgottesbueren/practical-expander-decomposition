@@ -1,1 +1,1 @@
-bazel build --config default //main:cluster
+bazel build -c opt //main:cluster

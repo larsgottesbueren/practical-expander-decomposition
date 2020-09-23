@@ -1,6 +1,9 @@
 #include <memory>
 #include <numeric>
 
+#include <glog/logging.h>
+#include <glog/stl_logging.h>
+
 #include "expander_decomp.hpp"
 
 namespace ExpanderDecomposition {
@@ -59,6 +62,14 @@ Solver::Solver(std::unique_ptr<Undirected::Graph> g, const double phi)
       phi(phi) {
   flowGraph = constructFlowGraph(graph);
   subdivisionFlowGraph = constructSubdivisionFlowGraph(graph);
+
+  VLOG(1) << "Preparing to run expander decomposition."
+          << "\n\tGraph: " << graph->size() << " vertices and "
+          << graph->edgeCount() << " edges."
+          << "\n\tFlow graph: " << flowGraph->size() << " vertices and "
+          << flowGraph->edgeCount() << " edges."
+          << "\n\tSubdivision graph: " << subdivisionFlowGraph->size()
+          << " vertices and " << subdivisionFlowGraph->edgeCount() << " edges.";
 
   std::vector<int> vertices(graph->size());
   std::iota(vertices.begin(), vertices.end(), 0);

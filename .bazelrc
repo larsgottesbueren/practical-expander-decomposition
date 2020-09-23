@@ -1,5 +1,4 @@
-build:default --cxxopt=-std=c++1z
-build:default --cxxopt=-stdlib=libc++
+build --cxxopt=-std=c++1z
 
 build:debug --cxxopt=-std=c++1z
 build:debug --cxxopt=-O0

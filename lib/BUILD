@@ -4,10 +4,9 @@ cc_library(
   name = "cluster_util",
   srcs = glob(["**/*.cpp"]),
   hdrs = glob(["**/*.hpp"]),
-  copts = [
-    "-Iexternal/eigen",
+  deps = [
+    "@com_google_glog//:glog",
   ],
-  deps = [],
   visibility = [
     "//main:__pkg__",
     "//test:__pkg__"

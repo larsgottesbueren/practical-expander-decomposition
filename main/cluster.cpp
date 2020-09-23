@@ -2,12 +2,21 @@
 #include <iostream>
 #include <vector>
 
+#include <gflags/gflags.h>
+#include <glog/logging.h>
+#include <glog/stl_logging.h>
+
 #include "lib/expander_decomp.hpp"
 #include "lib/ugraph.hpp"
 
 using namespace std;
 
-int main() {
+int main(int argc, char *argv[]) {
+  google::InitGoogleLogging(argv[0]);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
+
+  DLOG(INFO) << "Waiting for input";
+
   int n;
   cin >> n;
   string graphType;

@@ -5,5 +5,6 @@ cc_binary(
   srcs = ["cluster.cpp"],
   deps = [
     "//lib:cluster_util",
+    "@com_google_glog//:glog",
   ]
 )
