@@ -22,9 +22,10 @@ struct Result {
 };
 
 using Matching = std::vector<std::pair<int, int>>;
-std::vector<double> projectFlow(const std::vector<Matching> &rounds,
-                                const std::unordered_map<int,int> &fromSplitNode,
-                                std::vector<double> start);
+std::vector<double>
+projectFlow(const std::vector<Matching> &rounds,
+            const std::unordered_map<int, int> &fromSplitNode,
+            std::vector<double> start);
 
 class Solver {
 private:

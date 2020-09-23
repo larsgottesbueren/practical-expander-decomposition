@@ -35,9 +35,10 @@ Solver::Solver(const Undirected::Graph *g,
    Time complexity: O(|rounds| + |start|)
  */
 using Matching = std::vector<std::pair<int, int>>;
-std::vector<double> projectFlow(const std::vector<Matching> &rounds,
-                                const std::unordered_map<int,int> & fromSplitNode,
-                                std::vector<double> start) {
+std::vector<double>
+projectFlow(const std::vector<Matching> &rounds,
+            const std::unordered_map<int, int> &fromSplitNode,
+            std::vector<double> start) {
   for (auto it = rounds.begin(); it != rounds.end(); ++it) {
     for (const auto &[u, v] : *it) {
       auto uIt = fromSplitNode.find(u), vIt = fromSplitNode.find(v);
@@ -148,7 +149,8 @@ Result Solver::compute() {
       }
     }
 
-    assert(middle < (int)axSetByFlow.size() && "Set of split vertices smaller than expected.");
+    assert(middle < (int)axSetByFlow.size() &&
+           "Set of split vertices smaller than expected.");
     std::vector<int> sourcesLeft;
     for (int i = 0; i < middle; ++i) {
       int u = axSetByFlow[i];
