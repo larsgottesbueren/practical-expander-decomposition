@@ -1,8 +1,7 @@
-#include <memory>
-#include <numeric>
-
 #include <glog/logging.h>
 #include <glog/stl_logging.h>
+#include <memory>
+#include <numeric>
 
 #include "expander_decomp.hpp"
 
@@ -36,6 +35,9 @@ constructSubdivisionFlowGraph(const std::unique_ptr<Undirected::Graph> &g) {
 }
 
 void Solver::compute(const std::vector<int> &xs, int partition) {
+  VLOG(1) << "Attempting to find balanced cut for partition " << partition
+          << " (" << xs.size() << " vertices).";
+
   CutMatching::Solver cmSolver(graph.get(), subdivisionFlowGraph.get(), xs,
                                partition, phi);
   const auto result = cmSolver.compute();

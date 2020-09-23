@@ -1,10 +1,9 @@
 #include <cmath>
-#include <iostream>
-#include <vector>
-
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 #include <glog/stl_logging.h>
+#include <iostream>
+#include <vector>
 
 #include "lib/expander_decomp.hpp"
 #include "lib/ugraph.hpp"
@@ -25,8 +24,6 @@ int main(int argc, char *argv[]) {
   auto g = make_unique<Undirected::Graph>(n);
 
   if (graphType == "random") {
-    cerr << "Generating random graph with O(n) edges" << endl;
-
     int m = n + rand() % (2 * n);
     for (int i = 0; i < m; ++i) {
       int u = rand() % n;
@@ -37,10 +34,6 @@ int main(int argc, char *argv[]) {
       g->addEdge(u, v);
     }
   } else if (graphType == "clusters") {
-    cerr
-        << "Generating two unconnected clusters where the balanced cut is clear"
-        << endl;
-
     int leftN = n / 2;
 
     for (int i = 0; i < leftN; ++i)
@@ -58,7 +51,6 @@ int main(int argc, char *argv[]) {
     g->addEdge(3, leftN + 3);
     g->addEdge(4, leftN + 4);
   } else if (graphType == "path") {
-    cerr << "Generating path" << endl;
     for (int i = 0; i < n - 1; ++i)
       g->addEdge(i, i + 1);
   } else {
@@ -75,10 +67,7 @@ int main(int argc, char *argv[]) {
   double phi;
   cin >> phi;
 
-  cerr << "Computing decomposition" << endl;
   ExpanderDecomposition::Solver solver(move(g), phi);
-
-  cout << "Partition with phi = " << phi << endl;
   auto partitions = solver.getPartition();
   for (const auto &p : partitions)
     cout << p.size() << endl;
