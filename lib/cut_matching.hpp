@@ -29,7 +29,7 @@ projectFlow(const std::vector<Matching> &rounds,
 
 class Solver {
 private:
-  const Undirected::Graph *graph;
+  const UnitFlow::Graph *graph;
   UnitFlow::Graph *subdivisionFlowGraph;
   const std::vector<int> subset;
 
@@ -43,7 +43,7 @@ public:
 
      Precondition: graph should not contain loops.
    */
-  Solver(const Undirected::Graph *g, UnitFlow::Graph *subdivisionFlowGraph,
+  Solver(const UnitFlow::Graph *g, UnitFlow::Graph *subdivisionFlowGraph,
          const std::vector<int> &subset, const double phi);
 
   Result compute();

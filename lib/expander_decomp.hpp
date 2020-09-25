@@ -26,12 +26,9 @@ constructSubdivisionFlowGraph(const std::unique_ptr<Undirected::Graph> &g);
 class Solver {
 private:
   /**
-     One graph and two flow graphs are maintained. The vertices and edges in
-     'graph' and 'flowGraph' are identical apart from the edges maintaining flow
-     information in the latter. Let 'graph = (V,E)'. Then '{e.id + |V| | e \in
-     E}' is the vertex ids of the split vertices in 'subdivisionFlowGraph'.
+     Two flow graphs are maintained. Let 'graph = (V,E)'. Then '{e.id + |V| | e
+     \in E}' is the vertex ids of the split vertices in 'subdivisionFlowGraph'.
    */
-  std::unique_ptr<Undirected::Graph> graph;
   std::unique_ptr<UnitFlow::Graph> flowGraph, subdivisionFlowGraph;
   const double phi;
 

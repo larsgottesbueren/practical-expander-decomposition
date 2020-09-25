@@ -38,14 +38,14 @@ void Solver::compute(const std::vector<int> &xs, int partition) {
   VLOG(1) << "Attempting to find balanced cut for partition " << partition
           << " (" << xs.size() << " vertices).";
 
-  CutMatching::Solver cmSolver(graph.get(), subdivisionFlowGraph.get(), xs,
+  CutMatching::Solver cmSolver(flowGraph.get(), subdivisionFlowGraph.get(), xs,
                                phi);
   const auto result = cmSolver.compute();
 
   switch (result.t) {
   case CutMatching::Balanced: {
     assert(!result.r.empty() && "Cut should be balanced");
-    int newPartition = graph->newPartition(result.a, xs);
+    int newPartition = flowGraph->newPartition(result.a, xs);
     compute(result.a, newPartition);
     compute(result.r, partition);
     break;
@@ -59,9 +59,8 @@ void Solver::compute(const std::vector<int> &xs, int partition) {
   }
 }
 
-Solver::Solver(std::unique_ptr<Undirected::Graph> g, const double phi)
-    : graph(std::move(g)), flowGraph(nullptr), subdivisionFlowGraph(nullptr),
-      phi(phi) {
+Solver::Solver(std::unique_ptr<Undirected::Graph> graph, const double phi)
+    : flowGraph(nullptr), subdivisionFlowGraph(nullptr), phi(phi) {
   flowGraph = constructFlowGraph(graph);
   subdivisionFlowGraph = constructSubdivisionFlowGraph(graph);
 
@@ -79,9 +78,9 @@ Solver::Solver(std::unique_ptr<Undirected::Graph> g, const double phi)
 }
 
 std::vector<std::vector<int>> Solver::getPartition() const {
-  std::vector<std::vector<int>> result(graph->partitionCount());
-  for (int u = 0; u < graph->size(); ++u)
-    result[graph->getPartition(u)].push_back(u);
+  std::vector<std::vector<int>> result(flowGraph->partitionCount());
+  for (int u = 0; u < flowGraph->size(); ++u)
+    result[flowGraph->getPartition(u)].push_back(u);
   return result;
 }
 

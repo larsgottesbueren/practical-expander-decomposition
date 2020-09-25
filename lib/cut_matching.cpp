@@ -11,8 +11,7 @@
 
 namespace CutMatching {
 
-Solver::Solver(const Undirected::Graph *g,
-               UnitFlow::Graph *subdivisionFlowGraph,
+Solver::Solver(const UnitFlow::Graph *g, UnitFlow::Graph *subdivisionFlowGraph,
                const std::vector<int> &subset, const double phi)
     : graph(g), subdivisionFlowGraph(subdivisionFlowGraph), subset(subset),
       phi(phi) {
