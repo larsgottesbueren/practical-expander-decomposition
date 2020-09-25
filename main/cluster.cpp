@@ -70,5 +70,15 @@ int main(int argc, char *argv[]) {
   ExpanderDecomposition::Solver solver(move(g), phi);
   auto partitions = solver.getPartition();
   for (const auto &p : partitions)
-    cout << p.size() << endl;
+    cout << p.size() << " ";
+  cout << endl;
+
+  if (n <= 200) {
+    for (int p = 0; p < partitions.size(); ++p) {
+      cout << p << ":";
+      for (auto x : partitions[p])
+        cout << " " << x;
+      cout << endl;
+    }
+  }
 }

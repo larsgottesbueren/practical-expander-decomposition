@@ -1,5 +1,7 @@
 #include <algorithm>
 #include <cmath>
+#include <glog/logging.h>
+#include <glog/stl_logging.h>
 #include <numeric>
 #include <random>
 #include <unordered_set>
@@ -68,23 +70,20 @@ void fillRandomUnitVector(std::mt19937 &gen, std::vector<double> &xs) {
 Result Solver::compute() {
   std::vector<Matching> rounds;
 
-  const int numSplitNodes = graph->edgeCount(graphPartition);
-  const double T =
-      1 + 0.9 * std::ceil(std::log(numSplitNodes) * std::log(numSplitNodes));
-
-  std::vector<double> r(numSplitNodes);
-
   std::vector<int> splitNodes;
   std::unordered_set<int> splitNodeSet;
-  splitNodes.reserve(numSplitNodes);
   for (const auto u : subset)
     for (const auto &e : subdivisionFlowGraph->edges(u))
       if (splitNodeSet.find(e->to) == splitNodeSet.end()) {
         splitNodes.push_back(e->to);
         splitNodeSet.insert(e->to);
       }
-  assert((int)splitNodes.size() == numSplitNodes &&
-         "The number of split nodes added did not match");
+
+  const int numSplitNodes = splitNodeSet.size();
+  const double T =
+      1 + 0.9 * std::ceil(std::log(numSplitNodes) * std::log(numSplitNodes));
+
+  std::vector<double> r(numSplitNodes);
 
   // Maintain split node indices: 'fromSplitNode[splitNodes[i]] = i'
   std::unordered_map<int, int> fromSplitNode;
@@ -172,6 +171,12 @@ Result Solver::compute() {
     rType = Expander;
   else
     rType = NearExpander;
+
+  VLOG(2) << "Cut matching ran " << iterations << " iterations and resulted in "
+          << (rType == Balanced
+                  ? "balanced cut"
+                  : (rType == Expander ? "expander" : "near expander"))
+          << ".";
 
   Result result;
   result.t = rType;
