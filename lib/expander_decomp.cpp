@@ -4,6 +4,8 @@
 #include <numeric>
 
 #include "expander_decomp.hpp"
+#include "trimming.hpp"
+#include "cut_matching.hpp"
 
 namespace ExpanderDecomposition {
 
@@ -38,9 +40,9 @@ void Solver::compute(const std::vector<int> &xs, int partition) {
   VLOG(1) << "Attempting to find balanced cut for partition " << partition
           << " (" << xs.size() << " vertices).";
 
-  CutMatching::Solver cmSolver(flowGraph.get(), subdivisionFlowGraph.get(), xs,
+  CutMatching::Solver cm(flowGraph.get(), subdivisionFlowGraph.get(), xs,
                                phi);
-  const auto result = cmSolver.compute();
+  auto result = cm.compute();
 
   switch (result.t) {
   case CutMatching::Balanced: {
@@ -51,6 +53,11 @@ void Solver::compute(const std::vector<int> &xs, int partition) {
     break;
   }
   case CutMatching::NearExpander: {
+    Trimming::Solver trimming(flowGraph.get(), result.a, phi);
+    const auto trimmingResult = trimming.compute();
+    result.r.insert(result.r.end(), trimmingResult.r.begin(), trimmingResult.r.end());
+    int newPartition = flowGraph->newPartition(result.r, xs);
+    compute(result.r, newPartition);
     break;
   }
   case CutMatching::Expander: {

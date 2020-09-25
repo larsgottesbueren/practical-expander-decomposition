@@ -7,10 +7,10 @@
 namespace Trimming {
 
 /**
-   The result of trimming is an expander 'a' and the removed vertices 'r'.
+   The result of trimming is a vector of removed vertices 'r'.
  */
 struct Result {
-  std::vector<int> a, r;
+  std::vector<int> r;
 };
 
 class Solver {
