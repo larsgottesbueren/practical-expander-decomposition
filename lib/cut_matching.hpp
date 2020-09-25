@@ -33,7 +33,6 @@ private:
   UnitFlow::Graph *subdivisionFlowGraph;
   const std::vector<int> subset;
 
-  const int graphPartition;
   const double phi;
 
   std::mt19937 randomGen;
@@ -45,8 +44,7 @@ public:
      Precondition: graph should not contain loops.
    */
   Solver(const Undirected::Graph *g, UnitFlow::Graph *subdivisionFlowGraph,
-         const std::vector<int> &subset, const int graphPartition,
-         const double phi);
+         const std::vector<int> &subset, const double phi);
 
   Result compute();
 };

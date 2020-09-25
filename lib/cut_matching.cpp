@@ -13,10 +13,9 @@ namespace CutMatching {
 
 Solver::Solver(const Undirected::Graph *g,
                UnitFlow::Graph *subdivisionFlowGraph,
-               const std::vector<int> &subset, const int graphPartition,
-               const double phi)
+               const std::vector<int> &subset, const double phi)
     : graph(g), subdivisionFlowGraph(subdivisionFlowGraph), subset(subset),
-      graphPartition(graphPartition), phi(phi) {
+      phi(phi) {
   std::random_device rd;
   randomGen = std::mt19937(rd());
 

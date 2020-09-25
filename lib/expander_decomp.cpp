@@ -39,7 +39,7 @@ void Solver::compute(const std::vector<int> &xs, int partition) {
           << " (" << xs.size() << " vertices).";
 
   CutMatching::Solver cmSolver(graph.get(), subdivisionFlowGraph.get(), xs,
-                               partition, phi);
+                               phi);
   const auto result = cmSolver.compute();
 
   switch (result.t) {
