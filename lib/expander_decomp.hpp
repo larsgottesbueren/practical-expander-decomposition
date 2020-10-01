@@ -2,8 +2,8 @@
 
 #include <vector>
 
-#include "unit_flow.hpp"
 #include "ugraph.hpp"
+#include "unit_flow.hpp"
 
 namespace ExpanderDecomposition {
 

@@ -3,9 +3,9 @@
 #include <memory>
 #include <numeric>
 
+#include "cut_matching.hpp"
 #include "expander_decomp.hpp"
 #include "trimming.hpp"
-#include "cut_matching.hpp"
 
 namespace ExpanderDecomposition {
 
@@ -40,24 +40,27 @@ void Solver::compute(const std::vector<int> &xs, int partition) {
   VLOG(1) << "Attempting to find balanced cut for partition " << partition
           << " (" << xs.size() << " vertices).";
 
-  CutMatching::Solver cm(flowGraph.get(), subdivisionFlowGraph.get(), xs,
-                               phi);
+  CutMatching::Solver cm(flowGraph.get(), subdivisionFlowGraph.get(), xs, phi);
   auto result = cm.compute();
 
   switch (result.t) {
   case CutMatching::Balanced: {
-    assert(!result.r.empty() && "Cut should be balanced");
+    assert(!result.a.empty() && "Cut should be balanced but A was empty.");
+    assert(!result.r.empty() && "Cut should be balanced but R was empty.");
     int newPartition = flowGraph->newPartition(result.a, xs);
     compute(result.a, newPartition);
     compute(result.r, partition);
     break;
   }
   case CutMatching::NearExpander: {
-    Trimming::Solver trimming(flowGraph.get(), result.a, phi);
+    Trimming::Solver trimming(flowGraph.get(), result.a, phi, partition);
     const auto trimmingResult = trimming.compute();
-    result.r.insert(result.r.end(), trimmingResult.r.begin(), trimmingResult.r.end());
-    int newPartition = flowGraph->newPartition(result.r, xs);
-    compute(result.r, newPartition);
+    result.r.insert(result.r.end(), trimmingResult.r.begin(),
+                    trimmingResult.r.end());
+    if (result.r.size() > 0 && result.r.size() < xs.size()) {
+      int newPartition = flowGraph->newPartition(result.r, xs);
+      compute(result.r, newPartition);
+    }
     break;
   }
   case CutMatching::Expander: {
