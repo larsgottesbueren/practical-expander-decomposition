@@ -25,25 +25,28 @@ Path parent. This is the parent in the represented tree of the left-most
   /**
      Difference between subtrees minimum value and weight at current node.
 
-     Definition: 'u.minDiff = u.minWeight - u.weight'
+     Invariant: 'u.minWeight = u.weight + u.deltaMin'
    */
-  int minDiff;
+  int deltaMin;
 
   Vertex(int id, Vertex *left, Vertex *right, Vertex *parent,
-         Vertex *pathparent, int deltaW, int minDiff)
+         Vertex *pathparent, int deltaW, int deltaMin)
       : id(id), left(left), right(right), parent(parent),
-        pathparent(pathparent), deltaW(deltaW), minDiff(minDiff) {}
+        pathparent(pathparent), deltaW(deltaW), deltaMin(deltaMin) {}
   Vertex(int id) : Vertex(id, nullptr, nullptr, nullptr, nullptr, 0, 0) {}
 
   /**
      Rotate current vertex upwards. Let 'u' be the current vertex, 'p' the
-     parent, and A,B,C be subtrees. Then a rotation of 'u' is:
+     parent, and A,B,C be subtrees. Then a rotation of 'u' is one of the
+     following:
 
-         p         u
-        / \       / \
-       u   C  => A   p
-      / \           / \
-     A   B         B   C
+         p         u       |     p           u
+        / \       / \      |    / \         / \
+       u   C  => A   p     |   A  u   =>   p  C
+      / \           / \    |     / \      / \
+     A   B         B   C   |    B   C    A  B
+
+     Maintains 'deltaW' and 'deltaMin'.
    */
   void rotateUp();
 
@@ -53,19 +56,9 @@ Path parent. This is the parent in the represented tree of the left-most
   void splay();
 
   /**
-     Find top of path (closest to root) represented by this aux-tree.
+     Update the 'deltaMin' property of the current vertex assuming its children
+     maintain the 'deltaMin' invariant.
    */
-  Vertex *findPathTop();
-
-  /**
-     Find minimum value on path. Return value along with vertex closest to root
-     which has this value.
-   */
-  std::pair<int, Vertex *> findPathMin();
-
-  /**
-     Increment all values on path with delta.
-   */
-  void updatePath(int delta);
+  void updateDeltaMin();
 };
 } // namespace SplayTree
