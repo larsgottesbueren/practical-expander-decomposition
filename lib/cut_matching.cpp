@@ -15,6 +15,8 @@ Solver::Solver(const UnitFlow::Graph *g, UnitFlow::Graph *subdivisionFlowGraph,
                const std::vector<int> &subset, const double phi)
     : graph(g), subdivisionFlowGraph(subdivisionFlowGraph), subset(subset),
       phi(phi) {
+  assert(!subset.empty() && "Cut-matching expected non-empty subset.");
+
   std::random_device rd;
   randomGen = std::mt19937(0);
   //  randomGen = std::mt19937(rd());
@@ -194,7 +196,7 @@ Result Solver::compute() {
   }
 
   Result result;
-  if (iterations <= T)
+  if (iterations <= T && !aSet.empty())
     // We have: graph.volume(R) > m / (10 * T)
     result.t = Balanced;
   else if (rSet.empty())
