@@ -290,9 +290,8 @@ TEST(UnitFlow, CanMatchLargeGraph) {
     std::unordered_set<int> alive;
     for (int i = 0; i < n; ++i)
       alive.insert(i);
-    std::vector<int>
-      sources = {0, 1, 2, 3, 4},
-      targets = {n - 5, n - 4, n - 3, n - 2, n - 1};
+    std::vector<int> sources = {0, 1, 2, 3, 4},
+                     targets = {n - 5, n - 4, n - 3, n - 2, n - 1};
 
     for (int u : sources)
       uf.addSource(u, 10);

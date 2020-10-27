@@ -315,9 +315,7 @@ struct NaiveTree {
       u = parent[u];
     return u;
   }
-  int findParent(int u) {
-    return parent[u];
-  }
+  int findParent(int u) { return parent[u]; }
 };
 
 /**
