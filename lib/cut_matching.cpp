@@ -68,6 +68,24 @@ void fillRandomUnitVector(std::mt19937 &gen, std::vector<double> &xs) {
   std::shuffle(xs.begin(), xs.end(), gen);
 }
 
+/**
+   Construct a random unit vector by sampling from normal distribution. Based
+   on https://stackoverflow.com/a/8453514
+ */
+std::vector<double> randomUnitVector(std::mt19937 &gen, int n) {
+  std::normal_distribution<> d(0, 1);
+  std::vector<double> xs(n);
+  double m = 0;
+  for (auto &x : xs) {
+    x = d(gen);
+    m += x * x;
+  }
+  m = std::sqrt(m);
+  for (auto &x : xs)
+    x /= m;
+  return xs;
+}
+
 Result Solver::compute() {
   std::vector<Matching> rounds;
 
@@ -84,7 +102,12 @@ Result Solver::compute() {
   const double T =
       1 + 0.9 * std::ceil(std::log(numSplitNodes) * std::log(numSplitNodes));
 
-  std::vector<double> r(numSplitNodes);
+  if (numSplitNodes <= 1) {
+    Result result;
+    result.t = Expander;
+    result.a = subset;
+    return result;
+  }
 
   // Maintain split node indices: 'fromSplitNode[splitNodes[i]] = i'
   std::unordered_map<int, int> fromSplitNode;
@@ -104,7 +127,7 @@ Result Solver::compute() {
              100 + numSplitNodes / 10.0 / T;
        ++iterations) {
 
-    fillRandomUnitVector(randomGen, r);
+    std::vector<double> r = randomUnitVector(randomGen, numSplitNodes);
     const auto flow = projectFlow(rounds, fromSplitNode, r);
     // double avgFlow = std::accumulate(flow.begin(), flow.end(), 0) /
     // flow.size();
@@ -170,29 +193,41 @@ Result Solver::compute() {
       aSet.erase(u), axSet.erase(u), aAndAxSet.erase(u), rSet.insert(u);
   }
 
-  ResultType rType;
+  Result result;
   if (iterations <= T)
     // We have: graph.volume(R) > m / (10 * T)
-    rType = Balanced;
+    result.t = Balanced;
   else if (rSet.empty())
-    rType = Expander;
+    result.t = Expander;
   else
-    rType = NearExpander;
+    result.t = NearExpander;
 
-  VLOG(2) << "Cut matching ran " << iterations << " iterations and resulted in "
-          << (rType == Balanced
-                  ? "balanced cut"
-                  : (rType == Expander ? "expander" : "near expander"))
-          << ".";
-
-  Result result;
-  result.t = rType;
   for (auto u : aSet)
     if (splitNodeSet.find(u) == splitNodeSet.end())
       result.a.push_back(u);
   for (auto u : rSet)
     if (splitNodeSet.find(u) == splitNodeSet.end())
       result.r.push_back(u);
+
+  switch (result.t) {
+  case Balanced: {
+    VLOG(2) << "Cut matching ran " << iterations
+            << " iterations and resulted in balanced cut with size ("
+            << result.a.size() << ", " << result.r.size() << ").";
+    break;
+  }
+  case Expander: {
+    VLOG(2) << "Cut matching ran " << iterations
+            << " iterations and resulted in expander.";
+    break;
+  }
+  case NearExpander: {
+    VLOG(2) << "Cut matching ran " << iterations
+            << " iterations and resulted in near expander of size "
+            << result.a.size() << ".";
+    break;
+  }
+  }
 
   return result;
 }
