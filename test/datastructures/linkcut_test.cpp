@@ -315,6 +315,9 @@ struct NaiveTree {
       u = parent[u];
     return u;
   }
+  int findParent(int u) {
+    return parent[u];
+  }
 };
 
 /**
@@ -330,7 +333,7 @@ TEST(LinkCut, StressTest) {
   NaiveTree naive(n);
 
   for (int query = 0; query < queries; ++query) {
-    int op = rand() % 8;
+    int op = rand() % 9;
 
     switch (op) {
     case 0: { // Get
@@ -390,6 +393,11 @@ TEST(LinkCut, StressTest) {
         int w = (rand() % (1 << 10)) - (1 << 9);
         forest.updatePath(u, w), naive.updatePath(u, w);
       }
+      break;
+    }
+    case 8: { // Compare parents.
+      int u = rand() % n;
+      EXPECT_EQ(forest.findParent(u), naive.findParent(u));
       break;
     }
     default: {

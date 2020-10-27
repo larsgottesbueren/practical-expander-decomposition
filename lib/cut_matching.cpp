@@ -16,7 +16,8 @@ Solver::Solver(const UnitFlow::Graph *g, UnitFlow::Graph *subdivisionFlowGraph,
     : graph(g), subdivisionFlowGraph(subdivisionFlowGraph), subset(subset),
       phi(phi) {
   std::random_device rd;
-  randomGen = std::mt19937(rd());
+  randomGen = std::mt19937(0);
+  //  randomGen = std::mt19937(rd());
 
   const int splitNodes = graph->edgeCount();
   const UnitFlow::Flow capacity =

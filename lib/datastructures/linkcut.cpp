@@ -113,6 +113,8 @@ Vertex Forest::findRoot(Vertex vertex) {
   while (u->left)
     u = u->left;
   access(u->id);
+
+  assert(u->left == nullptr && "'u' must be root of aux-tree after access.");
   return u->id;
 }
 
@@ -137,7 +139,15 @@ Vertex Forest::findRootEdge(Vertex vertex) {
 Vertex Forest::findParent(Vertex vertex) {
   access(vertex);
   SplayTree::Vertex *u = &vertices[vertex];
-  return u->left ? u->left->id : -1;
+  if (u->left) {
+    u = u->left;
+    while (u->right)
+      u = u->right;
+    access(u->id);
+    return u->id;
+  } else {
+    return -1;
+  }
 }
 
 std::pair<int, Vertex> Forest::findPathMin(Vertex vertex) {

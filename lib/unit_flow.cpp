@@ -140,7 +140,7 @@ Graph::matching(const std::unordered_set<Vertex> &alive,
       forest.link(e->from, e->to, e->flow);
       e->flow = 0;
 
-      Vertex m = dfs(u);
+      Vertex m = dfs(r);
       if (m != -1)
         return m;
 
