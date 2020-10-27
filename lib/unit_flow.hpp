@@ -7,6 +7,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "datastructures/linkcut.hpp"
 #include "partition_graph.hpp"
 
 namespace UnitFlow {
@@ -60,6 +61,11 @@ private:
      Residual capacity of an edge.
    */
   Flow residual(const Edge &e) const { return e.capacity - e.flow; }
+
+  /**
+     A link-cut forest used for computing matchings.
+   */
+  LinkCut::Forest forest;
 
 public:
   /**
@@ -162,6 +168,8 @@ public:
      Method will mutate the flow such that it is no longer legal.
    */
   std::vector<std::pair<Vertex, Vertex>>
-  matching(const std::vector<Vertex> &sources);
+  matching(const std::unordered_set<Vertex> &alive,
+           const std::vector<Vertex> &sources,
+           const std::vector<Vertex> &targets);
 };
 } // namespace UnitFlow

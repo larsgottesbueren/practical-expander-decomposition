@@ -8,7 +8,7 @@ Edge::Edge(const UnitFlow::Vertex from, const UnitFlow::Vertex to, Flow flow,
 
 Graph::Graph(int n)
     : PartitionGraph<int, Edge>(n), absorbed(n), sink(n), height(n),
-      nextEdgeIdx(n) {}
+      nextEdgeIdx(n), forest(n) {}
 
 bool Graph::addEdge(Vertex u, Vertex v, Flow capacity) {
   auto p = addDirectedEdge({u, v, 0, capacity}, true);
@@ -103,44 +103,151 @@ void Graph::reset() {
 }
 
 std::vector<std::pair<Vertex, Vertex>>
-Graph::matching(const std::vector<Vertex> &sources) {
+Graph::matching(const std::unordered_set<Vertex> &alive,
+                const std::vector<Vertex> &sources,
+                const std::vector<Vertex> &targets) {
+  forest.reset(alive.begin(), alive.end());
+
+#ifdef DEBUG
+  for (auto u : sources)
+    assert(alive.find(u) != alive.end() && "Source not in alive set.");
+  for (auto u : targets)
+    assert(alive.find(u) != alive.end() && "Target not in alive set.");
+#endif
+
   using Match = std::pair<Vertex, Vertex>;
   std::vector<Match> matches;
 
-  std::function<Vertex(Vertex)> search = [&](Vertex start) {
-    std::unordered_set<Vertex> visited;
-    auto isVisited = [&visited](Vertex u) {
-      return visited.find(u) != visited.end();
-    };
-    std::function<Vertex(Vertex)> dfs = [&](Vertex u) {
-      if (isVisited(u))
-        return -1;
-      visited.insert(u);
-      for (auto &e : edges(u)) {
-        if (e->flow <= 0)
-          continue;
-        else if (flowIn(e->to) > 0 && sink[e->to] > 0) {
-          e->flow--, absorbed[e->to]--;
-          return e->to;
-        } else {
-          const Vertex match = dfs(e->to);
-          if (match != -1) {
-            e->flow--;
-            return match;
-          }
-        }
-      }
-      return -1;
-    };
-    return dfs(start);
+  std::function<Vertex(Vertex)> dfs = [&](Vertex u) {
+    assert(alive.find(u) != alive.end() && "Must search from an alive vertex.");
+
+    int r = forest.findRoot(u);
+    assert(alive.find(r) != alive.end() && "Root must be alive.");
+
+    if (flowIn(r) > 0 && sink[r] > 0) {
+      absorbed[r]--;
+      return r;
+    }
+
+    for (auto &e : edges(r)) {
+      if (e->flow <= 0 || forest.findRoot(e->to) == r ||
+          alive.find(e->to) == alive.end())
+        continue;
+
+      assert(e->from == r && "Must relax edges from current root.");
+
+      forest.set(e->from, 0);
+      forest.link(e->from, e->to, e->flow);
+      e->flow = 0;
+
+      Vertex m = dfs(u);
+      if (m != -1)
+        return m;
+
+      for (auto &f : edges(e->to))
+        if (alive.find(f->to) != alive.end() &&
+            forest.findParent(f->to) == e->to)
+          forest.cut(f->to), forest.set(f->to, 0);
+    }
+
+    return -1;
   };
 
+  for (auto u : targets)
+    forest.set(u, 1 << 28); // TODO: Fix 'findPathMin' to avoid this constant.
+
   for (auto u : sources) {
-    const Vertex v = search(u);
-    if (v != -1)
+    const Vertex v = dfs(u);
+    if (v != -1) {
       matches.push_back({u, v});
+
+      forest.updatePathEdges(u, -1);
+      while (forest.findRoot(u) != u) {
+        auto [value, w] = forest.findPathMin(u);
+        if (value == 0)
+          forest.cut(w), forest.set(w, 1 << 28);
+        else
+          break;
+      }
+    }
   }
 
   return matches;
 }
+
+/*
+std::vector<std::pair<Vertex, Vertex>>
+Graph::matching(const std::vector<Vertex> &subset,
+              const std::vector<Vertex> &sources,
+              const std::vector<Vertex> &targets) {
+forest.reset(subset.begin(), subset.end());
+
+using Match = std::pair<Vertex, Vertex>;
+std::vector<Match> matches;
+
+std::function<Vertex(Vertex)> search = [&](Vertex start) {
+  std::unordered_set<Vertex> visited;
+  std::function<Vertex(Vertex)> dfs = [&](Vertex u) {
+    int r = forest.findRoot(u);
+    while (true) {
+      assert(forest.findRoot(r) == r && "Must always search from root of
+path."); if (visited.find(r) != visited.end()) return -1; visited.insert(r);
+
+      if (flowIn(r) > 0 && sink[r] > 0) {
+        absorbed[r]--;
+        return r;
+      }
+
+      for (auto &e : edges(r)) {
+        if (e->flow <= 0 ||
+            visited.find(e->to) != visited.end() ||
+            forest.findRoot(e->to) == r)
+          continue;
+
+        forest.set(e->from, 0);
+        forest.link(e->from, e->to, e->flow);
+        e->flow = 0;
+
+        Vertex m = dfs(e->to);
+        if (m != -1)
+          return m;
+        else
+          forest.cut(e->from), forest.set(e->from, 0);
+      }
+
+      if (r != u) {
+        r = forest.findRootEdge(u);
+        forest.cut(r), forest.set(r, 0);
+      } else {
+        break;
+      }
+    }
+    return -1;
+  };
+
+  Vertex match = dfs(start);
+  if (match != -1) {
+    forest.updatePathEdges(start, -1);
+    while (forest.findRoot(start) != start) {
+      auto [w, u] = forest.findPathMin(start);
+      if (w == 0)
+        forest.cut(u), forest.set(u, 1<<28);
+      else
+        break;
+    }
+  }
+  return match;
+};
+
+for (auto u : targets)
+  forest.set(u, 1 << 28); // TODO: Fix 'findPathMin' to avoid this constant.
+for (auto u : sources) {
+  const Vertex v = search(u);
+  if (v != -1)
+    matches.push_back({u, v});
+}
+
+return matches;
+}
+*/
 } // namespace UnitFlow

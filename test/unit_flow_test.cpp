@@ -147,7 +147,7 @@ TEST(UnitFlow, CanMatchSimple) {
   uf.addSink(1, 5);
   uf.addEdge(0, 1, 5);
   uf.compute(10);
-  auto matches = uf.matching({0});
+  auto matches = uf.matching({0, 1}, {0}, {1});
   EXPECT_EQ(matches, (std::vector<std::pair<int, int>>{{0, 1}}));
 }
 
@@ -157,7 +157,7 @@ TEST(UnitFlow, WontMatchBeforeFlowComputed) {
   uf.addSink(1, 5);
   uf.addEdge(0, 1, 5);
 
-  auto matches = uf.matching({0});
+  auto matches = uf.matching({0, 1}, {0}, {1});
   EXPECT_TRUE(matches.empty());
 }
 
@@ -193,10 +193,14 @@ TEST(UnitFlow, CanMatchMultiple) {
     ASSERT_EQ(uf.flowIn(u), 0)
         << "Did not expect a left partition vertex absorbing flow.";
 
-  std::vector<int> sources(leftN);
+  std::unordered_set<int> alive;
+  for (int i = 0; i < n; ++i)
+    alive.insert(i);
+  std::vector<int> sources(leftN), targets(rightN);
   std::iota(sources.begin(), sources.end(), 0);
+  std::iota(targets.begin(), targets.end(), 0);
 
-  auto matches = uf.matching(sources);
+  auto matches = uf.matching(alive, sources, targets);
 
   ASSERT_EQ((int)matches.size(), leftN)
       << "Expected all vertices in left partition to be matched.";
@@ -232,7 +236,7 @@ TEST(UnitFlow, CanRouteAndMatchPathGraph) {
   auto levelCut = uf.compute(INT_MAX);
   ASSERT_TRUE(levelCut.empty());
 
-  auto matches = uf.matching({0, 1});
+  auto matches = uf.matching({0, 1, 2, 3, 4, 5, 6}, {0, 1}, {5, 6});
   ASSERT_EQ((int)matches.size(), 2);
 
   std::set<int> left, right;
@@ -241,6 +245,63 @@ TEST(UnitFlow, CanRouteAndMatchPathGraph) {
 
   EXPECT_EQ(left, (std::set<int>{0, 1}));
   EXPECT_EQ(right, (std::set<int>{5, 6}));
+}
+
+/**
+   Construct and match the following graph:
+
+   s1 - t1 - s2
+      \    /
+        t2
+ */
+TEST(UnitFlow, CanRouteAndMatchDiamondGraph) {
+  UnitFlow::Graph uf(4);
+  uf.addSource(0, 10), uf.addSource(3, 10);
+  uf.addSink(1, 10), uf.addSink(2, 10);
+
+  uf.addEdge(0, 1, 2);
+  uf.addEdge(0, 2, 8);
+  uf.addEdge(1, 2, 10);
+  uf.addEdge(1, 3, 1);
+  uf.addEdge(2, 3, 10);
+
+  auto levelCut = uf.compute(INT_MAX);
+  ASSERT_TRUE(levelCut.empty());
+
+  auto matches = uf.matching({0, 1, 2, 3}, {0, 3}, {1, 2});
+  ASSERT_EQ((int)matches.size(), 2);
+}
+
+/**
+   Construct random graph with random capacities and find a matching.
+ */
+TEST(UnitFlow, CanMatchLargeGraph) {
+  for (int iteration = 0; iteration < 200; ++iteration) {
+    std::srand(iteration);
+    constexpr int n = 50, m = 1000, c = 100;
+
+    UnitFlow::Graph uf(n);
+
+    for (int i = 0; i < m; ++i) {
+      int u = rand() % n, v = rand() % n;
+      uf.addEdge(u, v, rand() % c);
+    }
+
+    std::unordered_set<int> alive;
+    for (int i = 0; i < n; ++i)
+      alive.insert(i);
+    std::vector<int>
+      sources = {0, 1, 2, 3, 4},
+      targets = {n - 5, n - 4, n - 3, n - 2, n - 1};
+
+    for (int u : sources)
+      uf.addSource(u, 10);
+    for (int u : targets)
+      uf.addSink(u, 10);
+
+    uf.compute(INT_MAX);
+    uf.matching(alive, sources, targets);
+  }
 }
 
 /**

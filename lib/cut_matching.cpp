@@ -148,13 +148,19 @@ Result Solver::compute() {
 
     assert(middle < (int)axSetByFlow.size() &&
            "Set of split vertices smaller than expected.");
-    std::vector<int> sourcesLeft;
+    std::vector<int> sourcesLeft, targetsLeft;
     for (int i = 0; i < middle; ++i) {
       int u = axSetByFlow[i];
       if (!isRemoved(u))
         sourcesLeft.push_back(u);
     }
-    auto matching = subdivisionFlowGraph->matching(sourcesLeft);
+    for (int i = middle; i < (int)axSetByFlow.size(); ++i) {
+      int u = axSetByFlow[i];
+      if (!isRemoved(u))
+        targetsLeft.push_back(u);
+    }
+    auto matching =
+        subdivisionFlowGraph->matching(aAndAxSet, sourcesLeft, targetsLeft);
     rounds.push_back(matching);
 
     for (auto u : removed)
