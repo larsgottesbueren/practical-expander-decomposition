@@ -60,6 +60,8 @@ void fillRandomUnitVector(std::mt19937 &gen, std::vector<double> &xs) {
   const int n = (int)xs.size();
   for (int i = 0; i < n / 2; ++i)
     xs[i] = -1;
+  for (int i = n / 2; i < n; ++i)
+    xs[i] = 1;
   if (n % 2 != 0)
     xs[0] = -2;
   std::shuffle(xs.begin(), xs.end(), gen);
