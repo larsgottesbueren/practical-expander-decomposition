@@ -275,18 +275,24 @@ struct NaiveTree {
   std::vector<int> parent;
   std::vector<int> weight;
   NaiveTree(int n) : parent(n, -1), weight(n) {}
+  int get(int u) { return weight[u]; }
+  void set(int u, int value) { weight[u] = value; }
   void link(int u, int v, int delta) {
     parent[u] = v;
     weight[u] += delta;
   }
-  void cut(int u) {
-    parent[u] = -1;
-  }
+  void cut(int u) { parent[u] = -1; }
   void updatePath(int u, int delta) {
     weight[u] += delta;
     u = parent[u];
     if (u != -1)
       updatePath(u, delta);
+  }
+  void updatePathEdges(int u, int delta) {
+    while (parent[u] != -1) {
+      weight[u] += delta;
+      u = parent[u];
+    }
   }
   std::pair<int, int> findPathMin(int u) {
     if (parent[u] == -1)
@@ -304,6 +310,11 @@ struct NaiveTree {
     else
       return findRoot(parent[u]);
   }
+  int findRootEdge(int u) {
+    while (parent[u] != -1 && parent[parent[u]] != -1)
+      u = parent[u];
+    return u;
+  }
 };
 
 /**
@@ -313,15 +324,26 @@ struct NaiveTree {
  */
 TEST(LinkCut, StressTest) {
   std::srand(0);
-  constexpr int n = 1000, queries = 500000;
+  constexpr int n = 1000, queries = 10000000;
 
   LinkCut::Forest forest(n);
   NaiveTree naive(n);
 
   for (int query = 0; query < queries; ++query) {
-    int op = rand() % 4;
-    if (op == 0) {
-      // Link or cut depending on if 'u' already has a parent.
+    int op = rand() % 8;
+
+    switch (op) {
+    case 0: { // Get
+      int u = rand() % n;
+      EXPECT_EQ(forest.get(u), naive.get(u));
+      break;
+    }
+    case 1: { // Set
+      int u = rand() % n, v = (rand() % 1000) - 500;
+      forest.set(u, v), naive.set(u, v);
+      break;
+    }
+    case 2: { // Link or cut depending on if 'u' already has a parent.
       int u = rand() % n;
       int v;
       do
@@ -338,20 +360,41 @@ TEST(LinkCut, StressTest) {
         forest.cut(u);
         naive.cut(u);
       }
-    } else if (op == 1) {
-      // Find path minimum from 'u'.
-      int u = rand() % n;
-      EXPECT_EQ(forest.findPathMin(u), naive.findPathMin(u));
-    } else if (op == 2) {
-      // Find root of vertex 'u'.
+      break;
+    }
+    case 3: { // Find root
       int u = rand() % n;
       EXPECT_EQ(forest.findRoot(u), naive.findRoot(u));
-    } else {
-      // Add a delta to the 'u' to root path.
+      break;
+    }
+    case 4: { // Find edge root
+      int u = rand() % n;
+      if (naive.parent[u] != -1)
+        EXPECT_EQ(forest.findRootEdge(u), naive.findRootEdge(u));
+      break;
+    }
+    case 5: { // Find path min
+      int u = rand() % n;
+      EXPECT_EQ(forest.findPathMin(u), naive.findPathMin(u));
+      break;
+    }
+    case 6: { // Update path
       int u = rand() % n;
       int w = (rand() % (1 << 10)) - (1 << 9);
-      forest.updatePath(u, w);
-      naive.updatePath(u, w);
+      forest.updatePath(u, w), naive.updatePath(u, w);
+      break;
+    }
+    case 7: { // Update path edges
+      int u = rand() % n;
+      if (naive.parent[u] != -1) {
+        int w = (rand() % (1 << 10)) - (1 << 9);
+        forest.updatePath(u, w), naive.updatePath(u, w);
+      }
+      break;
+    }
+    default: {
+      assert(false && "Default not implemented.");
+    }
     }
   }
 }

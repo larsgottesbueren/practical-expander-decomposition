@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ostream>
 #include <vector>
 
 #include "splay_tree.hpp"
@@ -36,6 +37,16 @@ public:
   Forest(int n);
 
   /**
+     Return the weight of a vertex.
+   */
+  int get(Vertex u);
+
+  /**
+     Set a weight of a vertex.
+   */
+  void set(Vertex u, int value);
+
+  /**
      Add a directed edge '(u,v)' with a certain weight. This makes 'v' the
      parent of 'u' in the rooted forest.
 
@@ -44,9 +55,8 @@ public:
   void link(Vertex u, Vertex v, int weight);
 
   /**
-     Cut the edge '(u,p(u))' where 'p(u)' is the parent of 'u'. Returns 'p(u)'.
-
-     Precondition: 'p(u)' must exist.
+     Cut the edge '(u,p(u))' where 'p(u)' is the parent of 'u'. Returns 'p(u)'
+     or -1 if no parent exists.
    */
   Vertex cut(Vertex u);
 
@@ -62,6 +72,21 @@ public:
   Vertex findRoot(Vertex u);
 
   /**
+     Return parent of vertex or -1 if no such parent exists.
+   */
+  Vertex findParent(Vertex u);
+
+  /**
+     Find the edge in a path which points to the root.
+
+     Example: With the following directed path 'findRootEdge(a)' should result
+       in vertex 'd' since edges are represented by their tail.
+
+       a -> b -> c -> d -> root
+   */
+  Vertex findRootEdge(Vertex u);
+
+  /**
      Find minimum value along path from 'u' to root. Return pair
      '(val,vertex)'. If several vertices have the same minimum value, the vertex
      closest to the root is returned.
@@ -72,5 +97,42 @@ public:
      Add an integer value to all vertices on the path from 'u' to the root.
    */
   void updatePath(Vertex u, int delta);
+
+  /**
+     Add an integer value to all ledges along a path from 'u' to the root.
+   */
+  void updatePathEdges(Vertex u, int delta);
+
+  /**
+     Iterate over subset of vertices and clear all parent and child pointers as
+     well as setting weights to 0.
+   */
+  template <typename It> void reset(It begin, It end) {
+    for (auto it = begin; it != end; ++it)
+      vertices[*it].reset();
+  }
+
+  /**
+     Print available information to the output stream without modifying the
+     datastructure.
+   */
+  friend std::ostream &operator<<(std::ostream &os, const Forest &f) {
+    int n = (int)f.vertices.size();
+    os << "Link-cut forest of size " << n << ":" << std::endl;
+
+    for (int i = 0; i < n; ++i) {
+      const auto &v = f.vertices[i];
+      os << i << std::endl;
+      if (v.parent)
+        os << "\tParent: " << v.parent->id << std::endl;
+      if (v.pathparent)
+        os << "\tPath parent: " << v.pathparent->id << std::endl;
+      if (v.left)
+        os << "\tLeft: " << v.left->id << std::endl;
+      if (v.right)
+        os << "\tRight: " << v.right->id << std::endl;
+    }
+    return os;
+  }
 };
 }; // namespace LinkCut

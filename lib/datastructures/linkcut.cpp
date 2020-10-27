@@ -1,6 +1,7 @@
 #include "linkcut.hpp"
 
 #include <algorithm>
+#include <iostream>
 #include <limits>
 
 namespace LinkCut {
@@ -43,7 +44,30 @@ void Forest::access(Vertex vertex) {
   }
 }
 
+int Forest::get(Vertex u) {
+  access(u);
+  return vertices[u].deltaW;
+}
+
+void Forest::set(Vertex vertex, int value) {
+  access(vertex);
+  SplayTree::Vertex *u = &vertices[vertex];
+
+  if (u->left)
+    u->left->deltaW += u->deltaW - value;
+  if (u->right)
+    u->right->deltaW += u->deltaW - value;
+  u->deltaW = value;
+  u->updateDeltaMin();
+}
+
 void Forest::link(Vertex from, Vertex to, int weight) {
+#ifdef DEBUG
+  if (connected(from, to)) {
+    std::cout << *this;
+    assert(false && "Attempting to link already connected vertices");
+  }
+#endif
   access(from);
   access(to);
 
@@ -66,6 +90,9 @@ Vertex Forest::cut(Vertex vertex) {
   SplayTree::Vertex *u = &vertices[vertex];
   SplayTree::Vertex *v = u->left;
 
+  if (!v)
+    return -1;
+
   v->parent = nullptr;
   u->left = nullptr;
 
@@ -87,6 +114,30 @@ Vertex Forest::findRoot(Vertex vertex) {
     u = u->left;
   access(u->id);
   return u->id;
+}
+
+Vertex Forest::findRootEdge(Vertex vertex) {
+  access(vertex);
+
+  SplayTree::Vertex *u = &vertices[vertex];
+  assert(u->left && "'findRootEdge' is undefined for root vertex");
+
+  while (u->left && u->left->left)
+    u = u->left;
+  if (u->left->right) {
+    u = u->left->right;
+    while (u->left)
+      u = u->left;
+  }
+
+  access(u->id);
+  return u->id;
+}
+
+Vertex Forest::findParent(Vertex vertex) {
+  access(vertex);
+  SplayTree::Vertex *u = &vertices[vertex];
+  return u->left ? u->left->id : -1;
 }
 
 std::pair<int, Vertex> Forest::findPathMin(Vertex vertex) {
@@ -147,4 +198,14 @@ void Forest::updatePath(Vertex vertex, int delta) {
   u->updateDeltaMin();
 }
 
+void Forest::updatePathEdges(Vertex vertex, int delta) {
+  access(vertex);
+  SplayTree::Vertex *u = &vertices[vertex];
+  u->deltaW += delta;
+  while (u->left)
+    u = u->left;
+  u->deltaW -= delta;
+  while (u->parent)
+    u->parent->updateDeltaMin(), u = u->parent;
+}
 } // namespace LinkCut

@@ -75,4 +75,9 @@ void Vertex::updateDeltaMin() {
   deltaMin = std::min({0, l, r});
 }
 
+void Vertex::reset() {
+  left = nullptr, right = nullptr, parent = nullptr, pathparent = nullptr;
+  deltaW = 0, deltaMin = 0;
+}
+
 } // namespace SplayTree

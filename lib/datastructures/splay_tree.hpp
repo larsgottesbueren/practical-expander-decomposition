@@ -60,5 +60,11 @@ Path parent. This is the parent in the represented tree of the left-most
      maintain the 'deltaMin' invariant.
    */
   void updateDeltaMin();
+
+  /**
+     Clear all pointers and set weights to 0. This might result in neighboring
+     vertices having broken invariants.
+   */
+  void reset();
 };
 } // namespace SplayTree
