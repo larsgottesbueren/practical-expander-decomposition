@@ -98,4 +98,11 @@ std::vector<std::vector<int>> Solver::getPartition() const {
   return result;
 }
 
+int Solver::getEdgesCut() const {
+  int count = 0;
+  for (int u = 0; u < flowGraph->size(); ++u)
+    count += flowGraph->globalDegree(u) - flowGraph->degree(u);
+  return count / 2;
+}
+
 } // namespace ExpanderDecomposition

@@ -69,6 +69,9 @@ int main(int argc, char *argv[]) {
 
   ExpanderDecomposition::Solver solver(move(g), phi);
   auto partitions = solver.getPartition();
+
+  cout << "Edges cut: " << solver.getEdgesCut() << endl;
+
   for (const auto &p : partitions)
     cout << p.size() << " ";
   cout << endl;

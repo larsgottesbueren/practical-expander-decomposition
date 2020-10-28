@@ -47,5 +47,11 @@ public:
      Return the computed partition as a vector of disjoint vertex vectors.
    */
   std::vector<std::vector<int>> getPartition() const;
+
+  /**
+     Return the number of edges which are cut. An edge is cut if it's two
+     endpoints are in separate partitions.
+   */
+  int getEdgesCut() const;
 };
 } // namespace ExpanderDecomposition
