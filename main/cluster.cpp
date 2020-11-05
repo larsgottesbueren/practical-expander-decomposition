@@ -16,6 +16,8 @@ int main(int argc, char *argv[]) {
 
   DLOG(INFO) << "Waiting for input";
 
+  //  srand(time(NULL));
+
   int n;
   cin >> n;
   string graphType;
@@ -38,18 +40,18 @@ int main(int argc, char *argv[]) {
 
     for (int i = 0; i < leftN; ++i)
       for (int j = i + 1; j < leftN; ++j)
-        if (rand() % 100 < 50)
-          g->addEdge(i, j);
+        //        if (rand() % 100 < 50)
+        g->addEdge(i, j);
     for (int i = leftN; i < n; ++i)
       for (int j = i + 1; j < n; ++j)
-        if (rand() % 100 < 50)
-          g->addEdge(i, j);
+        //        if (rand() % 100 < 50)
+        g->addEdge(i, j);
 
     g->addEdge(0, leftN);
-    g->addEdge(1, leftN + 1);
-    g->addEdge(2, leftN + 2);
-    g->addEdge(3, leftN + 3);
-    g->addEdge(4, leftN + 4);
+    //    g->addEdge(1, leftN + 1);
+    //    g->addEdge(2, leftN + 2);
+    //    g->addEdge(3, leftN + 3);
+    //    g->addEdge(4, leftN + 4);
   } else if (graphType == "path") {
     for (int i = 0; i < n - 1; ++i)
       g->addEdge(i, i + 1);

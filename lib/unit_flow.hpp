@@ -126,8 +126,8 @@ public:
 
   /**
      Compute max flow with push relabel and max height h. Return those vertices
-     part of a level cut (height[u] >= h). If an empty vector is returned then
-     all flow was possible to route.
+     with excess flow left over. If an empty vector is returned then all flow
+     was possible to route.
 
      Extra log factor compared to paper due to use of priority queue.
    */
@@ -139,6 +139,14 @@ public:
    */
   std::vector<Vertex> compute(const int maxHeight,
                               const std::unordered_set<Vertex> &alive);
+
+  /**
+     Compute a level cut. See Saranurak and Wang A.1.
+
+     Precondition: A flow has been computed.
+   */
+  std::vector<Vertex> levelCut(const int maxHeight,
+                               const std::unordered_set<Vertex> &alive);
 
   /**
      Set all flow, sinks and source capacities to 0.

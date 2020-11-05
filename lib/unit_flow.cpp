@@ -36,7 +36,7 @@ std::vector<Vertex> Graph::compute(const int maxHeight,
   std::priority_queue<QPair, std::vector<QPair>, std::greater<QPair>> q;
 
   // TODO: Is '2*alive.size()' correct?
-  const int maxH = std::min(maxHeight, 2 * (int)alive.size() + 1);
+  const int maxH = std::min(maxHeight, (int)alive.size() * 2 + 1);
 
   for (auto u : alive)
     if (excess(u) > 0)
@@ -83,12 +83,42 @@ std::vector<Vertex> Graph::compute(const int maxHeight,
     }
   }
 
-  std::vector<UnitFlow::Vertex> levelCut;
+  std::vector<UnitFlow::Vertex> hasExcess;
   for (auto u : alive)
     if (excess(u) > 0)
-      levelCut.push_back(u);
+      hasExcess.push_back(u);
 
-  return levelCut;
+  return hasExcess;
+}
+
+std::vector<Vertex> Graph::levelCut(const int maxHeight,
+                                    const std::unordered_set<Vertex> &alive) {
+  const int h = maxHeight;
+  int m = 0;
+  for (auto u : alive)
+    m += degree(u);
+  m /= 2;
+
+  std::vector<std::vector<Vertex>> levels(h + 1);
+  for (auto u : alive)
+    levels[height[u]].push_back(u);
+
+  std::vector<Vertex> result;
+  int volume = 0;
+  for (int level = maxHeight; level >= 0; --level) {
+    int z = 0;
+    for (auto u : levels[level]) {
+      volume += degree(u);
+      result.push_back(u);
+      for (const auto &e : edges(u))
+        if (alive.find(e->to) != alive.end() && height[u] == height[e->to] + 1)
+          z++;
+    }
+    if ((double)z <= 5.0 * volume * std::log(m) / (double)h)
+      break;
+  }
+
+  return result;
 }
 
 void Graph::reset() {

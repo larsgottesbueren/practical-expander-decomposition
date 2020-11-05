@@ -34,6 +34,7 @@ private:
   const std::vector<int> subset;
 
   const double phi;
+  const double T;
 
   std::mt19937 randomGen;
 

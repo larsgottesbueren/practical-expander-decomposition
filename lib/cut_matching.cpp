@@ -14,16 +14,15 @@ namespace CutMatching {
 Solver::Solver(const UnitFlow::Graph *g, UnitFlow::Graph *subdivisionFlowGraph,
                const std::vector<int> &subset, const double phi)
     : graph(g), subdivisionFlowGraph(subdivisionFlowGraph), subset(subset),
-      phi(phi) {
+      phi(phi), T(100 + std::ceil(std::log(graph->edgeCount()) *
+                                  std::log(graph->edgeCount()))) {
   assert(!subset.empty() && "Cut-matching expected non-empty subset.");
 
   std::random_device rd;
   randomGen = std::mt19937(0);
   //  randomGen = std::mt19937(rd());
 
-  const int splitNodes = graph->edgeCount();
-  const UnitFlow::Flow capacity =
-      std::round(1.0 / phi / std::log(splitNodes) / std::log(splitNodes));
+  const UnitFlow::Flow capacity = std::ceil(1.0 / phi / T);
   for (const auto u : subset)
     for (auto &e : subdivisionFlowGraph->edges(u))
       e->capacity = capacity, e->reverse->capacity = capacity;
@@ -88,6 +87,18 @@ std::vector<double> randomUnitVector(std::mt19937 &gen, int n) {
   return xs;
 }
 
+template <typename It>
+double potential(const double avgFlow, const std::vector<double> &flow,
+                 const std::unordered_map<int, int> &fromSplitNode, It begin,
+                 It end) {
+  double p = 0;
+  for (auto it = begin; it != end; it++) {
+    double f = flow[fromSplitNode.at(*it)];
+    p += (f - avgFlow) * (f - avgFlow);
+  }
+  return p;
+}
+
 Result Solver::compute() {
   std::vector<Matching> rounds;
 
@@ -101,8 +112,6 @@ Result Solver::compute() {
       }
 
   const int numSplitNodes = splitNodeSet.size();
-  const double T =
-      1 + 0.9 * std::ceil(std::log(numSplitNodes) * std::log(numSplitNodes));
 
   if (numSplitNodes <= 1) {
     Result result;
@@ -126,84 +135,130 @@ Result Solver::compute() {
   int iterations = 1;
   for (; iterations <= T &&
          subdivisionFlowGraph->globalVolume(rSet.begin(), rSet.end()) <=
-             100 + numSplitNodes / 10.0 / T;
+             numSplitNodes / (10 * T);
        ++iterations) {
+    VLOG(3) << "Iteration " << iterations << " out of " << T << ".";
 
-    std::vector<double> r = randomUnitVector(randomGen, numSplitNodes);
-    const auto flow = projectFlow(rounds, fromSplitNode, r);
-    // double avgFlow = std::accumulate(flow.begin(), flow.end(), 0) /
-    // flow.size();
-    std::vector<int> axSetByFlow(axSet.begin(), axSet.end());
-    std::sort(axSetByFlow.begin(), axSetByFlow.end(),
-              [&flow, &fromSplitNode](int u, int v) {
-                return flow[fromSplitNode[u]] < flow[fromSplitNode[v]];
-              });
-    const int middle = axSetByFlow.size() / 2;
-    // const double eta = flow[fromSplitNode[axSetByFlow[middle]]];
+    const auto flow = projectFlow(rounds, fromSplitNode,
+                                  randomUnitVector(randomGen, numSplitNodes));
+    double avgFlow =
+        std::accumulate(flow.begin(), flow.end(), 0.0) / (double)flow.size();
+
+    std::vector<int> axLeft, axRight;
+    for (auto u : axSet) {
+      if (flow[fromSplitNode[u]] < avgFlow)
+        axLeft.push_back(u);
+      else
+        axRight.push_back(u);
+    }
+    //    assert(axLeft.size() <= axRight.size() && "Left set should not be
+    //    larger than right.");
+    //    if (axLeft.size() > axRight.size())
+    //  swap(axLeft, axRight);
+    double pAll = potential(avgFlow, flow, fromSplitNode, axSet.begin(),
+                            axSet.end()),
+           pLeft = potential(avgFlow, flow, fromSplitNode, axLeft.begin(),
+                             axLeft.end());
+
+    if (pLeft >= pAll / 20.0) {
+      sort(axLeft.begin(), axLeft.end(), [&flow, &fromSplitNode](int u, int v) {
+        return flow[fromSplitNode[u]] < flow[fromSplitNode[v]];
+      });
+      while (8 * axLeft.size() > axSet.size())
+        axLeft.pop_back();
+    } else {
+      double leftL = 0;
+      for (auto u : axLeft)
+        leftL += std::abs(flow[fromSplitNode[u]] - avgFlow);
+      double rightL = 0;
+      for (auto u : axRight)
+        rightL += std::abs(flow[fromSplitNode[u]] - avgFlow);
+      assert(std::abs(leftL - rightL) < 1e-9 &&
+             "Left and right sums should be equal.");
+      const double l = leftL;
+      const double mu = avgFlow + 4.0 * l / axSet.size();
+
+      axRight.clear();
+      for (auto u : axSet)
+        if (flow[fromSplitNode[u]] <= mu)
+          axRight.push_back(u);
+
+      axLeft.clear();
+      for (auto u : axSet)
+        if (flow[fromSplitNode[u]] >= avgFlow + 6.0 * l / axSet.size())
+          axLeft.push_back(u);
+      sort(axLeft.begin(), axLeft.end(), [&flow, &fromSplitNode](int u, int v) {
+        return flow[fromSplitNode[u]] > flow[fromSplitNode[v]];
+      });
+      while (8 * axLeft.size() > axSet.size())
+        axLeft.pop_back();
+    }
 
     subdivisionFlowGraph->reset(aAndAxSet.begin(), aAndAxSet.end());
-    for (int i = 0; i < (int)axSetByFlow.size(); ++i)
-      if (i < middle)
-        subdivisionFlowGraph->addSource(axSetByFlow[i], 1);
-      else
-        subdivisionFlowGraph->addSink(axSetByFlow[i], 1);
 
+    for (const auto u : axLeft)
+      subdivisionFlowGraph->addSource(u, 1);
+    for (const auto u : axRight)
+      subdivisionFlowGraph->addSink(u, 1);
+
+    VLOG(3) << "Computing flow with |S| = " << axLeft.size()
+            << " |T| = " << axRight.size() << ".";
     const int h = (int)ceil(1.0 / phi / std::log(numSplitNodes));
-    const auto levelCut = subdivisionFlowGraph->compute(h, aAndAxSet);
+    const auto hasExcess = subdivisionFlowGraph->compute(h, aAndAxSet);
 
     std::unordered_set<int> removed;
-    for (auto u : levelCut)
-      removed.insert(u);
-    auto isRemoved = [&removed](int u) {
-      return removed.find(u) != removed.end();
-    };
+    if (hasExcess.empty()) {
+      VLOG(3) << "\tAll flow routed.";
+    } else {
+      VLOG(3) << "\tHas " << hasExcess.size()
+              << " vertices with excess. Computing level cut.";
+      const auto levelCut = subdivisionFlowGraph->levelCut(h, aAndAxSet);
+      VLOG(3) << "\tHas level cut with " << levelCut.size() << " vertices.";
+
+      for (auto u : levelCut)
+        removed.insert(u);
+    }
+
     for (auto u : axSet) {
       assert(subdivisionFlowGraph->degree(u) == 2 &&
              "Subdivision vertices should have degree two.");
       int count = 0;
       for (const auto &e : subdivisionFlowGraph->edges(u))
-        if (isRemoved(e->to))
+        if (removed.find(e->to) != removed.end())
           count++;
 
-      if (isRemoved(u)) {
-        if (count == 0)
-          removed.erase(u);
+      if (removed.find(u) != removed.end()) {
+        for (const auto &e : subdivisionFlowGraph->edges(u))
+          removed.insert(e->to);
+        // if (count == 0)
+        //  removed.erase(u);
       } else {
         if (count == 2)
           removed.insert(u);
       }
     }
+    VLOG(3) << "\tRemoving " << removed.size() << " vertices.";
 
-    assert(middle < (int)axSetByFlow.size() &&
-           "Set of split vertices smaller than expected.");
     std::vector<int> sourcesLeft, targetsLeft;
-    for (int i = 0; i < middle; ++i) {
-      int u = axSetByFlow[i];
-      if (!isRemoved(u))
+    for (const auto u : axLeft)
+      if (removed.find(u) == removed.end())
         sourcesLeft.push_back(u);
-    }
-    for (int i = middle; i < (int)axSetByFlow.size(); ++i) {
-      int u = axSetByFlow[i];
-      if (!isRemoved(u))
+    for (const auto u : axRight)
+      if (removed.find(u) == removed.end())
         targetsLeft.push_back(u);
-    }
-    auto matching =
-        subdivisionFlowGraph->matching(aAndAxSet, sourcesLeft, targetsLeft);
-    rounds.push_back(matching);
 
     for (auto u : removed)
       aSet.erase(u), axSet.erase(u), aAndAxSet.erase(u), rSet.insert(u);
+
+    VLOG(3) << "Computing matching with |S| = " << sourcesLeft.size()
+            << " |T| = " << targetsLeft.size() << ".";
+    auto matching =
+        subdivisionFlowGraph->matching(aAndAxSet, sourcesLeft, targetsLeft);
+    rounds.push_back(matching);
+    VLOG(3) << "Found matching of size " << matching.size() << ".";
   }
 
   Result result;
-  if (iterations <= T && !aSet.empty())
-    // We have: graph.volume(R) > m / (10 * T)
-    result.t = Balanced;
-  else if (rSet.empty())
-    result.t = Expander;
-  else
-    result.t = NearExpander;
-
   for (auto u : aSet)
     if (splitNodeSet.find(u) == splitNodeSet.end())
       result.a.push_back(u);
@@ -211,11 +266,21 @@ Result Solver::compute() {
     if (splitNodeSet.find(u) == splitNodeSet.end())
       result.r.push_back(u);
 
+  if (iterations <= T && !result.a.empty() && !result.r.empty())
+    // We have: graph.volume(R) > m / (10 * T)
+    result.t = Balanced;
+  else if (result.r.empty())
+    result.t = Expander;
+  else
+    result.t = NearExpander;
+
   switch (result.t) {
   case Balanced: {
     VLOG(2) << "Cut matching ran " << iterations
             << " iterations and resulted in balanced cut with size ("
-            << result.a.size() << ", " << result.r.size() << ").";
+            << result.a.size() << ", " << result.r.size() << ") and volume ("
+            << graph->volume(result.a.begin(), result.a.end()) << ", "
+            << graph->volume(result.r.begin(), result.r.end()) << ").";
     break;
   }
   case Expander: {
