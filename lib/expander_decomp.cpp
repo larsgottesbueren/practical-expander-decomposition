@@ -57,6 +57,8 @@ void Solver::compute(const std::vector<int> &xs, int partition) {
     break;
   }
   case CutMatching::NearExpander: {
+    assert(!result.a.empty() && "Near expander should have non-empty A.");
+    assert(!result.r.empty() && "Near expander should have non-empty R.");
     Trimming::Solver trimming(flowGraph.get(), result.a, phi, partition);
     const auto trimmingResult = trimming.compute();
     result.r.insert(result.r.end(), trimmingResult.r.begin(),
