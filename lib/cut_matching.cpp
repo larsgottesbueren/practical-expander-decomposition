@@ -229,7 +229,8 @@ Result Solver::compute() {
 
       if (removed.find(u) != removed.end()) {
         for (const auto &e : subdivisionFlowGraph->edges(u))
-          removed.insert(e->to);
+          if (aSet.find(e->to) != aSet.end())
+            removed.insert(e->to);
         // if (count == 0)
         //  removed.erase(u);
       } else {
