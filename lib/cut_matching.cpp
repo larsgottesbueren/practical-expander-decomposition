@@ -151,10 +151,11 @@ Result Solver::compute() {
       else
         axRight.push_back(u);
     }
-    //    assert(axLeft.size() <= axRight.size() && "Left set should not be
-    //    larger than right.");
-    //    if (axLeft.size() > axRight.size())
-    //  swap(axLeft, axRight);
+    // TODO: Is this what w.l.o.g in RST Lemma 3.3 refers to?
+    if (axLeft.size() > axRight.size())
+      while (axLeft.size() > axRight.size() && !axLeft.empty())
+        axRight.push_back(axLeft.back()), axLeft.pop_back();
+
     double pAll = potential(avgFlow, flow, fromSplitNode, axSet.begin(),
                             axSet.end()),
            pLeft = potential(avgFlow, flow, fromSplitNode, axLeft.begin(),
