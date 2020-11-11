@@ -202,9 +202,9 @@ Result Solver::compute() {
     for (const auto u : axRight)
       subdivisionFlowGraph->addSink(u, 1);
 
-    VLOG(3) << "Computing flow with |S| = " << axLeft.size()
-            << " |T| = " << axRight.size() << ".";
     const int h = (int)ceil(1.0 / phi / std::log(numSplitNodes));
+    VLOG(3) << "Computing flow with |S| = " << axLeft.size()
+            << " |T| = " << axRight.size() << " and max height " << h << ".";
     const auto hasExcess = subdivisionFlowGraph->compute(h, aAndAxSet);
 
     std::unordered_set<int> removed;
@@ -223,19 +223,25 @@ Result Solver::compute() {
     for (auto u : axSet) {
       assert(subdivisionFlowGraph->degree(u) == 2 &&
              "Subdivision vertices should have degree two.");
-      int count = 0;
-      for (const auto &e : subdivisionFlowGraph->edges(u))
-        if (removed.find(e->to) != removed.end())
-          count++;
+
+      bool allNeighborsRemoved = true, noNeighborsRemoved = true;
+      for (const auto &e : subdivisionFlowGraph->edges(u)) {
+        if (aSet.find(e->to) != aSet.end()) {
+          if (removed.find(e->to) == removed.end())
+            allNeighborsRemoved = false;
+          else
+            noNeighborsRemoved = false;
+        }
+      }
 
       if (removed.find(u) != removed.end()) {
         for (const auto &e : subdivisionFlowGraph->edges(u))
           if (aSet.find(e->to) != aSet.end())
             removed.insert(e->to);
-        // if (count == 0)
-        //  removed.erase(u);
+        //        if (noNeighborsRemoved)
+        //          removed.erase(u);
       } else {
-        if (count == 2)
+        if (allNeighborsRemoved)
           removed.insert(u);
       }
     }
