@@ -44,7 +44,8 @@ void Solver::compute(const std::vector<int> &xs, int partition) {
     return;
   }
 
-  CutMatching::Solver cm(flowGraph.get(), subdivisionFlowGraph.get(), xs, phi);
+  CutMatching::Solver cm(flowGraph.get(), subdivisionFlowGraph.get(), xs, phi,
+                         tConst, tFactor);
   auto result = cm.compute();
 
   switch (result.t) {
@@ -75,8 +76,10 @@ void Solver::compute(const std::vector<int> &xs, int partition) {
   }
 }
 
-Solver::Solver(std::unique_ptr<Undirected::Graph> graph, const double phi)
-    : flowGraph(nullptr), subdivisionFlowGraph(nullptr), phi(phi) {
+Solver::Solver(std::unique_ptr<Undirected::Graph> graph, const double phi,
+               const int tConst, const double tFactor)
+    : flowGraph(nullptr), subdivisionFlowGraph(nullptr), phi(phi),
+      tConst(tConst), tFactor(tFactor) {
   flowGraph = constructFlowGraph(graph);
   subdivisionFlowGraph = constructSubdivisionFlowGraph(graph);
 

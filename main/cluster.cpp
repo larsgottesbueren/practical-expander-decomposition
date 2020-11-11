@@ -67,9 +67,11 @@ int main(int argc, char *argv[]) {
   }
 
   double phi;
-  cin >> phi;
+  int tConst;
+  int tFactor;
+  cin >> phi >> tConst >> tFactor;
 
-  ExpanderDecomposition::Solver solver(move(g), phi);
+  ExpanderDecomposition::Solver solver(move(g), phi, tConst, tFactor);
   auto partitions = solver.getPartition();
 
   cout << "Edges cut: " << solver.getEdgesCut() << endl;

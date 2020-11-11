@@ -45,7 +45,8 @@ public:
      Precondition: graph should not contain loops.
    */
   Solver(const UnitFlow::Graph *g, UnitFlow::Graph *subdivisionFlowGraph,
-         const std::vector<int> &subset, const double phi);
+         const std::vector<int> &subset, const double phi, const int tConst,
+         const double tFactor);
 
   Result compute();
 };

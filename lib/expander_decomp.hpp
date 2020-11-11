@@ -31,6 +31,16 @@ private:
    */
   std::unique_ptr<UnitFlow::Graph> flowGraph, subdivisionFlowGraph;
   const double phi;
+  /**
+      In Sanurak and Wang, the parameter 'T' is bounded by '\Theta(\log^2 m)'.
+      This is a constant factor which is added.
+   */
+  const int tConst;
+  /**
+      In Sanurak and Wang, the parameter 'T' is bounded by '\Theta(\log^2 m)'.
+      This is a constant factor such that 'T = tConst + tFactor (\log^2 m)'.
+   */
+  const double tFactor;
 
   /**
      Compute expander decomposition for subset of vertices 'xs'.
@@ -41,7 +51,8 @@ public:
   /**
      Create a decomposition problem with n vertices.
    */
-  Solver(std::unique_ptr<Undirected::Graph> g, const double phi);
+  Solver(std::unique_ptr<Undirected::Graph> g, const double phi,
+         const int tConst, const double tFactor);
 
   /**
      Return the computed partition as a vector of disjoint vertex vectors.

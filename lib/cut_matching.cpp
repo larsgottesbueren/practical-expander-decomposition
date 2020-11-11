@@ -12,15 +12,16 @@
 namespace CutMatching {
 
 Solver::Solver(const UnitFlow::Graph *g, UnitFlow::Graph *subdivisionFlowGraph,
-               const std::vector<int> &subset, const double phi)
+               const std::vector<int> &subset, const double phi,
+               const int tConst, const double tFactor)
     : graph(g), subdivisionFlowGraph(subdivisionFlowGraph), subset(subset),
-      phi(phi), T(100 + std::ceil(std::log(graph->edgeCount()) *
-                                  std::log(graph->edgeCount()))) {
+      phi(phi), T(tConst + std::ceil(tFactor * std::log(graph->edgeCount()) *
+                                     std::log(graph->edgeCount()))) {
   assert(!subset.empty() && "Cut-matching expected non-empty subset.");
 
   std::random_device rd;
-  randomGen = std::mt19937(0);
-  //  randomGen = std::mt19937(rd());
+  // randomGen = std::mt19937(0);
+  randomGen = std::mt19937(rd());
 
   const UnitFlow::Flow capacity = std::ceil(1.0 / phi / T);
   for (const auto u : subset)
