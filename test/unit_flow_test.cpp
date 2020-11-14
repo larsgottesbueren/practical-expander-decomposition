@@ -273,6 +273,51 @@ TEST(UnitFlow, CanRouteAndMatchDiamondGraph) {
 }
 
 /**
+   Can route flow from left to right hand side of a k-layered bipartite graph
+   and then find a matching for all source vertices.
+ */
+TEST(UnitFlow, CanRouteAndMatchKBipartite) {
+  constexpr int layerSize = 100, k = 100;
+  constexpr int n = layerSize * k;
+
+  UnitFlow::Graph uf(n);
+
+  for (int l = 0; l < k-1; ++l) {
+    for (int i = 0; i < layerSize; ++i) {
+      for (int j = 0; j < layerSize; ++j) {
+        int u = l * layerSize + i, v = (l + 1) * layerSize + j;
+        uf.addEdge(u, v, 1);
+      }
+    }
+  }
+
+  std::unordered_set<int> alive;
+  for (int l = 0; l < k; ++l)
+    for (int i = 0; i < layerSize; ++i)
+      alive.insert(l * layerSize + i);
+
+  std::vector<int> sources, targets;
+  for (int i = 0; i < layerSize; ++i) {
+    int s = i, t = (k-1) * layerSize + i;
+
+    uf.addSource(s, 1), sources.push_back(s);
+    uf.addSink(t, 1), targets.push_back(t);
+  }
+
+  auto hasExcess = uf.compute(INT_MAX);
+  ASSERT_TRUE(hasExcess.empty());
+
+  auto matches = uf.matching(alive, sources, targets);
+  ASSERT_EQ((int)matches.size(), layerSize);
+  for (auto [u,v] : matches) {
+    ASSERT_GE(u, 0);
+    ASSERT_LT(u, layerSize);
+    ASSERT_GE(v, (k-1) * layerSize);
+    ASSERT_LT(v, n);
+  }
+}
+
+/**
    Construct random graph with random capacities and find a matching.
  */
 TEST(UnitFlow, CanMatchLargeGraph) {
