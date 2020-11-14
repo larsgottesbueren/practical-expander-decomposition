@@ -8,3 +8,12 @@ cc_binary(
     "@com_google_glog//:glog",
   ]
 )
+
+cc_binary(
+  name = "sparse-cut",
+  srcs = ["cut.cpp"],
+  deps = [
+    "//lib:cluster_util",
+    "@com_google_glog//:glog",
+  ]
+)
