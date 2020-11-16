@@ -12,23 +12,28 @@
 
 using namespace std;
 
+DEFINE_double(phi, 0.0001, "Value of \\phi such that expansion of each cluster is at least \\phi");
+DEFINE_int32(t1, 100, "Constant 't1' in 'T = t1 + t2 \\log^2 m'");
+DEFINE_double(t2, 1.0, "Constant 't2' in 'T = t1 + t2 \\log^2 m'");
+DEFINE_bool(one_indexed, false, "Vertices are 1-indexed instead of 0-indexed.");
+
 int main(int argc, char *argv[]) {
   google::InitGoogleLogging(argv[0]);
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-  double phi;
-  int tConst;
-  double tFactor;
   int n, m;
-  cin >> phi >> tConst >> tFactor >> n >> m;
+  cin >> n >> m;
   auto g = make_unique<Undirected::Graph>(n);
   for (int i = 0; i < m; ++i) {
     int u, v;
     cin >> u >> v;
-    g->addEdge(u, v);
+    if (FLAGS_one_indexed)
+      u--, v--;
+    if (u < v)
+      g->addEdge(u, v);
   }
 
-  ExpanderDecomposition::Solver solver(move(g), phi, tConst, tFactor);
+  ExpanderDecomposition::Solver solver(move(g), FLAGS_phi, FLAGS_t1, FLAGS_t2);
   auto partitions = solver.getPartition();
 
   cout << solver.getEdgesCut() << " " << partitions.size() << endl;

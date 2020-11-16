@@ -6,12 +6,9 @@
 
 import multiprocessing as mp
 import subprocess
+from math import log
 
 executable = '/Users/isaac/kth/thesis/code/bazel-bin/main/expander-decomp'
-
-phi = 0.0001
-tConst = 10
-tFactor = 1.5
 
 compSize = 50
 comps = 10
@@ -29,7 +26,13 @@ for comp in range(comps):
             g[u].append(v)
             m += 1
 
-problemInput = '{} {} {} {} {}'.format(phi, tConst, tFactor, n, m)
+for c in range(comps-1):
+    u = c * compSize
+    v = (c + 1) * compSize + 1
+    g[u].append(v)
+    m += 1
+
+problemInput = '{} {}'.format(n, m)
 for u,vs in g.items():
     for v in vs:
         problemInput += '\n{} {}'.format(u, v)
