@@ -1,7 +1,7 @@
 #include <glog/logging.h>
 #include <glog/stl_logging.h>
-#include <unordered_set>
 
+#include "absl/container/flat_hash_set.h"
 #include "trimming.hpp"
 
 namespace Trimming {
@@ -19,7 +19,7 @@ Result Solver::compute() {
   VLOG(1) << "Trimming partition " << partition << " which has "
           << subset.size() << " vertices.";
 
-  std::unordered_set<int> aSet(subset.begin(), subset.end()), rSet;
+  absl::flat_hash_set<int> aSet(subset.begin(), subset.end()), rSet;
   flowGraph->reset(subset.begin(), subset.end());
 
   for (const auto &u : aSet) {

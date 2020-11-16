@@ -24,14 +24,14 @@ bool Graph::addEdge(Vertex u, Vertex v, Flow capacity) {
 }
 
 std::vector<Vertex> Graph::compute(const int maxHeight) {
-  std::unordered_set<int> vertices;
+  absl::flat_hash_set<int> vertices;
   for (UnitFlow::Vertex u = 0; u < size(); ++u)
     vertices.insert(u);
   return compute(maxHeight, vertices);
 }
 
 std::vector<Vertex> Graph::compute(const int maxHeight,
-                                   const std::unordered_set<Vertex> &alive) {
+                                   const absl::flat_hash_set<Vertex> &alive) {
   typedef std::pair<Flow, Vertex> QPair;
   std::priority_queue<QPair, std::vector<QPair>, std::greater<QPair>> q;
 
@@ -92,7 +92,7 @@ std::vector<Vertex> Graph::compute(const int maxHeight,
 }
 
 std::vector<Vertex> Graph::levelCut(const int maxHeight,
-                                    const std::unordered_set<Vertex> &alive) {
+                                    const absl::flat_hash_set<Vertex> &alive) {
   const int h = maxHeight;
   int m = 0;
   for (auto u : alive)
@@ -133,7 +133,7 @@ void Graph::reset() {
 }
 
 std::vector<std::pair<Vertex, Vertex>>
-Graph::matching(const std::unordered_set<Vertex> &alive,
+Graph::matching(const absl::flat_hash_set<Vertex> &alive,
                 const std::vector<Vertex> &sources,
                 const std::vector<Vertex> &targets) {
   forest.reset(alive.begin(), alive.end());
@@ -142,7 +142,7 @@ Graph::matching(const std::unordered_set<Vertex> &alive,
   std::vector<Match> matches;
 
   auto search = [&](Vertex start) {
-    std::unordered_set<Vertex> visited;
+    absl::flat_hash_set<Vertex> visited;
     std::vector<Edge *> path;
 
     std::function<Vertex(Vertex)> dfs = [&](Vertex u) {

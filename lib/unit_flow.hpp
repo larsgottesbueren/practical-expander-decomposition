@@ -3,10 +3,9 @@
 #include <algorithm>
 #include <list>
 #include <queue>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
+#include "absl/container/flat_hash_set.h"
 #include "datastructures/linkcut.hpp"
 #include "partition_graph.hpp"
 
@@ -138,7 +137,7 @@ public:
      vertices in 'alive'.
    */
   std::vector<Vertex> compute(const int maxHeight,
-                              const std::unordered_set<Vertex> &alive);
+                              const absl::flat_hash_set<Vertex> &alive);
 
   /**
      Compute a level cut. See Saranurak and Wang A.1.
@@ -146,7 +145,7 @@ public:
      Precondition: A flow has been computed.
    */
   std::vector<Vertex> levelCut(const int maxHeight,
-                               const std::unordered_set<Vertex> &alive);
+                               const absl::flat_hash_set<Vertex> &alive);
 
   /**
      Set all flow, sinks and source capacities to 0.
@@ -176,7 +175,7 @@ public:
      Method will mutate the flow such that it is no longer legal.
    */
   std::vector<std::pair<Vertex, Vertex>>
-  matching(const std::unordered_set<Vertex> &alive,
+  matching(const absl::flat_hash_set<Vertex> &alive,
            const std::vector<Vertex> &sources,
            const std::vector<Vertex> &targets);
 };

@@ -4,8 +4,8 @@
 #include <glog/stl_logging.h>
 #include <numeric>
 #include <random>
-#include <unordered_set>
 
+#include "absl/container/flat_hash_set.h"
 #include "cut_matching.hpp"
 #include "unit_flow.hpp"
 
@@ -40,7 +40,7 @@ Solver::Solver(const UnitFlow::Graph *g, UnitFlow::Graph *subdivisionFlowGraph,
 using Matching = std::vector<std::pair<int, int>>;
 std::vector<double>
 projectFlow(const std::vector<Matching> &rounds,
-            const std::unordered_map<int, int> &fromSplitNode,
+            const absl::flat_hash_map<int, int> &fromSplitNode,
             std::vector<double> start) {
   for (auto it = rounds.begin(); it != rounds.end(); ++it) {
     for (const auto &[u, v] : *it) {
@@ -90,7 +90,7 @@ std::vector<double> randomUnitVector(std::mt19937 &gen, int n) {
 
 template <typename It>
 double potential(const double avgFlow, const std::vector<double> &flow,
-                 const std::unordered_map<int, int> &fromSplitNode, It begin,
+                 const absl::flat_hash_map<int, int> &fromSplitNode, It begin,
                  It end) {
   double p = 0;
   for (auto it = begin; it != end; it++) {
@@ -104,7 +104,7 @@ Result Solver::compute() {
   std::vector<Matching> rounds;
 
   std::vector<int> splitNodes;
-  std::unordered_set<int> splitNodeSet;
+  absl::flat_hash_set<int> splitNodeSet;
   for (const auto u : subset)
     for (const auto &e : subdivisionFlowGraph->edges(u))
       if (splitNodeSet.find(e->to) == splitNodeSet.end()) {
@@ -122,11 +122,11 @@ Result Solver::compute() {
   }
 
   // Maintain split node indices: 'fromSplitNode[splitNodes[i]] = i'
-  std::unordered_map<int, int> fromSplitNode;
+  absl::flat_hash_map<int, int> fromSplitNode;
   for (size_t i = 0; i < splitNodes.size(); ++i)
     fromSplitNode[splitNodes[i]] = i;
 
-  std::unordered_set<int> aSet, axSet, aAndAxSet, rSet;
+  absl::flat_hash_set<int> aSet, axSet, aAndAxSet, rSet;
   for (auto u : subset) {
     aSet.insert(u), aAndAxSet.insert(u);
     for (const auto &e : subdivisionFlowGraph->edges(u))
@@ -208,7 +208,7 @@ Result Solver::compute() {
             << " |T| = " << axRight.size() << " and max height " << h << ".";
     const auto hasExcess = subdivisionFlowGraph->compute(h, aAndAxSet);
 
-    std::unordered_set<int> removed;
+    absl::flat_hash_set<int> removed;
     if (hasExcess.empty()) {
       VLOG(3) << "\tAll flow routed.";
     } else {
@@ -239,8 +239,8 @@ Result Solver::compute() {
         for (const auto &e : subdivisionFlowGraph->edges(u))
           if (aSet.find(e->to) != aSet.end())
             removed.insert(e->to);
-          // if (noNeighborsRemoved)
-          //   removed.erase(u);
+        // if (noNeighborsRemoved)
+        //   removed.erase(u);
       } else {
         if (allNeighborsRemoved)
           removed.insert(u);

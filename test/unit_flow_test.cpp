@@ -193,7 +193,7 @@ TEST(UnitFlow, CanMatchMultiple) {
     ASSERT_EQ(uf.flowIn(u), 0)
         << "Did not expect a left partition vertex absorbing flow.";
 
-  std::unordered_set<int> alive;
+  absl::flat_hash_set<int> alive;
   for (int i = 0; i < n; ++i)
     alive.insert(i);
   std::vector<int> sources(leftN), targets(rightN);
@@ -291,7 +291,7 @@ TEST(UnitFlow, CanRouteAndMatchKBipartite) {
     }
   }
 
-  std::unordered_set<int> alive;
+  absl::flat_hash_set<int> alive;
   for (int l = 0; l < k; ++l)
     for (int i = 0; i < layerSize; ++i)
       alive.insert(l * layerSize + i);
@@ -332,7 +332,7 @@ TEST(UnitFlow, CanMatchLargeGraph) {
       uf.addEdge(u, v, rand() % c);
     }
 
-    std::unordered_set<int> alive;
+    absl::flat_hash_set<int> alive;
     for (int i = 0; i < n; ++i)
       alive.insert(i);
     std::vector<int> sources = {0, 1, 2, 3, 4},

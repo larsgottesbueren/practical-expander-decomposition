@@ -1,9 +1,9 @@
 #pragma once
 
 #include <random>
-#include <unordered_map>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
 #include "ugraph.hpp"
 #include "unit_flow.hpp"
 
@@ -24,7 +24,7 @@ struct Result {
 using Matching = std::vector<std::pair<int, int>>;
 std::vector<double>
 projectFlow(const std::vector<Matching> &rounds,
-            const std::unordered_map<int, int> &fromSplitNode,
+            const absl::flat_hash_map<int, int> &fromSplitNode,
             std::vector<double> start);
 
 class Solver {
