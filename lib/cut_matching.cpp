@@ -175,8 +175,8 @@ Result Solver::compute() {
       double rightL = 0;
       for (auto u : axRight)
         rightL += std::abs(flow[fromSplitNode[u]] - avgFlow);
-//      assert(std::abs(leftL - rightL) < 1e-9 &&
-//             "Left and right sums should be equal.");
+      //      assert(std::abs(leftL - rightL) < 1e-9 &&
+      //             "Left and right sums should be equal.");
       const double l = leftL;
       const double mu = avgFlow + 4.0 * l / axSet.size();
 
@@ -239,8 +239,8 @@ Result Solver::compute() {
         for (const auto &e : subdivisionFlowGraph->edges(u))
           if (aSet.find(e->to) != aSet.end())
             removed.insert(e->to);
-        //        if (noNeighborsRemoved)
-        //          removed.erase(u);
+          // if (noNeighborsRemoved)
+          //   removed.erase(u);
       } else {
         if (allNeighborsRemoved)
           removed.insert(u);

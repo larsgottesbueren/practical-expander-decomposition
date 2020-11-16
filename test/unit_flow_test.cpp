@@ -282,7 +282,7 @@ TEST(UnitFlow, CanRouteAndMatchKBipartite) {
 
   UnitFlow::Graph uf(n);
 
-  for (int l = 0; l < k-1; ++l) {
+  for (int l = 0; l < k - 1; ++l) {
     for (int i = 0; i < layerSize; ++i) {
       for (int j = 0; j < layerSize; ++j) {
         int u = l * layerSize + i, v = (l + 1) * layerSize + j;
@@ -298,7 +298,7 @@ TEST(UnitFlow, CanRouteAndMatchKBipartite) {
 
   std::vector<int> sources, targets;
   for (int i = 0; i < layerSize; ++i) {
-    int s = i, t = (k-1) * layerSize + i;
+    int s = i, t = (k - 1) * layerSize + i;
 
     uf.addSource(s, 1), sources.push_back(s);
     uf.addSink(t, 1), targets.push_back(t);
@@ -309,10 +309,10 @@ TEST(UnitFlow, CanRouteAndMatchKBipartite) {
 
   auto matches = uf.matching(alive, sources, targets);
   ASSERT_EQ((int)matches.size(), layerSize);
-  for (auto [u,v] : matches) {
+  for (auto [u, v] : matches) {
     ASSERT_GE(u, 0);
     ASSERT_LT(u, layerSize);
-    ASSERT_GE(v, (k-1) * layerSize);
+    ASSERT_GE(v, (k - 1) * layerSize);
     ASSERT_LT(v, n);
   }
 }

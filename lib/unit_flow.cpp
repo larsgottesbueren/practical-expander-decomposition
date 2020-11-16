@@ -155,7 +155,8 @@ Graph::matching(const std::unordered_set<Vertex> &alive,
 
       for (auto &e : edges(u)) {
         int v = e->to;
-        if (e->flow <= 0 || alive.find(v) == alive.end() || visited.find(v) != visited.end())
+        if (e->flow <= 0 || alive.find(v) == alive.end() ||
+            visited.find(v) != visited.end())
           continue;
 
         path.push_back(e.get());
@@ -179,7 +180,7 @@ Graph::matching(const std::unordered_set<Vertex> &alive,
   for (auto u : sources) {
     int m = search(u);
     if (m != -1)
-      matches.push_back({u,m});
+      matches.push_back({u, m});
   }
 
   return matches;
