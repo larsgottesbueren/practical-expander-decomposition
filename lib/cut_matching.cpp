@@ -140,8 +140,8 @@ Result Solver::compute() {
        ++iterations) {
     VLOG(3) << "Iteration " << iterations << " out of " << T << ".";
 
-    const auto flow = projectFlow(rounds, fromSplitNode,
-                                  randomUnitVector(randomGen, numSplitNodes));
+    auto flow = projectFlow(rounds, fromSplitNode,
+                            randomUnitVector(randomGen, numSplitNodes));
     double avgFlow =
         std::accumulate(flow.begin(), flow.end(), 0.0) / (double)flow.size();
 
@@ -153,9 +153,18 @@ Result Solver::compute() {
         axRight.push_back(u);
     }
     // TODO: Is this what w.l.o.g in RST Lemma 3.3 refers to?
-    if (axLeft.size() > axRight.size())
-      while (axLeft.size() > axRight.size() && !axLeft.empty())
-        axRight.push_back(axLeft.back()), axLeft.pop_back();
+    if (axLeft.size() > axRight.size()) {
+      axLeft.clear(), axRight.clear();
+      for (auto &f : flow)
+        f *= -1;
+      avgFlow *= -1;
+      for (auto u : axSet) {
+        if (flow[fromSplitNode[u]] < avgFlow)
+          axLeft.push_back(u);
+        else
+          axRight.push_back(u);
+      }
+    }
 
     double pAll = potential(avgFlow, flow, fromSplitNode, axSet.begin(),
                             axSet.end()),
@@ -175,8 +184,8 @@ Result Solver::compute() {
       double rightL = 0;
       for (auto u : axRight)
         rightL += std::abs(flow[fromSplitNode[u]] - avgFlow);
-      //      assert(std::abs(leftL - rightL) < 1e-9 &&
-      //             "Left and right sums should be equal.");
+      assert(std::abs(leftL - rightL) < 1e-9 &&
+             "Left and right sums should be equal.");
       const double l = leftL;
       const double mu = avgFlow + 4.0 * l / axSet.size();
 
@@ -236,11 +245,8 @@ Result Solver::compute() {
       }
 
       if (removed.find(u) != removed.end()) {
-        for (const auto &e : subdivisionFlowGraph->edges(u))
-          if (aSet.find(e->to) != aSet.end())
-            removed.insert(e->to);
-        // if (noNeighborsRemoved)
-        //   removed.erase(u);
+        if (noNeighborsRemoved)
+          removed.erase(u);
       } else {
         if (allNeighborsRemoved)
           removed.insert(u);
