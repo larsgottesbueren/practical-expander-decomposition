@@ -13,7 +13,7 @@
 using namespace std;
 
 DEFINE_double(
-    phi, 0.0001,
+    phi, 0.01,
     "Value of \\phi such that expansion of each cluster is at least \\phi");
 DEFINE_int32(t1, 100, "Constant 't1' in 'T = t1 + t2 \\log^2 m'");
 DEFINE_double(t2, 1.0, "Constant 't2' in 'T = t1 + t2 \\log^2 m'");

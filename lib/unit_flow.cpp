@@ -103,22 +103,25 @@ std::vector<Vertex> Graph::levelCut(const int maxHeight,
   for (auto u : alive)
     levels[height[u]].push_back(u);
 
-  std::vector<Vertex> result;
+  std::vector<Vertex> curResult;
+  std::vector<Vertex> bestResult;
   int volume = 0;
-  for (int level = maxHeight; level >= 0; --level) {
+  int bestZ = INT_MAX;
+  for (int level = maxHeight; level > 0; --level) {
     int z = 0;
     for (auto u : levels[level]) {
       volume += degree(u);
-      result.push_back(u);
+      curResult.push_back(u);
       for (const auto &e : edges(u))
         if (alive.find(e->to) != alive.end() && height[u] == height[e->to] + 1)
           z++;
     }
     if ((double)z <= 5.0 * volume * std::log(m) / (double)h)
-      break;
+      if (z < bestZ)
+        bestZ = z, bestResult = curResult;
   }
 
-  return result;
+  return bestResult;
 }
 
 void Graph::reset() {

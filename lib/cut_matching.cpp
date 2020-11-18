@@ -230,6 +230,17 @@ Result Solver::compute() {
         removed.insert(u);
     }
 
+    for (auto u : aSet) {
+      bool allRemoved = true;
+      for (const auto &e : subdivisionFlowGraph->edges(u))
+        if (removed.find(e->to) == removed.end()) {
+          allRemoved = false;
+          break;
+        }
+      if (allRemoved)
+        removed.insert(u);
+    }
+
     for (auto u : axSet) {
       assert(subdivisionFlowGraph->degree(u) == 2 &&
              "Subdivision vertices should have degree two.");
