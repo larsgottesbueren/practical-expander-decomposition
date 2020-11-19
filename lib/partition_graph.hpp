@@ -1,6 +1,9 @@
 #pragma once
 
+#include <queue>
 #include <vector>
+
+#include "absl/container/flat_hash_set.h"
 
 /**
    A graph which supports partitioning vertices into separate sub-graphs.
@@ -24,6 +27,12 @@ private:
   std::vector<int> originalDegree;
   std::vector<int> numEdgesInPartition;
   std::vector<int> numVerticesInPartition;
+
+  /**
+     Used to mark vertex as visited in search algorithms. Assume it can contain
+     arbitrary values; reset relevant vertices before use.
+   */
+  std::vector<bool> visited;
 
   /**
      'partition[u] = p' indicates vertex 'u' is in partition 'p'.
@@ -71,8 +80,8 @@ public:
    */
   PartitionGraph(const int n)
       : numPartitions(1), numVertices(n), numEdges(0), originalDegree(n),
-        numEdgesInPartition(1, 0), numVerticesInPartition(1, n), partition(n),
-        graph(n) {}
+        numEdgesInPartition(1, 0), numVerticesInPartition(1, n), visited(n),
+        partition(n), graph(n) {}
 
   /**
      Number of vertices in entire graph.
@@ -178,6 +187,40 @@ public:
 
     return vs;
   };
+
+  /**
+     Find all connected components of a subset of vertices. Return a vector of
+     these components.
+   */
+  std::vector<std::vector<V>>
+  connectedComponents(const std::vector<V> &xs) {
+    for (auto u : xs)
+      visited[u] = false;
+
+    std::vector<std::vector<V>> comps;
+
+    auto search = [&](V start) {
+      std::queue<V> q;
+      visited[start] = true;
+      q.push(start);
+      while (!q.empty()) {
+        int u = q.front();
+        q.pop();
+        comps.back().push_back(u);
+        for (const auto &e : edges(u))
+          if (!visited[e->to])
+            visited[e->to] = true, q.push(e->to);
+      }
+    };
+
+    for (auto u : xs)
+      if (!visited[u]) {
+        comps.push_back({});
+        search(u);
+      }
+
+    return comps;
+  }
 
   /**
      Create a new partition for the nodes 'xs' given the current nodes in the

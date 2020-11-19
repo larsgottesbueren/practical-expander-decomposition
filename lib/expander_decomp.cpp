@@ -42,37 +42,53 @@ void Solver::compute(const std::vector<int> &xs, int partition) {
   if (xs.empty()) {
     VLOG(2) << "Exiting early, partition " << partition << " was empty.";
     return;
+  } else if (xs.size() == 1) {
+    VLOG(2) << "Exiting early, partition " << partition << " was single vertex.";
+    return;
   }
 
-  CutMatching::Solver cm(flowGraph.get(), subdivisionFlowGraph.get(), xs, phi,
-                         tConst, tFactor);
-  auto result = cm.compute();
+  const auto &components = flowGraph->connectedComponents(xs);
 
-  switch (result.t) {
-  case CutMatching::Balanced: {
-    assert(!result.a.empty() && "Cut should be balanced but A was empty.");
-    assert(!result.r.empty() && "Cut should be balanced but R was empty.");
-    int newPartition = flowGraph->newPartition(result.a, xs);
-    compute(result.a, newPartition);
-    compute(result.r, partition);
-    break;
-  }
-  case CutMatching::NearExpander: {
-    assert(!result.a.empty() && "Near expander should have non-empty A.");
-    assert(!result.r.empty() && "Near expander should have non-empty R.");
-    Trimming::Solver trimming(flowGraph.get(), result.a, phi, partition);
-    const auto trimmingResult = trimming.compute();
-    result.r.insert(result.r.end(), trimmingResult.r.begin(),
-                    trimmingResult.r.end());
-    if (result.r.size() > 0 && result.r.size() < xs.size()) {
-      int newPartition = flowGraph->newPartition(result.r, xs);
-      compute(result.r, newPartition);
+  if (components.size() > 1) {
+    VLOG(2) << "Found " << components.size() << " connected components.";
+    for (int i = 1; i < int(components.size()); ++i) {
+      int p = flowGraph->newPartition(components[i], xs);
+      if (components[i].size() > 1)
+        compute(components[i], p);
     }
-    break;
-  }
-  case CutMatching::Expander: {
-    break;
-  }
+    if (components[0].size() > 1)
+      compute(components[0], partition);
+  } else {
+    CutMatching::Solver cm(flowGraph.get(), subdivisionFlowGraph.get(), xs, phi,
+                           tConst, tFactor);
+    auto result = cm.compute();
+
+    switch (result.t) {
+    case CutMatching::Balanced: {
+      assert(!result.a.empty() && "Cut should be balanced but A was empty.");
+      assert(!result.r.empty() && "Cut should be balanced but R was empty.");
+      int newPartition = flowGraph->newPartition(result.a, xs);
+      compute(result.a, newPartition);
+      compute(result.r, partition);
+      break;
+    }
+    case CutMatching::NearExpander: {
+      assert(!result.a.empty() && "Near expander should have non-empty A.");
+      assert(!result.r.empty() && "Near expander should have non-empty R.");
+      Trimming::Solver trimming(flowGraph.get(), result.a, phi, partition);
+      const auto trimmingResult = trimming.compute();
+      result.r.insert(result.r.end(), trimmingResult.r.begin(),
+                      trimmingResult.r.end());
+      if (result.r.size() > 0 && result.r.size() < xs.size()) {
+        int newPartition = flowGraph->newPartition(result.r, xs);
+        compute(result.r, newPartition);
+      }
+      break;
+    }
+    case CutMatching::Expander: {
+      break;
+    }
+    }
   }
 }
 
