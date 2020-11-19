@@ -53,6 +53,29 @@ def gen_dumbbell(args):
 
     output(g,n*k,m)
 
+def gen_clique_path(args):
+    g = {}
+    n = args.n
+    k = args.k
+    m = 0
+
+    for c in range(k):
+        for i in range(n):
+            u = c * n + i
+            g[u] = []
+            for j in range(i+1,n):
+                v = c * n + j
+                g[u].append(v)
+                m += 1
+
+    for c in range(k-1):
+        u = c * n
+        v = (c + 1) * n
+        g[u].append(v)
+        m += 1
+
+    output(g,n*k,m)
+
 parser = argparse.ArgumentParser(description='Utility for creating graphs')
 subparsers = parser.add_subparsers()
 
@@ -86,6 +109,22 @@ dumbbell_parser.add_argument(
     type=int,
     default=2,
     help='number of cliques (default=2)')
+
+clique_path_parser = subparsers.add_parser(
+    'clique-path',
+    help='k cliques, each with n vertices, forming a path'
+    )
+clique_path_parser.set_defaults(func=gen_clique_path)
+clique_path_parser.add_argument(
+    '-n',
+    type=int,
+    default=100,
+    help='number of vertices in each clique (default=100)')
+clique_path_parser.add_argument(
+    '-k',
+    type=int,
+    default=10,
+    help='number of cliques in path (default=10)')
 
 args = parser.parse_args()
 args.func(args)
