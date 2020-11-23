@@ -192,8 +192,7 @@ public:
      Find all connected components of a subset of vertices. Return a vector of
      these components.
    */
-  std::vector<std::vector<V>>
-  connectedComponents(const std::vector<V> &xs) {
+  std::vector<std::vector<V>> connectedComponents(const std::vector<V> &xs) {
     for (auto u : xs)
       visited[u] = false;
 

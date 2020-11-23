@@ -43,7 +43,8 @@ void Solver::compute(const std::vector<int> &xs, int partition) {
     VLOG(2) << "Exiting early, partition " << partition << " was empty.";
     return;
   } else if (xs.size() == 1) {
-    VLOG(2) << "Exiting early, partition " << partition << " was single vertex.";
+    VLOG(2) << "Exiting early, partition " << partition
+            << " was single vertex.";
     return;
   }
 
