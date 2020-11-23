@@ -32,29 +32,31 @@ std::vector<Vertex> Graph::compute(const int maxHeight) {
 
 std::vector<Vertex> Graph::compute(const int maxHeight,
                                    const absl::flat_hash_set<Vertex> &alive) {
-  typedef std::pair<Flow, Vertex> QPair;
-  std::priority_queue<QPair, std::vector<QPair>, std::greater<QPair>> q;
-
-  // TODO: Is '2*alive.size()' correct?
   const int maxH = std::min(maxHeight, (int)alive.size() * 2 + 1);
+
+  std::vector<std::queue<Vertex>> q(maxH + 1);
 
   for (auto u : alive)
     if (excess(u) > 0)
-      q.push({height[u], u});
+      q[0].push(u);
 
-  while (!q.empty()) {
-    auto [_, u] = q.top();
+  int level = 0;
+  while (level <= maxH) {
+    if (q[level].empty()) {
+      level++;
+      continue;
+    }
 
-    if (degree(u) == 0 || alive.find(u) == alive.end()) {
-      q.pop();
+    const int u = q[level].front();
+    if (degree(u) == 0) {
+      q[level].pop();
       continue;
     }
 
     auto &e = edges(u)[nextEdgeIdx[u]];
-    if (excess(e->from) > 0 && residual(*e) > 0 &&
-        height[e->from] == height[e->to] + 1 &&
+    if (excess(u) > 0 && residual(*e) > 0 && height[u] == height[e->to] + 1 &&
         alive.find(e->to) != alive.end()) {
-      // push
+      // Push flow across 'e'
       assert(excess(e->to) == 0 && "Pushing to vertex with non-zero excess");
       UnitFlow::Flow delta = std::min(
           {excess(e->from), residual(*e), (UnitFlow::Flow)degree(e->to)});
@@ -67,17 +69,20 @@ std::vector<Vertex> Graph::compute(const int maxHeight,
 
       assert(excess(e->from) >= 0 && "Excess after pushing cannot be negative");
       if (height[e->from] >= maxH || excess(e->from) == 0)
-        q.pop();
-      if (height[e->to] < maxH && excess(e->to) > 0)
-        q.push({height[e->to], e->to});
+        q[level].pop();
+
+      if (height[e->to] < maxH && excess(e->to) > 0) {
+        q[height[e->to]].push(e->to);
+        level = std::min(level, height[e->to]);
+      }
     } else if (nextEdgeIdx[e->from] == (int)edges(e->from).size() - 1) {
       // all edges have been tried, relabel
-      q.pop();
+      q[level].pop();
       height[e->from]++;
       nextEdgeIdx[e->from] = 0;
 
       if (height[e->from] < maxH)
-        q.push({height[e->from], e->from});
+        q[height[e->from]].push(e->from);
     } else {
       nextEdgeIdx[e->from]++;
     }
