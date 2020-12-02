@@ -121,7 +121,7 @@ std::vector<Vertex> Graph::levelCut(const int maxHeight,
         if (alive.find(e->to) != alive.end() && height[u] == height[e->to] + 1)
           z++;
     }
-    if ((double)z <= 5.0 * volume * std::log10(m) / (double)h)
+    if ((double)z <= 5.0 * volume * std::log(m) / (double)h)
       if (z < bestZ)
         bestZ = z, bestResult = curResult;
   }
