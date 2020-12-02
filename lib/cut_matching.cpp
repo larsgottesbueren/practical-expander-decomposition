@@ -15,8 +15,8 @@ Solver::Solver(const UnitFlow::Graph *g, UnitFlow::Graph *subdivisionFlowGraph,
                const std::vector<int> &subset, const double phi,
                const int tConst, const double tFactor)
     : graph(g), subdivisionFlowGraph(subdivisionFlowGraph), subset(subset),
-      phi(phi), T(tConst + std::ceil(tFactor * std::log(graph->edgeCount()) *
-                                     std::log(graph->edgeCount()))) {
+      phi(phi), T(tConst + std::ceil(tFactor * std::log10(graph->edgeCount()) *
+                                     std::log10(graph->edgeCount()))) {
   assert(!subset.empty() && "Cut-matching expected non-empty subset.");
 
   std::random_device rd;
@@ -212,7 +212,7 @@ Result Solver::compute() {
     for (const auto u : axRight)
       subdivisionFlowGraph->addSink(u, 1);
 
-    const int h = (int)ceil(1.0 / phi / std::log(numSplitNodes));
+    const int h = (int)ceil(1.0 / phi / std::log10(numSplitNodes));
     VLOG(3) << "Computing flow with |S| = " << axLeft.size()
             << " |T| = " << axRight.size() << " and max height " << h << ".";
     const auto hasExcess = subdivisionFlowGraph->compute(h, aAndAxSet);
