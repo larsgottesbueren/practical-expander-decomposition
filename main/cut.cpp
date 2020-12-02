@@ -17,7 +17,7 @@ DEFINE_double(
     "Value of \\phi such that expansion of each cluster is at least \\phi");
 DEFINE_int32(t1, 100, "Constant 't1' in 'T = t1 + t2 \\log^2 m'");
 DEFINE_double(t2, 1.0, "Constant 't2' in 'T = t1 + t2 \\log^2 m'");
-DEFINE_bool(one_indexed, false, "Vertices are 1-indexed instead of 0-indexed.");
+DEFINE_bool(chaco, false, "Input graph is given in the Chaco graph file format.");
 
 int main(int argc, char *argv[]) {
   google::InitGoogleLogging(argv[0]);
@@ -26,13 +26,23 @@ int main(int argc, char *argv[]) {
   int n, m;
   cin >> n >> m;
   auto g = make_unique<Undirected::Graph>(n);
-  for (int i = 0; i < m; ++i) {
-    int u, v;
-    cin >> u >> v;
-    if (FLAGS_one_indexed)
-      u--, v--;
-    if (u < v)
-      g->addEdge(u, v);
+
+  if (FLAGS_chaco) {
+    cin.ignore();
+    for (int u = 0; u < n; ++u) {
+      string line; cin >> line;
+      stringstream ss(line);
+      int v;
+      while (ss >> v)
+        g->addEdge(u, v-1);
+    }
+  } else {
+    for (int i = 0; i < m; ++i) {
+      int u, v;
+      cin >> u >> v;
+      if (u < v)
+        g->addEdge(u, v);
+    }
   }
 
   vector<int> xs(n);
