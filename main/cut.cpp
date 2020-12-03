@@ -17,7 +17,8 @@ DEFINE_double(
     "Value of \\phi such that expansion of each cluster is at least \\phi");
 DEFINE_int32(t1, 100, "Constant 't1' in 'T = t1 + t2 \\log^2 m'");
 DEFINE_double(t2, 1.0, "Constant 't2' in 'T = t1 + t2 \\log^2 m'");
-DEFINE_bool(chaco, false, "Input graph is given in the Chaco graph file format.");
+DEFINE_bool(chaco, false,
+            "Input graph is given in the Chaco graph file format.");
 
 int main(int argc, char *argv[]) {
   google::InitGoogleLogging(argv[0]);
@@ -30,11 +31,12 @@ int main(int argc, char *argv[]) {
   if (FLAGS_chaco) {
     cin.ignore();
     for (int u = 0; u < n; ++u) {
-      string line; cin >> line;
+      string line;
+      cin >> line;
       stringstream ss(line);
       int v;
       while (ss >> v)
-        g->addEdge(u, v-1);
+        g->addEdge(u, v - 1);
     }
   } else {
     for (int i = 0; i < m; ++i) {
