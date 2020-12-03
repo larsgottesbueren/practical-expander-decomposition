@@ -30,7 +30,7 @@ parser = argparse.ArgumentParser(
     'Utility for running expander-decomp multiple times on the same graph')
 parser.add_argument(
     '--executable',
-    default='/Users/isaac/kth/thesis/code/bazel-bin/main/expander-decomp',
+    default='bazel-bin/main/expander-decomp',
     help='location of expander-decomp binary')
 parser.add_argument('-i',
                     '--iterations',
