@@ -212,7 +212,8 @@ Result Solver::compute() {
     for (const auto u : axRight)
       subdivisionFlowGraph->addSink(u, 1);
 
-    const int h = (int)ceil(1.0 / phi / std::log10(numSplitNodes));
+    const int h = std::max((int)round(1.0 / phi / std::log10(numSplitNodes)),
+                           (int)std::log10(numSplitNodes));
     VLOG(3) << "Computing flow with |S| = " << axLeft.size()
             << " |T| = " << axRight.size() << " and max height " << h << ".";
     const auto hasExcess = subdivisionFlowGraph->compute(h, aAndAxSet);
