@@ -5,11 +5,15 @@
 
 import argparse
 
-def output(g,n,m):
+def output(args,g,n,m):
     problemInput = '{} {}'.format(n, m)
     for u, vs in g.items():
         for v in vs:
-            problemInput += '\n{} {}'.format(u, v)
+            a,b = u,v
+            if args.one_indexed:
+                a += 1
+                b += 1
+            problemInput += '\n{} {}'.format(a, b)
     print(problemInput)
 
 def gen_clique(args):
@@ -27,7 +31,7 @@ def gen_clique(args):
                 g[u].append(v)
                 m += 1
 
-    output(g,n*k,m)
+    output(args,g,n*k,m)
 
 def gen_dumbbell(args):
     g = {}
@@ -51,7 +55,7 @@ def gen_dumbbell(args):
             g[u].append(v)
             m += 1
 
-    output(g,n*k,m)
+    output(args,g,n*k,m)
 
 def gen_clique_path(args):
     g = {}
@@ -74,9 +78,32 @@ def gen_clique_path(args):
         g[u].append(v)
         m += 1
 
-    output(g,n*k,m)
+    output(args,g,n*k,m)
+
+def gen_lattice(args):
+    g = {}
+    n = args.n
+    m = 0
+
+    for x in range(n):
+        for y in range(n):
+            u = x + y * n
+            g[u] = []
+            vs = []
+            if x < n-1: vs.append((x+1) + y * n)
+            if y < n-1: vs.append(x + (y+1) * n)
+            if x < n-1 and y < n-1: vs.append((x+1) + (y+1)*n)
+            for v in vs:
+                g[u].append(v)
+                m += 1
+    output(args,g,n*n,m)
 
 parser = argparse.ArgumentParser(description='Utility for creating graphs')
+parser.add_argument(
+    '--one_indexed',
+    action='store_true',
+    help='make vertex labels one-indexed (default=false)')
+
 subparsers = parser.add_subparsers()
 
 clique_parser = subparsers.add_parser(
@@ -125,6 +152,16 @@ clique_path_parser.add_argument(
     type=int,
     default=10,
     help='number of cliques in path (default=10)')
+
+lattice_parser = subparsers.add_parser(
+    'lattice',
+    help='n by n lattice')
+lattice_parser.set_defaults(func=gen_lattice)
+lattice_parser.add_argument(
+    '-n',
+    type=int,
+    default=10,
+    help='width and height of lattice (default=10)')
 
 args = parser.parse_args()
 args.func(args)
