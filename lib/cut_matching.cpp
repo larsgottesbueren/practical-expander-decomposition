@@ -133,10 +133,13 @@ Result Solver::compute() {
       axSet.insert(e->to), aAndAxSet.insert(e->to);
   }
 
+  const int goodBalance = 0.45 * subdivisionFlowGraph->globalVolume(
+                                     aAndAxSet.begin(), aAndAxSet.end()),
+            minBalance = numSplitNodes / (10 * T);
+
   int iterations = 1;
-  for (; iterations <= T &&
-         subdivisionFlowGraph->globalVolume(rSet.begin(), rSet.end()) <=
-             numSplitNodes / (10 * T);
+  for (; iterations <= T && subdivisionFlowGraph->globalVolume(
+                                rSet.begin(), rSet.end()) <= 0.45 * goodBalance;
        ++iterations) {
     VLOG(3) << "Iteration " << iterations << " out of " << T << ".";
 
@@ -293,7 +296,8 @@ Result Solver::compute() {
     if (splitNodeSet.find(u) == splitNodeSet.end())
       result.r.push_back(u);
 
-  if (iterations <= T && !result.a.empty() && !result.r.empty())
+  if (!result.a.empty() && !result.r.empty() &&
+      subdivisionFlowGraph->volume(rSet.begin(), rSet.end()) > minBalance)
     // We have: graph.volume(R) > m / (10 * T)
     result.t = Balanced;
   else if (result.r.empty())
