@@ -36,11 +36,16 @@ Result Solver::compute() {
   const int h = ceil(40 * std::log(2 * m + 1) / phi);
 
   while (true) {
-    const auto levelCut = flowGraph->compute(h, aSet);
+    const auto hasExcess = flowGraph->compute(h, aSet);
+    VLOG(3) << "Found excess of size: " << hasExcess.size();
+    if (hasExcess.empty())
+      break;
+
+    const auto levelCut = flowGraph->levelCut(h, aSet);
+    VLOG(3) << "Found level cut of size: " << levelCut.size();
     if (levelCut.empty())
       break;
 
-    VLOG(2) << "Found level cut of size: " << levelCut.size();
     for (const auto &u : levelCut)
       aSet.erase(u), rSet.insert(u);
     for (const auto &u : levelCut)
