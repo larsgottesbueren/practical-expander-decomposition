@@ -60,6 +60,11 @@ public:
   std::vector<std::vector<int>> getPartition() const;
 
   /**
+     Compute the conductance of each partition relative the rest of the graph.
+   */
+  std::vector<double> getConductance() const;
+
+  /**
      Return the number of edges which are cut. An edge is cut if it's two
      endpoints are in separate partitions.
    */

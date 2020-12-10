@@ -117,6 +117,27 @@ std::vector<std::vector<int>> Solver::getPartition() const {
   std::vector<std::vector<int>> result(flowGraph->partitionCount());
   for (int u = 0; u < flowGraph->size(); ++u)
     result[flowGraph->getPartition(u)].push_back(u);
+
+  return result;
+}
+
+std::vector<double> Solver::getConductance() const {
+  auto partitions = getPartition();
+  std::vector<double> result(int(partitions.size()));
+
+  std::vector<int> all(flowGraph->size());
+  std::iota(all.begin(), all.end(), 0);
+
+  const int totalVolume = flowGraph->globalVolume(all.begin(), all.end());
+
+  for (const auto &p : partitions) {
+    int pId = flowGraph->getPartition(p[0]);
+    int edgesCut = 0, volume = flowGraph->globalVolume(p.begin(), p.end());
+    for (int u : p)
+      edgesCut += flowGraph->globalDegree(u) - flowGraph->degree(u);
+    result[pId] = double(edgesCut) / std::min(volume, totalVolume);
+  }
+
   return result;
 }
 
