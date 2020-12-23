@@ -64,6 +64,11 @@ private:
    */
   std::vector<int> vertexIndices;
 
+  /**
+     True if vertex is a subdivision vertex.
+   */
+  std::vector<bool> subdivision;
+
 protected:
   /**
      Used to mark vertex as visited in search algorithms. Set values to false
@@ -79,7 +84,8 @@ public:
      Time complexity: O(n + m)
    */
   Graph(int n, const std::vector<E> &es)
-      : edges(n), edgeBounds(n), vertices(n), vertexIndices(n), visited(n) {
+      : edges(n), edgeBounds(n), vertices(n), vertexIndices(n), subdivision(n),
+        visited(n) {
     std::iota(vertices.begin(), vertices.end(), 0);
     std::iota(vertexIndices.begin(), vertexIndices.end(), 0);
     vertexBound.push({n});
@@ -146,7 +152,7 @@ public:
      Time complexity: O(1)
    */
   typename std::vector<V>::const_iterator cbeginRemoved() const {
-    return vertices.begin() + vertexBound.top().middle;
+    return vertices.cbegin() + vertexBound.top().middle;
   }
 
   /**
@@ -164,7 +170,7 @@ public:
      Time complexity: O(1)
    */
   typename std::vector<V>::const_iterator cendRemoved() const {
-    return vertices.begin() + vertexBound.top().end;
+    return vertices.cbegin() + vertexBound.top().end;
   }
 
   /**
@@ -252,6 +258,16 @@ public:
   }
 
   /**
+     Mark vertex 'u' as subdivision vertex.
+   */
+  void setSubdivision(V u) { subdivision[u] = true; }
+
+  /**
+     Return true if vertex is a subdivision vertex.
+   */
+  bool isSubdivision(V u) const { return subdivision[u]; }
+
+  /**
      Given a subset of vertices, return the same vertices where all of their
      valid neighbors are included as well.
 
@@ -268,8 +284,9 @@ public:
           result.push_back(e->to), visited[e->to] = true;
     }
 
-    for (auto it = begin(); it != end(); ++it)
-      visited[*it] = false;
+    for (auto it = subsetBegin; it != subsetEnd; ++it)
+      for (auto e = cbeginEdge(*it); e != cendEdge(*it); ++e)
+        visited[e->to] = false;
 
     return result;
   }
