@@ -119,6 +119,11 @@ TEST(SubsetGraph, RemoveSingle) {
   EXPECT_EQ(g.degree(2), 0);
   EXPECT_EQ(g.degree(3), 1);
   EXPECT_EQ(g.degree(4), 1);
+
+  std::set<int> alive(g.begin(), g.end()),
+      removed(g.beginRemoved(), g.endRemoved());
+  EXPECT_EQ(alive, std::set<int>({0, 1, 3, 4}));
+  EXPECT_EQ(removed, std::set<int>({2}));
 }
 
 /**
@@ -143,11 +148,11 @@ TEST(SubsetGraph, RemoveSeveralInPath) {
   g.remove(4);
   EXPECT_EQ(int(g.connectedComponents().size()), 5);
 
-  std::set<int> us;
-  for (auto u : g)
-    us.insert(u);
+  std::set<int> alive(g.begin(), g.end()),
+      removed(g.beginRemoved(), g.endRemoved());
 
-  EXPECT_EQ(us, std::set<int>({1, 3, 5, 7, 9}));
+  EXPECT_EQ(alive, std::set<int>({1, 3, 5, 7, 9}));
+  EXPECT_EQ(removed, std::set<int>({0, 2, 4, 6, 8}));
 
   for (auto u : g)
     EXPECT_EQ(g.degree(u), 0);
@@ -169,6 +174,12 @@ TEST(SubsetGraph, RemoveSeveral) {
   EXPECT_EQ(int(g.connectedComponents().size()), 2);
   g.remove(2);
   EXPECT_EQ(int(g.connectedComponents().size()), 3);
+
+  std::set<int> alive(g.begin(), g.end()),
+      removed(g.beginRemoved(), g.endRemoved());
+
+  EXPECT_EQ(alive, std::set<int>({1, 3, 5}));
+  EXPECT_EQ(removed, std::set<int>({0, 2, 4}));
 }
 
 TEST(SubsetGraph, SubgraphEmpty) {

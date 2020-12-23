@@ -132,6 +132,42 @@ public:
   }
 
   /**
+     Begin iterator to removed vertices in current subgraph.
+
+     Time complexity: O(1)
+   */
+  typename std::vector<V>::iterator beginRemoved() {
+    return vertices.begin() + vertexBound.top().middle;
+  }
+
+  /**
+     Constant iterator to beginning of removed vertices in current subgraph.
+
+     Time complexity: O(1)
+   */
+  typename std::vector<V>::const_iterator cbeginRemoved() const {
+    return vertices.begin() + vertexBound.top().middle;
+  }
+
+  /**
+     End iterator of removed vertices in current subgraph.
+
+     Time complexity: O(1)
+   */
+  typename std::vector<V>::iterator endRemoved() {
+    return vertices.begin() + vertexBound.top().end;
+  }
+
+  /**
+     Constant iterator to end of removed vertices in current subgraph.
+
+     Time complexity: O(1)
+   */
+  typename std::vector<V>::const_iterator cendRemoved() const {
+    return vertices.begin() + vertexBound.top().end;
+  }
+
+  /**
      Edge begin-iterator.
 
      Time complexity: O(1)
