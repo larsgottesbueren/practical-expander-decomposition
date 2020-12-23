@@ -132,7 +132,8 @@ void Solver::compute(const std::vector<int> &xs) {
       break;
     }
     case CutMatching::Expander: {
-      VLOG(3) << "Finalizing " << xs.size() << " vertices as partition " << numPartitions << ".";
+      VLOG(3) << "Finalizing " << xs.size() << " vertices as partition "
+              << numPartitions << ".";
       finalizePartition(xs.begin(), xs.end());
       break;
     }
