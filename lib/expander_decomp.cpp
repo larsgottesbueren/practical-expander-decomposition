@@ -30,7 +30,11 @@ constructSubdivisionFlowGraph(const std::unique_ptr<Undirected::Graph> &g) {
         es.emplace_back(e->from, splitVertex, 0);
         es.emplace_back(e->to, splitVertex, 0);
       }
-  return std::make_unique<UnitFlow::Graph>(g->size() + int(es.size()) / 2, es);
+  auto f =
+      std::make_unique<UnitFlow::Graph>(g->size() + int(es.size()) / 2, es);
+  for (int u = g->size(); u < f->size(); ++u)
+    f->setSubdivision(u);
+  return f;
 }
 
 Solver::Solver(std::unique_ptr<Undirected::Graph> graph, const double phi,

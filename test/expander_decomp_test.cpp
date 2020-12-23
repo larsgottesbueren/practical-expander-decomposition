@@ -81,6 +81,10 @@ TEST(ConstructSubdivisionFlowGraph, SingleEdge) {
   EXPECT_EQ(f->degree(1), 1);
   EXPECT_EQ(f->degree(2), 2); // Split vertex
 
+  EXPECT_FALSE(f->isSubdivision(0));
+  EXPECT_FALSE(f->isSubdivision(1));
+  EXPECT_TRUE(f->isSubdivision(2));
+
   const auto &e02 = f->getEdge(0, 0);
   const auto &e12 = f->getEdge(1, 0);
 
@@ -103,6 +107,11 @@ TEST(ConstructSubdivisionFlowGraph, BasicGraph) {
   const auto f = ExpanderDecomposition::constructSubdivisionFlowGraph(g);
   EXPECT_EQ(f->size(), n + g->edgeCount());
   EXPECT_EQ(f->edgeCount(), 2 * g->edgeCount());
+
+  for (int u = 0; u < n; ++u)
+    EXPECT_FALSE(f->isSubdivision(u));
+  for (int u = n; u < f->size(); ++u)
+    EXPECT_TRUE(f->isSubdivision(u));
 }
 
 /**
