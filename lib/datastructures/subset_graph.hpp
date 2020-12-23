@@ -204,6 +204,18 @@ public:
   }
 
   /**
+     Neighbors of vertex 'u'.
+
+     Time complexity: O(deg(u))
+   */
+  std::vector<V> neighbors(V u) const {
+    std::vector<V> result;
+    for (auto e = cbeginEdge(u); e != cendEdge(u); ++e)
+      result.push_back(e->to);
+    return result;
+  }
+
+  /**
      Given a subset of vertices, return the same vertices where all of their
      valid neighbors are included as well.
 

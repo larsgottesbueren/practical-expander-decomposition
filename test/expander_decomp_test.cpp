@@ -4,29 +4,32 @@
 #include "lib/expander_decomp.hpp"
 
 TEST(ConstructFlowGraph, EmptyGraph) {
-  const auto g = std::make_unique<Undirected::Graph>(0, {});
+  const auto g =
+      std::make_unique<Undirected::Graph>(0, std::vector<Undirected::Edge>());
   const auto f = ExpanderDecomposition::constructFlowGraph(g);
   EXPECT_EQ(f->size(), 0);
   EXPECT_EQ(f->edgeCount(), 0);
 }
 
 TEST(ConstructFlowGraph, SingleVertex) {
-  const auto g = std::make_unique<Undirected::Graph>(1, {});
+  const auto g =
+      std::make_unique<Undirected::Graph>(1, std::vector<Undirected::Edge>());
   const auto f = ExpanderDecomposition::constructFlowGraph(g);
   EXPECT_EQ(f->size(), 1);
   EXPECT_EQ(f->edgeCount(), 0);
 }
 
 TEST(ConstructFlowGraph, SingleEdge) {
-  auto g = std::make_unique<Undirected::Graph>(2, {{0, 1}});
+  auto g = std::make_unique<Undirected::Graph>(
+      2, std::vector<Undirected::Edge>({{0, 1}}));
   const auto f = ExpanderDecomposition::constructFlowGraph(g);
   EXPECT_EQ(f->size(), 2);
   EXPECT_EQ(f->edgeCount(), 1);
-  EXPECT_EQ(f->edges(0).size(), 1);
-  EXPECT_EQ(f->edges(1).size(), 1);
+  EXPECT_EQ(f->degree(0), 1);
+  EXPECT_EQ(f->degree(1), 1);
 
-  const auto &e01 = f->edges(0)[0];
-  const auto &e10 = f->edges(1)[0];
+  const auto &e01 = f->getEdge(0, 0);
+  const auto &e10 = f->getEdge(1, 0);
 
   EXPECT_EQ(e01.from, 0);
   EXPECT_EQ(e01.to, 1);
@@ -53,30 +56,33 @@ TEST(ConstructFlowGraph, BasicGraph) {
 }
 
 TEST(ConstructSubdivisionFlowGraph, EmptyGraph) {
-  const auto g = std::make_unique<Undirected::Graph>(0, {});
+  const auto g =
+      std::make_unique<Undirected::Graph>(0, std::vector<Undirected::Edge>());
   const auto f = ExpanderDecomposition::constructSubdivisionFlowGraph(g);
   EXPECT_EQ(f->size(), 0);
   EXPECT_EQ(f->edgeCount(), 0);
 }
 
 TEST(ConstructSubdivisionFlowGraph, SingleVertex) {
-  const auto g = std::make_unique<Undirected::Graph>(1, {});
+  const auto g =
+      std::make_unique<Undirected::Graph>(1, std::vector<Undirected::Edge>());
   const auto f = ExpanderDecomposition::constructSubdivisionFlowGraph(g);
   EXPECT_EQ(f->size(), 1);
   EXPECT_EQ(f->edgeCount(), 0);
 }
 
 TEST(ConstructSubdivisionFlowGraph, SingleEdge) {
-  auto g = std::make_unique<Undirected::Graph>(2, {{0, 1}});
+  auto g = std::make_unique<Undirected::Graph>(
+      2, std::vector<Undirected::Edge>({{0, 1}}));
   const auto f = ExpanderDecomposition::constructSubdivisionFlowGraph(g);
   EXPECT_EQ(f->size(), 3);
   EXPECT_EQ(f->edgeCount(), 2);
-  EXPECT_EQ(f->edges(0).size(), 1);
-  EXPECT_EQ(f->edges(1).size(), 1);
-  EXPECT_EQ(f->edges(2).size(), 2); // Split vertex
+  EXPECT_EQ(f->degree(0), 1);
+  EXPECT_EQ(f->degree(1), 1);
+  EXPECT_EQ(f->degree(2), 2); // Split vertex
 
-  const auto &e02 = f->edges(0)[0];
-  const auto &e12 = f->edges(1)[0];
+  const auto &e02 = f->getEdge(0, 0);
+  const auto &e12 = f->getEdge(1, 0);
 
   EXPECT_EQ(e02.from, 0);
   EXPECT_EQ(e02.to, 2);

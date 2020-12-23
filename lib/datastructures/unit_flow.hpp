@@ -39,6 +39,15 @@ struct Edge {
     Edge e{to, from, 0, capacity};
     return e;
   }
+
+  /**
+     Two edges are equal if all their fields agree, including reverse index.
+  */
+  friend bool operator==(const Edge &lhs, const Edge &rhs) {
+    return lhs.from == rhs.from && lhs.to == rhs.to &&
+           lhs.revIdx == rhs.revIdx && lhs.flow == rhs.flow &&
+           lhs.capacity == rhs.capacity;
+  }
 };
 
 /**

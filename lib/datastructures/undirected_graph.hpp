@@ -24,6 +24,13 @@ struct Edge {
     Edge e{to, from};
     return e;
   }
+
+  /**
+     Two edges are equal if all their fields agree, including reverse index.
+  */
+  friend bool operator==(const Edge &lhs, const Edge &rhs) {
+    return lhs.from == rhs.from && lhs.to == rhs.to && lhs.revIdx == rhs.revIdx;
+  }
 };
 
 /**

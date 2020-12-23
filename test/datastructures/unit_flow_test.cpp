@@ -18,22 +18,22 @@ TEST(UnitFlow, AddEdge) {
   EXPECT_EQ(uf.neighbors(1), (std::vector<int>{0}));
   EXPECT_EQ(uf.neighbors(2), (std::vector<int>{0}));
 
-  const auto &e01 = uf.edges(0)[0];
-  const auto &e02 = uf.edges(0)[1];
-  const auto &e10 = uf.edges(1)[0];
-  const auto &e20 = uf.edges(2)[0];
+  const auto &e01 = uf.getEdge(0, 0);
+  const auto &e02 = uf.getEdge(0, 1);
+  const auto &e10 = uf.getEdge(1, 0);
+  const auto &e20 = uf.getEdge(2, 0);
 
   EXPECT_EQ(e01.capacity, 5);
   EXPECT_EQ(e10.capacity, 5);
   EXPECT_EQ(e02.capacity, 10);
   EXPECT_EQ(e20.capacity, 10);
 
-  EXPECT_EQ(g.reverse(e01), e10);
-  EXPECT_EQ(g.reverse(e02), e20);
+  EXPECT_EQ(uf.reverse(e01), e10);
+  EXPECT_EQ(uf.reverse(e02), e20);
 }
 
 TEST(UnitFlow, SingleVertex) {
-  UnitFlow::Graph uf(1);
+  UnitFlow::Graph uf(1, {});
   uf.addSource(0, 10);
   uf.addSink(0, 5);
 
@@ -44,10 +44,9 @@ TEST(UnitFlow, SingleVertex) {
 }
 
 TEST(UnitFlow, TwoVertexFlow) {
-  UnitFlow::Graph uf(2);
+  UnitFlow::Graph uf(2, {{0, 1, 10}});
   uf.addSource(0, 10);
   uf.addSink(1, 10);
-  uf.addEdge(0, 1, 10);
 
   auto cut = uf.compute(INT_MAX);
 
@@ -57,10 +56,9 @@ TEST(UnitFlow, TwoVertexFlow) {
 }
 
 TEST(UnitFlow, TwoVertexFlowSmallEdge) {
-  UnitFlow::Graph uf(2);
+  UnitFlow::Graph uf(2, {{0, 1, 4}});
   uf.addSource(0, 10);
   uf.addSink(1, 10);
-  uf.addEdge(0, 1, 4);
 
   auto cut = uf.compute(INT_MAX);
 
@@ -70,10 +68,9 @@ TEST(UnitFlow, TwoVertexFlowSmallEdge) {
 }
 
 TEST(UnitFlow, TwoVertexFlowSmallSink) {
-  UnitFlow::Graph uf(2);
+  UnitFlow::Graph uf(2, {{0, 1, 9}});
   uf.addSource(0, 10);
   uf.addSink(1, 2);
-  uf.addEdge(0, 1, 9);
 
   auto cut = uf.compute(INT_MAX);
 
@@ -90,16 +87,17 @@ TEST(UnitFlow, CanRouteBipartite) {
   const int n = 5;
   const int m = 10;
 
-  UnitFlow::Graph uf(n + m);
+  std::vector<UnitFlow::Edge> es;
+  for (int u = 0; u < n; ++u)
+    for (int v = 0; v < m; ++v)
+      es.emplace_back(u, n + v, 2);
+
+  UnitFlow::Graph uf(n + m, es);
 
   for (int u = 0; u < n; ++u)
     uf.addSink(u, 10);
   for (int u = 0; u < m; ++u)
     uf.addSink(n + u, 5);
-
-  for (int u = 0; u < n; ++u)
-    for (int v = 0; v < m; ++v)
-      uf.addEdge(u, n + v, 2);
 
   auto cut = uf.compute(INT_MAX);
 
@@ -114,20 +112,24 @@ TEST(UnitFlow, CanRouteBipartite) {
 TEST(UnitFlow, CannotRouteBottleneck) {
   const int n = 10;
 
-  UnitFlow::Graph uf(n);
-
+  std::vector<UnitFlow::Edge> es;
   for (int u = 0; u < 3; ++u) {
-    uf.addSource(u, 10);
-    uf.addEdge(u, 3, 5);
+    es.emplace_back(u, 3, 5);
     for (int v = u + 1; v < 3; ++v)
-      uf.addEdge(u, v, 10);
+      es.emplace_back(u, v, 10);
   }
   for (int u = 4; u < n; ++u) {
-    uf.addSink(u, 10);
-    uf.addEdge(3, u, 5);
+    es.emplace_back(3, u, 5);
     for (int v = u + 1; v < n; ++v)
-      uf.addEdge(u, v, 10);
+      es.emplace_back(u, v, 10);
   }
+
+  UnitFlow::Graph uf(n, es);
+
+  for (int u = 0; u < 3; ++u)
+    uf.addSource(u, 10);
+  for (int u = 4; u < n; ++u)
+    uf.addSink(u, 10);
 
   auto cut = uf.compute(INT_MAX);
   std::sort(cut.begin(), cut.end());
@@ -142,20 +144,18 @@ TEST(UnitFlow, CannotRouteBottleneck) {
 }
 
 TEST(UnitFlow, CanMatchSimple) {
-  UnitFlow::Graph uf(2);
+  UnitFlow::Graph uf(2, {{0, 1, 5}});
   uf.addSource(0, 5);
   uf.addSink(1, 5);
-  uf.addEdge(0, 1, 5);
   uf.compute(10);
   auto matches = uf.matching({0, 1}, {0}, {1});
   EXPECT_EQ(matches, (std::vector<std::pair<int, int>>{{0, 1}}));
 }
 
 TEST(UnitFlow, WontMatchBeforeFlowComputed) {
-  UnitFlow::Graph uf(2);
+  UnitFlow::Graph uf(2, {{0, 1, 5}});
   uf.addSource(0, 5);
   uf.addSink(1, 5);
-  uf.addEdge(0, 1, 5);
 
   auto matches = uf.matching({0, 1}, {0}, {1});
   EXPECT_TRUE(matches.empty());
@@ -171,19 +171,21 @@ TEST(UnitFlow, CanMatchMultiple) {
   const int rightN = 20;
   const int n = leftN + rightN;
 
-  UnitFlow::Graph uf(n);
-
-  for (int u = 0; u < leftN; ++u) {
-    uf.addSource(u, 2);
+  std::vector<UnitFlow::Edge> es;
+  for (int u = 0; u < leftN; ++u)
     for (int v = u + 1; v < leftN; ++v)
-      uf.addEdge(u, v, 1000);
-  }
-  for (int u = leftN; u < leftN + rightN; ++u) {
-    uf.addSink(u, 2);
+      es.emplace_back(u, v, 1000);
+  for (int u = leftN; u < leftN + rightN; ++u)
     for (int v = u + 1; v < leftN + rightN; ++v)
-      uf.addEdge(u, v, 1000);
-  }
-  uf.addEdge(0, leftN, 1000);
+      es.emplace_back(u, v, 1000);
+  es.emplace_back(0, leftN, 1000);
+
+  UnitFlow::Graph uf(n, es);
+
+  for (int u = 0; u < leftN; ++u)
+    uf.addSource(u, 2);
+  for (int u = leftN; u < leftN + rightN; ++u)
+    uf.addSink(u, 2);
 
   uf.compute(INT_MAX);
 
@@ -219,19 +221,14 @@ TEST(UnitFlow, CanMatchMultiple) {
    matchings.
  */
 TEST(UnitFlow, CanRouteAndMatchPathGraph) {
-  UnitFlow::Graph uf(7);
+  const std::vector<UnitFlow::Edge> es = {{0, 1, 2}, {1, 2, 2}, {2, 3, 2},
+                                          {3, 4, 2}, {4, 5, 2}, {5, 6, 2}};
+  UnitFlow::Graph uf(7, es);
   uf.addSource(0, 1);
   uf.addSource(1, 1);
 
   uf.addSink(5, 1);
   uf.addSink(6, 1);
-
-  uf.addEdge(0, 1, 2);
-  uf.addEdge(1, 2, 2);
-  uf.addEdge(2, 3, 2);
-  uf.addEdge(3, 4, 2);
-  uf.addEdge(4, 5, 2);
-  uf.addEdge(5, 6, 2);
 
   auto levelCut = uf.compute(INT_MAX);
   ASSERT_TRUE(levelCut.empty());
@@ -255,15 +252,12 @@ TEST(UnitFlow, CanRouteAndMatchPathGraph) {
         t2
  */
 TEST(UnitFlow, CanRouteAndMatchDiamondGraph) {
-  UnitFlow::Graph uf(4);
+  const std::vector<UnitFlow::Edge> es = {
+      {0, 1, 2}, {0, 2, 8}, {1, 2, 10}, {1, 3, 1}, {2, 3, 10}};
+
+  UnitFlow::Graph uf(4, es);
   uf.addSource(0, 10), uf.addSource(3, 10);
   uf.addSink(1, 10), uf.addSink(2, 10);
-
-  uf.addEdge(0, 1, 2);
-  uf.addEdge(0, 2, 8);
-  uf.addEdge(1, 2, 10);
-  uf.addEdge(1, 3, 1);
-  uf.addEdge(2, 3, 10);
 
   auto levelCut = uf.compute(INT_MAX);
   ASSERT_TRUE(levelCut.empty());
@@ -280,16 +274,17 @@ TEST(UnitFlow, CanRouteAndMatchKBipartite) {
   constexpr int layerSize = 100, k = 100;
   constexpr int n = layerSize * k;
 
-  UnitFlow::Graph uf(n);
-
+  std::vector<UnitFlow::Edge> es;
   for (int l = 0; l < k - 1; ++l) {
     for (int i = 0; i < layerSize; ++i) {
       for (int j = 0; j < layerSize; ++j) {
         int u = l * layerSize + i, v = (l + 1) * layerSize + j;
-        uf.addEdge(u, v, 1);
+        es.emplace_back(u, v, 1);
       }
     }
   }
+
+  UnitFlow::Graph uf(n, es);
 
   absl::flat_hash_set<int> alive;
   for (int l = 0; l < k; ++l)
@@ -325,12 +320,13 @@ TEST(UnitFlow, CanMatchLargeGraph) {
     std::srand(iteration);
     constexpr int n = 50, m = 1000, c = 100;
 
-    UnitFlow::Graph uf(n);
-
+    std::vector<UnitFlow::Edge> es;
     for (int i = 0; i < m; ++i) {
       int u = rand() % n, v = rand() % n;
-      uf.addEdge(u, v, rand() % c);
+      es.emplace_back(u, v, rand() % c);
     }
+
+    UnitFlow::Graph uf(n, es);
 
     absl::flat_hash_set<int> alive;
     for (int i = 0; i < n; ++i)
@@ -352,16 +348,11 @@ TEST(UnitFlow, CanMatchLargeGraph) {
    'reset' should set all flow, height, absorbtion and sinks to 0.
  */
 TEST(UnitFlow, Reset) {
-  UnitFlow::Graph uf(5);
+  const std::vector<UnitFlow::Edge> es = {{0, 1, 10}, {0, 2, 10}, {1, 2, 10},
+                                          {1, 3, 10}, {1, 2, 10}, {2, 4, 10}};
+  UnitFlow::Graph uf(5, es);
   uf.addSource(0, 5);
   uf.addSink(4, 5);
-
-  uf.addEdge(0, 1, 10);
-  uf.addEdge(0, 2, 10);
-  uf.addEdge(1, 2, 10);
-  uf.addEdge(1, 3, 10);
-  uf.addEdge(1, 2, 10);
-  uf.addEdge(2, 4, 10);
 
   uf.compute(INT_MAX);
 
@@ -372,7 +363,7 @@ TEST(UnitFlow, Reset) {
     EXPECT_EQ(uf.getSink()[u], 0);
     EXPECT_EQ(uf.getHeight()[u], 0);
     EXPECT_EQ(uf.getNextEdgeIdx()[u], 0);
-    for (const auto &e : uf.edges(u))
+    for (auto e = uf.beginEdge(u); e != uf.endEdge(u); ++e)
       EXPECT_EQ(e->flow, 0);
   }
 }
@@ -381,16 +372,11 @@ TEST(UnitFlow, Reset) {
    'reset' should set all flow, height, absorbtion and sinks to 0.
  */
 TEST(UnitFlow, ResetSubset) {
-  UnitFlow::Graph uf(5);
+  const std::vector<UnitFlow::Edge> es = {{0, 1, 10}, {0, 2, 10}, {1, 2, 10},
+                                          {1, 3, 10}, {1, 2, 10}, {2, 4, 10}};
+  UnitFlow::Graph uf(5, es);
   uf.addSource(0, 5);
   uf.addSink(4, 5);
-
-  uf.addEdge(0, 1, 10);
-  uf.addEdge(0, 2, 10);
-  uf.addEdge(1, 2, 10);
-  uf.addEdge(1, 3, 10);
-  uf.addEdge(1, 2, 10);
-  uf.addEdge(2, 4, 10);
 
   uf.compute(INT_MAX);
 
@@ -402,7 +388,7 @@ TEST(UnitFlow, ResetSubset) {
     EXPECT_EQ(uf.getSink()[u], 0);
     EXPECT_EQ(uf.getHeight()[u], 0);
     EXPECT_EQ(uf.getNextEdgeIdx()[u], 0);
-    for (const auto &e : uf.edges(u))
+    for (auto e = uf.beginEdge(u); e != uf.endEdge(u); ++e)
       EXPECT_EQ(e->flow, 0);
   }
 }

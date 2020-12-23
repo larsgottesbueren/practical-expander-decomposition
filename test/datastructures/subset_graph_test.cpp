@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "lib/datastructures/subset_graph.hpp"
-#include "lib/ugraph.hpp"
+#include "lib/datastructures/undirected_graph.hpp"
 
 #include <iostream>
 
@@ -19,8 +19,9 @@ TEST(SubsetGraph, ConstructEmpty) {
  */
 TEST(SubsetGraph, ConstructSmall) {
   const int n = 10;
-  const std::vector<Edge> es = {{0, 1}, {0, 2}, {1, 2}, {2, 3}, {3, 4}, {4, 5},
-                                {0, 5}, {6, 7}, {6, 8}, {7, 8}, {7, 9}};
+  const std::vector<Undirected::Edge> es = {{0, 1}, {0, 2}, {1, 2}, {2, 3},
+                                            {3, 4}, {4, 5}, {0, 5}, {6, 7},
+                                            {6, 8}, {7, 8}, {7, 9}};
   Graph g(n, es);
 
   ASSERT_EQ(g.size(), n);
@@ -52,7 +53,7 @@ TEST(SubsetGraph, ConstructSmall) {
  */
 TEST(SubsetGraph, Reverse) {
   const int n = 4;
-  const std::vector<Edge> es = {{0, 1}, {1, 2}, {0, 2}, {0, 3}};
+  const std::vector<Undirected::Edge> es = {{0, 1}, {1, 2}, {0, 2}, {0, 3}};
 
   Graph g(n, es);
 
@@ -71,8 +72,8 @@ TEST(SubsetGraph, Reverse) {
  */
 TEST(SubsetGraph, ConnectedComponents) {
   const int n = 10;
-  const std::vector<Edge> es = {{0, 1}, {0, 2}, {0, 3}, {1, 2},
-                                {4, 5}, {5, 6}, {6, 7}, {7, 8}};
+  const std::vector<Undirected::Edge> es = {{0, 1}, {0, 2}, {0, 3}, {1, 2},
+                                            {4, 5}, {5, 6}, {6, 7}, {7, 8}};
   Graph g(n, es);
 
   auto comps = g.connectedComponents();
@@ -94,7 +95,8 @@ TEST(SubsetGraph, ConnectedComponents) {
  */
 TEST(SubsetGraph, RemoveSingle) {
   const int n = 5;
-  const std::vector<Edge> es = {{0, 1}, {0, 2}, {1, 2}, {2, 3}, {2, 4}, {3, 4}};
+  const std::vector<Undirected::Edge> es = {{0, 1}, {0, 2}, {1, 2},
+                                            {2, 3}, {2, 4}, {3, 4}};
   Graph g(n, es);
 
   ASSERT_EQ(int(g.connectedComponents().size()), 1);
@@ -113,7 +115,7 @@ TEST(SubsetGraph, RemoveSingle) {
  */
 TEST(SubsetGraph, RemoveSeveralInPath) {
   const int n = 10;
-  std::vector<Edge> es;
+  std::vector<Undirected::Edge> es;
   for (int i = 0; i < n - 1; ++i)
     es.emplace_back(i, i + 1);
   Graph g(n, es);
@@ -145,8 +147,8 @@ TEST(SubsetGraph, RemoveSeveralInPath) {
  */
 TEST(SubsetGraph, RemoveSeveral) {
   const int n = 6;
-  const std::vector<Edge> es = {{0, 1}, {0, 2}, {1, 2}, {2, 3},
-                                {2, 4}, {3, 4}, {4, 5}};
+  const std::vector<Undirected::Edge> es = {{0, 1}, {0, 2}, {1, 2}, {2, 3},
+                                            {2, 4}, {3, 4}, {4, 5}};
   Graph g(n, es);
 
   EXPECT_EQ(int(g.connectedComponents().size()), 1);
@@ -160,7 +162,7 @@ TEST(SubsetGraph, RemoveSeveral) {
 
 TEST(SubsetGraph, SubgraphEmpty) {
   const int n = 4;
-  const std::vector<Edge> es = {{0, 1}, {0, 2}, {2, 3}};
+  const std::vector<Undirected::Edge> es = {{0, 1}, {0, 2}, {2, 3}};
 
   Graph g(n, es);
 
@@ -173,8 +175,8 @@ TEST(SubsetGraph, SubgraphEmpty) {
 
 TEST(SubsetGraph, SubgraphSimple) {
   const int n = 6;
-  const std::vector<Edge> es = {{0, 1}, {0, 2}, {1, 2}, {2, 3},
-                                {2, 4}, {3, 4}, {4, 5}};
+  const std::vector<Undirected::Edge> es = {{0, 1}, {0, 2}, {1, 2}, {2, 3},
+                                            {2, 4}, {3, 4}, {4, 5}};
   Graph g(n, es);
 
   std::vector<int> subset = {0, 1, 2, 3};
@@ -193,8 +195,8 @@ TEST(SubsetGraph, SubgraphSimple) {
  */
 TEST(SubsetGraph, RestoreSubgraphSimple) {
   const int n = 6;
-  const std::vector<Edge> es = {{0, 1}, {0, 2}, {1, 2}, {2, 3},
-                                {2, 4}, {3, 4}, {4, 5}};
+  const std::vector<Undirected::Edge> es = {{0, 1}, {0, 2}, {1, 2}, {2, 3},
+                                            {2, 4}, {3, 4}, {4, 5}};
   Graph g(n, es);
 
   std::set<int> subset1 = {0, 1, 2, 3};
