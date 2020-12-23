@@ -219,20 +219,22 @@ public:
      Given a subset of vertices, return the same vertices where all of their
      valid neighbors are included as well.
 
-     If subset contains subdivision vertices or if graph is not a subdivision
-     graph this can result in duplicate vertices being returned.
-
      Time complexity: O(vol(subset))
    */
   template <typename It>
-  std::vector<V> subdivisionVertices(It subsetBegin, It subsetEnd) const {
+  std::vector<V> subdivisionVertices(It subsetBegin, It subsetEnd) {
     std::vector<V> result;
     for (auto it = subsetBegin; it != subsetEnd; ++it) {
       const int u = *it;
       result.push_back(u);
       for (auto e = cbeginEdge(u); e != cendEdge(u); ++e)
-        result.push_back(e->to);
+        if (!visited[e->to])
+          result.push_back(e->to), visited[e->to] = true;
     }
+
+    for (auto it = begin(); it != end(); ++it)
+      visited[*it] = false;
+
     return result;
   }
 
