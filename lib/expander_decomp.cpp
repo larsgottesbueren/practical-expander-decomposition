@@ -55,10 +55,11 @@ Solver::Solver(std::unique_ptr<Undirected::Graph> graph, const double phi,
 }
 
 void Solver::compute(const std::vector<int> &xs) {
-  VLOG(1) << "Attempting to find balanced cut with " << xs.size() << " vertices.";
+  VLOG(1) << "Attempting to find balanced cut with " << xs.size()
+          << " vertices.";
   if (xs.empty()) {
     VLOG(2) << "Exiting early, partition was empty.";
-        return;
+    return;
   } else if (xs.size() == 1) {
     VLOG(2) << "Creating single vertex partition.";
     finalizePartition(xs.begin(), xs.end());

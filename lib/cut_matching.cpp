@@ -24,8 +24,10 @@ Solver::Solver(const UnitFlow::Graph *g, UnitFlow::Graph *subdivisionFlowGraph,
 
   const UnitFlow::Flow capacity = std::ceil(1.0 / phi / T);
   for (const auto u : subset)
-    for (auto e = subdivisionFlowGraph->beginEdge(u); e != subdivisionFlowGraph->endEdge(u); ++e)
-      e->capacity = capacity, subdivisionFlowGraph->reverse(*e).capacity = capacity;
+    for (auto e = subdivisionFlowGraph->beginEdge(u);
+         e != subdivisionFlowGraph->endEdge(u); ++e)
+      e->capacity = capacity,
+      subdivisionFlowGraph->reverse(*e).capacity = capacity;
 }
 
 /**
@@ -105,7 +107,8 @@ Result Solver::compute() {
   std::vector<int> splitNodes;
   absl::flat_hash_set<int> splitNodeSet;
   for (const auto u : subset)
-    for (auto e = subdivisionFlowGraph->beginEdge(u); e != subdivisionFlowGraph->endEdge(u); ++e)
+    for (auto e = subdivisionFlowGraph->beginEdge(u);
+         e != subdivisionFlowGraph->endEdge(u); ++e)
       if (splitNodeSet.find(e->to) == splitNodeSet.end()) {
         splitNodes.push_back(e->to);
         splitNodeSet.insert(e->to);
@@ -128,7 +131,8 @@ Result Solver::compute() {
   absl::flat_hash_set<int> aSet, axSet, aAndAxSet, rSet;
   for (auto u : subset) {
     aSet.insert(u), aAndAxSet.insert(u);
-    for (auto e = subdivisionFlowGraph->beginEdge(u); e != subdivisionFlowGraph->endEdge(u); ++e)
+    for (auto e = subdivisionFlowGraph->beginEdge(u);
+         e != subdivisionFlowGraph->endEdge(u); ++e)
       axSet.insert(e->to), aAndAxSet.insert(e->to);
   }
 
@@ -235,7 +239,8 @@ Result Solver::compute() {
 
     for (auto u : aSet) {
       bool allRemoved = true;
-      for (auto e = subdivisionFlowGraph->beginEdge(u); e != subdivisionFlowGraph->endEdge(u); ++e)
+      for (auto e = subdivisionFlowGraph->beginEdge(u);
+           e != subdivisionFlowGraph->endEdge(u); ++e)
         if (removed.find(e->to) == removed.end()) {
           allRemoved = false;
           break;
@@ -249,7 +254,8 @@ Result Solver::compute() {
              "Subdivision vertices should have degree two.");
 
       bool allNeighborsRemoved = true, noNeighborsRemoved = true;
-      for (auto e = subdivisionFlowGraph->beginEdge(u); e != subdivisionFlowGraph->endEdge(u); ++e) {
+      for (auto e = subdivisionFlowGraph->beginEdge(u);
+           e != subdivisionFlowGraph->endEdge(u); ++e) {
         if (aSet.find(e->to) != aSet.end()) {
           if (removed.find(e->to) == removed.end())
             allNeighborsRemoved = false;

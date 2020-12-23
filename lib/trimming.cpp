@@ -16,7 +16,7 @@ Solver::Solver(UnitFlow::Graph *g, const std::vector<int> &subset,
   should be 'std::log(2 * m)' but that crashes if subgraph does not have edges.
  */
 Result Solver::compute() {
-  VLOG(1) << "Trimming partition with "          << subset.size() << " vertices.";
+  VLOG(1) << "Trimming partition with " << subset.size() << " vertices.";
 
   absl::flat_hash_set<int> aSet(subset.begin(), subset.end()), rSet;
   flowGraph->reset(subset.begin(), subset.end());
