@@ -250,8 +250,10 @@ Result Solver::compute() {
     }
 
     for (auto u : axSet) {
-      assert(subdivisionFlowGraph->degree(u) == 2 &&
-             "Subdivision vertices should have degree two.");
+      assert((subdivisionFlowGraph->degree(u) == 1 ||
+              subdivisionFlowGraph->degree(u) == 2) &&
+             "Subdivision vertices should have degree two (or one if on edge "
+             "of subgraph).");
 
       bool allNeighborsRemoved = true, noNeighborsRemoved = true;
       for (auto e = subdivisionFlowGraph->beginEdge(u);
