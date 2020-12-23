@@ -284,7 +284,7 @@ public:
      Time complexity: O(|subset| + vol(subset))
    */
   template <typename It> void subgraph(It subsetBegin, It subsetEnd) {
-    vertexBound.push({0, int(subsetEnd - subsetBegin)});
+    vertexBound.push({0, int(std::distance(subsetBegin, subsetEnd))});
 
     for (auto it = subsetBegin; it != subsetEnd; ++it) {
       const int fromIdx = vertexIndices[*it],
@@ -302,7 +302,6 @@ public:
 
     for (auto it = begin(); it != end(); ++it) {
       const int u = *it;
-      edgeBounds[u].push({edgeBounds[u].top().end});
       int offset = 0;
       for (int fromIdx = 0; fromIdx < edgeBounds[u].top().end; ++fromIdx) {
         const auto &e = edges[u][fromIdx];
@@ -313,7 +312,7 @@ public:
           reverse(edges[u][toIdx]).revIdx = toIdx;
         }
       }
-      edgeBounds[u].top().middle = offset, edgeBounds[u].top().end = offset;
+      edgeBounds[u].push({offset});
     }
 
     for (auto it = begin(); it != end(); ++it)
@@ -336,14 +335,15 @@ public:
      Time complexity: O(n)
    */
   void restoreSubgraph() {
-    vertexBound.pop();
-    assert(!vertexBound.empty() &&
-           "The top most vertex bound is required to represent entire graph.");
-    for (auto u = begin(); u != end(); ++u) {
+    for (auto it = begin(); it != end(); ++it) {
+      const int u = *it;
       edgeBounds[u].pop();
       assert(!edgeBounds[u].empty() && "The top most edge bound is require to "
                                        "represent an entire adjacency list.");
     }
+    vertexBound.pop();
+    assert(!vertexBound.empty() &&
+           "The top most vertex bound is required to represent entire graph.");
   }
 
   /**

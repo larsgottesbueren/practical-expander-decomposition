@@ -207,3 +207,38 @@ TEST(SubsetGraph, SubgraphSimple) {
     seen.insert(u);
   EXPECT_EQ(seen, std::set<int>(subset.begin(), subset.end()));
 }
+
+/**
+   Focus on subset twice then restore once.
+ */
+TEST(SubsetGraph, RestoreSubgraphSimple) {
+  const int n = 6;
+  const std::vector<Edge> es = {{0, 1}, {0, 2}, {1, 2}, {2, 3},
+                                {2, 4}, {3, 4}, {4, 5}};
+  Graph g(n, es);
+
+  std::set<int> subset1 = {0, 1, 2, 3};
+  g.subgraph(subset1.begin(), subset1.end());
+
+  std::set<int> subset2 = {1, 2};
+  g.subgraph(subset2.begin(), subset2.end());
+
+  EXPECT_EQ(g.size(), 2);
+  EXPECT_EQ(g.edgeCount(), 1);
+  EXPECT_EQ(g.degree(1), 1);
+  EXPECT_EQ(g.degree(2), 1);
+
+  g.restoreSubgraph();
+
+  EXPECT_EQ(g.size(), 4);
+  EXPECT_EQ(g.edgeCount(), 4);
+  EXPECT_EQ(g.degree(0), 2);
+  EXPECT_EQ(g.degree(1), 2);
+  EXPECT_EQ(g.degree(2), 3);
+  EXPECT_EQ(g.degree(3), 1);
+
+  std::set<int> seen;
+  for (auto u : g)
+    seen.insert(u);
+  EXPECT_EQ(seen, subset1);
+}
