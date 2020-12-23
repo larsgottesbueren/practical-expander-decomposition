@@ -105,7 +105,7 @@ void Solver::compute(const std::vector<int> &xs) {
                                                             result.r.end());
       flowGraph->subgraph(result.r.begin(), result.r.end());
       subdivisionFlowGraph->subgraph(subR.begin(), subR.end());
-      compute(result.a);
+      compute(result.r);
       flowGraph->restoreSubgraph();
       subdivisionFlowGraph->restoreSubgraph();
       break;
@@ -132,6 +132,7 @@ void Solver::compute(const std::vector<int> &xs) {
       break;
     }
     case CutMatching::Expander: {
+      VLOG(3) << "Finalizing " << xs.size() << " vertices as partition " << numPartitions << ".";
       finalizePartition(xs.begin(), xs.end());
       break;
     }
@@ -141,8 +142,10 @@ void Solver::compute(const std::vector<int> &xs) {
 
 std::vector<std::vector<int>> Solver::getPartition() const {
   std::vector<std::vector<int>> result(numPartitions);
-  for (auto u : *flowGraph)
+  for (auto u : *flowGraph) {
+    assert(partitionOf[u] != -1 && "Vertex not part of partition.");
     result[partitionOf[u]].push_back(u);
+  }
 
   return result;
 }
