@@ -25,6 +25,8 @@ int main(int argc, char *argv[]) {
   google::InitGoogleLogging(argv[0]);
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
+  VLOG(1) << "Reading input.";
+
   int n, m;
   cin >> n >> m;
 
@@ -33,20 +35,23 @@ int main(int argc, char *argv[]) {
     cin.ignore();
     for (int u = 0; u < n; ++u) {
       string line;
-      cin >> line;
+      getline(cin, line);
       stringstream ss(line);
+
       int v;
       while (ss >> v)
-        es.push_back({u, v - 1});
+        es.emplace_back(u, v - 1);
     }
   } else {
     for (int i = 0; i < m; ++i) {
       int u, v;
       cin >> u >> v;
       if (u < v)
-        es.push_back({u, v - 1});
+        es.emplace_back(u, v);
     }
   }
+
+  VLOG(1) << "Finished reading input.";
 
   ExpanderDecomposition::Solver solver(make_unique<Undirected::Graph>(n, es),
                                        FLAGS_phi, FLAGS_t1, FLAGS_t2);
