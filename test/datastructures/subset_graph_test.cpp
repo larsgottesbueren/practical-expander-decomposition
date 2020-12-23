@@ -48,6 +48,17 @@ TEST(SubsetGraph, ConstructSmall) {
   ASSERT_TRUE(esLeft.empty());
 }
 
+TEST(SubsetGraph, ConstructComplete) {
+  const int n = 100;
+  std::vector<Undirected::Edge> es;
+  for (int u = 0; u < n; ++u)
+    for (int v = u+1; v < n; ++v)
+      es.emplace_back(u,v);
+  Graph g(n, es);
+  EXPECT_EQ(g.size(), n);
+  EXPECT_EQ(g.edgeCount(), n * (n-1) / 2);
+}
+
 /**
    Test that 'reverse' returns the correct edge.
  */
@@ -223,4 +234,33 @@ TEST(SubsetGraph, RestoreSubgraphSimple) {
   for (auto u : g)
     seen.insert(u);
   EXPECT_EQ(seen, subset1);
+}
+
+TEST(SubsetGraph, SubdivisionVerticesSmall) {
+  const int n = 10;
+  const std::vector<Undirected::Edge> es =
+    {{0,1}, {1,2}, {2,3}};
+
+  Graph g(n, es);
+
+  { std::vector<int> subset = {0};
+    auto vs = g.subdivisionVertices(subset.begin(), subset.end());
+    std::sort(vs.begin(), vs.end());
+    EXPECT_EQ(vs, std::vector<int>({0,1}));
+  }
+  { std::vector<int> subset = {1};
+    auto vs = g.subdivisionVertices(subset.begin(), subset.end());
+    std::sort(vs.begin(), vs.end());
+    EXPECT_EQ(vs, std::vector<int>({0,1,2}));
+  }
+  { std::vector<int> subset = {2};
+    auto vs = g.subdivisionVertices(subset.begin(), subset.end());
+    std::sort(vs.begin(), vs.end());
+    EXPECT_EQ(vs, std::vector<int>({1,2,3}));
+  }
+  { std::vector<int> subset = {3};
+    auto vs = g.subdivisionVertices(subset.begin(), subset.end());
+    std::sort(vs.begin(), vs.end());
+    EXPECT_EQ(vs, std::vector<int>({2,3}));
+  }
 }
