@@ -166,6 +166,28 @@ public:
   }
 
   /**
+     Return the i'th edge in the adjacency list of vertex 'u'.
+   */
+  E &getEdge(V u, int idx) {
+    assert(idx >= 0 && "Edge index cannot be negative.");
+    assert(
+        idx < edgeBounds[u].top().middle &&
+        "Edge index larger than number of edges in subgraph adjacency list.");
+    return edges[u][idx];
+  }
+
+  /**
+     Return the i'th edge in the adjacency list of vertex 'u' as constant edge.
+   */
+  const E &getEdge(V u, int idx) const {
+    assert(idx >= 0 && "Edge index cannot be negative.");
+    assert(
+        idx < edgeBounds[u].top().middle &&
+        "Edge index larger than number of edges in subgraph adjacency list.");
+    return edges[u][idx];
+  }
+
+  /**
      Reverse edge in graph.
    */
   E &reverse(const E &e) {
@@ -179,6 +201,27 @@ public:
   const E &reverse(const E &e) const {
     assert(e.revIdx != -1 && "Reverse index undefined.");
     return edges[e.to][e.revIdx];
+  }
+
+  /**
+     Given a subset of vertices, return the same vertices where all of their
+     valid neighbors are included as well.
+
+     If subset contains subdivision vertices or if graph is not a subdivision
+     graph this can result in duplicate vertices being returned.
+
+     Time complexity: O(vol(subset))
+   */
+  template <typename It>
+  std::vector<V> subdivisionVertices(It subsetBegin, It subsetEnd) const {
+    std::vector<V> result;
+    for (auto it = subsetBegin; it != subsetEnd; ++it) {
+      const int u = *it;
+      result.push_back(u);
+      for (auto e = cbeginEdge(u); e != cendEdge(u); ++e)
+        result.push_back(e->to);
+    }
+    return result;
   }
 
   /**
@@ -196,6 +239,13 @@ public:
   int degree(V u) const { return edgeBounds[u].top().middle; }
 
   /**
+     Degree of vertex 'u' in entire graph.
+
+     Time complexity: O(1)
+   */
+  int globalDegree(V u) const { return int(edges[u].size()); }
+
+  /**
      Number of edges in graph.
 
      Time complexity: O(m)
@@ -209,10 +259,40 @@ public:
    */
   int volume() const {
     int total = 0;
-
     for (auto it = cbegin(); it != cend(); ++it)
       total += degree(*it);
+    return total;
+  }
 
+  /**
+     Volume of given vertices in the current subgraph.
+   */
+  template <typename It> int volume(It subsetBegin, It subsetEnd) const {
+    int total = 0;
+    for (auto it = subsetBegin; it != subsetEnd; ++it)
+      total += degree(*it);
+    return total;
+  }
+
+  /**
+     Volume of entire graph.
+
+     Time complexity: O(m)
+   */
+  int globalVolume() const {
+    int total = 0;
+    for (auto it = cbegin(); it != cend(); ++it)
+      total += globalDegree(*it);
+    return total;
+  }
+
+  /**
+     Volume of given vertices in the entire graph.
+   */
+  template <typename It> int globalVolume(It subsetBegin, It subsetEnd) const {
+    int total = 0;
+    for (auto it = subsetBegin; it != subsetEnd; ++it)
+      total += globalDegree(*it);
     return total;
   }
 

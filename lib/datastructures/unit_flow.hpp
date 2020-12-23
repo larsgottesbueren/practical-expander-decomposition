@@ -6,8 +6,8 @@
 #include <vector>
 
 #include "absl/container/flat_hash_set.h"
-#include "datastructures/linkcut.hpp"
-#include "partition_graph.hpp"
+#include "linkcut.hpp"
+#include "subset_graph.hpp"
 
 namespace UnitFlow {
 
@@ -15,26 +15,36 @@ using Vertex = int;
 using Flow = long long;
 
 struct Edge {
-  const Vertex from, to;
-  /**
-      Index such that graph[to][backIdx] = edge to->from
-  */
-  Edge *reverse;
+  Vertex from, to, revIdx;
   Flow flow, capacity;
 
-  Edge(const Vertex from, const Vertex to, Flow flow, Flow capacity);
+  Edge(Vertex from, Vertex to, Flow flow, Flow capacity);
+  /**
+     Construct an edge between two vertices with a certain capacity and zero
+     flow.
+   */
+  Edge(Vertex from, Vertex to, Flow capacity);
 
   /**
-     Reverse 'from' and 'to'.
+     Residual capacity. I.e. the amount of capacity left over.
    */
-  Edge rev() const { return *reverse; };
+  Flow residual() const { return capacity - flow; }
+
+  /**
+     Construct the reverse of this edge. 'capacity' is the same but 'flow' is
+     set to zero. 'revIdx' remains undefined since it is maintained by the graph
+     representation.
+  */
+  Edge reverse() const {
+    Edge e{to, from, 0, capacity};
+    return e;
+  }
 };
 
 /**
    Push relabel based unit flow algorithm. Based on push relabel in KACTL.
  */
-
-class Graph : public PartitionGraph<int, Edge> {
+class Graph : public SubsetGraph::Graph<int, Edge> {
 private:
   /**
      The amount of flow a vertex is absorbing. In the beginning, before any flow
@@ -68,9 +78,9 @@ private:
 
 public:
   /**
-     Construct a unit flow problem with n vertices and maximum label height h.
+     Construct a unit flow problem with 'n' vertices and edges 'es'.
    */
-  Graph(int n);
+  Graph(int n, const std::vector<Edge> &es);
 
   const std::vector<Flow> &getAbsorbed() const { return absorbed; }
   const std::vector<Flow> &getSink() const { return sink; }
@@ -110,7 +120,7 @@ public:
    */
   Flow flowOut(Vertex u) const {
     Flow f = 0;
-    for (const auto &e : edges(u))
+    for (auto e = cbeginEdge(u); e != cendEdge(u); ++e)
       if (e->flow > 0)
         f += e->flow;
     return f;
@@ -156,13 +166,13 @@ public:
      Set all flow, sinks and source capacities of a subset of vertices to 0.
    */
   template <typename It> void reset(const It begin, const It end) {
-    for (auto it = begin; it != end; ++it) {
-      for (auto &edge : edges(*it))
-        edge->flow = 0;
-      absorbed[*it] = 0;
-      sink[*it] = 0;
-      height[*it] = 0;
-      nextEdgeIdx[*it] = 0;
+    for (auto u : *this) {
+      for (auto e = beginEdge(u); e != endEdge(u); ++e)
+        e->flow = 0;
+      absorbed[u] = 0;
+      sink[u] = 0;
+      height[u] = 0;
+      nextEdgeIdx[u] = 0;
     }
   }
 

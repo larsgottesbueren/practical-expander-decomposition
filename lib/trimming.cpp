@@ -7,8 +7,8 @@
 namespace Trimming {
 
 Solver::Solver(UnitFlow::Graph *g, const std::vector<int> &subset,
-               const double phi, const int partition)
-    : flowGraph(g), subset(subset), phi(phi), partition(partition) {}
+               const double phi)
+    : flowGraph(g), subset(subset), phi(phi) {}
 
 /*
   TODO: consider making 'rSet' and 'result' the same.
@@ -16,14 +16,13 @@ Solver::Solver(UnitFlow::Graph *g, const std::vector<int> &subset,
   should be 'std::log(2 * m)' but that crashes if subgraph does not have edges.
  */
 Result Solver::compute() {
-  VLOG(1) << "Trimming partition " << partition << " which has "
-          << subset.size() << " vertices.";
+  VLOG(1) << "Trimming partition with "          << subset.size() << " vertices.";
 
   absl::flat_hash_set<int> aSet(subset.begin(), subset.end()), rSet;
   flowGraph->reset(subset.begin(), subset.end());
 
   for (const auto &u : aSet) {
-    for (const auto &e : flowGraph->edges(u)) {
+    for (auto e = flowGraph->beginEdge(u); e != flowGraph->endEdge(u); ++e) {
       if (aSet.find(e->to) == aSet.end())
         flowGraph->addSource(u, (UnitFlow::Flow)ceil(2.0 / phi));
       e->capacity = (UnitFlow::Flow)ceil(2.0 / phi);
@@ -32,7 +31,7 @@ Result Solver::compute() {
     flowGraph->addSink(u, d);
   }
 
-  const int m = flowGraph->edgeCount(partition);
+  const int m = flowGraph->edgeCount();
   const int h = ceil(40 * std::log(2 * m + 1) / phi);
 
   while (true) {
@@ -49,7 +48,7 @@ Result Solver::compute() {
     for (const auto &u : levelCut)
       aSet.erase(u), rSet.insert(u);
     for (const auto &u : levelCut)
-      for (const auto &e : flowGraph->edges(u))
+      for (auto e = flowGraph->beginEdge(u); e != flowGraph->endEdge(u); ++e)
         if (aSet.find(e->to) != aSet.end())
           flowGraph->addSource(e->to, (UnitFlow::Flow)ceil(2.0 / phi));
   }
@@ -57,8 +56,7 @@ Result Solver::compute() {
   Result result;
   result.r = std::vector<int>(rSet.begin(), rSet.end());
 
-  VLOG(1) << "Trimmed " << result.r.size() << " vertices from partition "
-          << partition;
+  VLOG(1) << "Trimmed " << result.r.size() << " vertices.";
 
   return result;
 }

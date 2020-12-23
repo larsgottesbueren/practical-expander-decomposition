@@ -1,35 +1,35 @@
 #include "gtest/gtest.h"
 
-#include "lib/unit_flow.hpp"
+#include "lib/datastructures/unit_flow.hpp"
 
 #include <algorithm>
 #include <numeric>
+#include <vector>
 
 /**
    Make sure 'addEdge' adds an edge in both ways with the correct 'backIdx'.
  */
 TEST(UnitFlow, AddEdge) {
-  UnitFlow::Graph uf(3);
-
-  ASSERT_TRUE(uf.addEdge(0, 1, 5));
-  ASSERT_TRUE(uf.addEdge(0, 2, 10));
+  const int n = 3;
+  const std::vector<UnitFlow::Edge> es = {{0, 1, 5}, {0, 2, 10}};
+  UnitFlow::Graph uf(n, es);
 
   EXPECT_EQ(uf.neighbors(0), (std::vector<int>{1, 2}));
   EXPECT_EQ(uf.neighbors(1), (std::vector<int>{0}));
-  EXPECT_EQ(uf.neighbors(1), (std::vector<int>{0}));
+  EXPECT_EQ(uf.neighbors(2), (std::vector<int>{0}));
 
   const auto &e01 = uf.edges(0)[0];
   const auto &e02 = uf.edges(0)[1];
   const auto &e10 = uf.edges(1)[0];
   const auto &e20 = uf.edges(2)[0];
 
-  EXPECT_EQ(e01->capacity, 5);
-  EXPECT_EQ(e10->capacity, 5);
-  EXPECT_EQ(e02->capacity, 10);
-  EXPECT_EQ(e20->capacity, 10);
+  EXPECT_EQ(e01.capacity, 5);
+  EXPECT_EQ(e10.capacity, 5);
+  EXPECT_EQ(e02.capacity, 10);
+  EXPECT_EQ(e20.capacity, 10);
 
-  EXPECT_EQ(e01->reverse, e10.get());
-  EXPECT_EQ(e02->reverse, e20.get());
+  EXPECT_EQ(g.reverse(e01), e10);
+  EXPECT_EQ(g.reverse(e02), e20);
 }
 
 TEST(UnitFlow, SingleVertex) {

@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "unit_flow.hpp"
+#include "datastructures/unit_flow.hpp"
 
 namespace Trimming {
 
@@ -18,14 +18,12 @@ private:
   UnitFlow::Graph *flowGraph;
   const std::vector<int> &subset;
   const double phi;
-  const int partition;
 
 public:
   /**
      Construct a trimming problem on the subgraph in 'g' induced by 'subset'.
    */
-  Solver(UnitFlow::Graph *g, const std::vector<int> &subset, const double phi,
-         const int partition);
+  Solver(UnitFlow::Graph *g, const std::vector<int> &subset, const double phi);
 
   Result compute();
 };

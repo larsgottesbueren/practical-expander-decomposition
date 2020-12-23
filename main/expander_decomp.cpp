@@ -7,8 +7,8 @@
 #include <vector>
 
 #include "lib/cut_matching.hpp"
+#include "lib/datastructures/undirected_graph.hpp"
 #include "lib/expander_decomp.hpp"
-#include "lib/ugraph.hpp"
 
 using namespace std;
 
@@ -27,8 +27,8 @@ int main(int argc, char *argv[]) {
 
   int n, m;
   cin >> n >> m;
-  auto g = make_unique<Undirected::Graph>(n);
 
+  vector<Undirected::Edge> es;
   if (FLAGS_chaco) {
     cin.ignore();
     for (int u = 0; u < n; ++u) {
@@ -37,18 +37,19 @@ int main(int argc, char *argv[]) {
       stringstream ss(line);
       int v;
       while (ss >> v)
-        g->addEdge(u, v - 1);
+        es.push_back({u, v - 1});
     }
   } else {
     for (int i = 0; i < m; ++i) {
       int u, v;
       cin >> u >> v;
       if (u < v)
-        g->addEdge(u, v);
+        es.push_back({u, v - 1});
     }
   }
 
-  ExpanderDecomposition::Solver solver(move(g), FLAGS_phi, FLAGS_t1, FLAGS_t2);
+  ExpanderDecomposition::Solver solver(make_unique<Undirected::Graph>(n, es),
+                                       FLAGS_phi, FLAGS_t1, FLAGS_t2);
   auto partitions = solver.getPartition();
   auto conductances = solver.getConductance();
 

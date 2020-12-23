@@ -2,26 +2,15 @@
 
 namespace UnitFlow {
 
-Edge::Edge(const UnitFlow::Vertex from, const UnitFlow::Vertex to, Flow flow,
-           Flow capacity)
-    : from(from), to(to), reverse(nullptr), flow(flow), capacity(capacity) {}
+Edge::Edge(Vertex from, Vertex to, Flow flow, Flow capacity)
+    : from(from), to(to), revIdx(-1), flow(flow), capacity(capacity) {}
 
-Graph::Graph(int n)
-    : PartitionGraph<int, Edge>(n), absorbed(n), sink(n), height(n),
+Edge::Edge(Vertex from, Vertex to, Flow capacity)
+    : Edge(from, to, 0, capacity) {}
+
+Graph::Graph(int n, const std::vector<Edge> &es)
+    : SubsetGraph::Graph<int, Edge>(n, es), absorbed(n), sink(n), height(n),
       nextEdgeIdx(n), forest(n) {}
-
-bool Graph::addEdge(Vertex u, Vertex v, Flow capacity) {
-  auto p = addDirectedEdge({u, v, 0, capacity}, true);
-  if (p) {
-    auto rp = addDirectedEdge({v, u, 0, capacity}, false);
-    assert(rp && "Reverse edge should exist if regular edge exists.");
-    p->reverse = rp;
-    rp->reverse = p;
-    return true;
-  } else {
-    return false;
-  }
-}
 
 std::vector<Vertex> Graph::compute(const int maxHeight) {
   absl::flat_hash_set<int> vertices;
@@ -53,38 +42,38 @@ std::vector<Vertex> Graph::compute(const int maxHeight,
       continue;
     }
 
-    auto &e = edges(u)[nextEdgeIdx[u]];
-    if (excess(u) > 0 && residual(*e) > 0 && height[u] == height[e->to] + 1 &&
-        alive.find(e->to) != alive.end()) {
+    auto &e = getEdge(u, nextEdgeIdx[u]);
+    if (excess(u) > 0 && e.residual() > 0 && height[u] == height[e.to] + 1 &&
+        alive.find(e.to) != alive.end()) {
       // Push flow across 'e'
-      assert(excess(e->to) == 0 && "Pushing to vertex with non-zero excess");
+      assert(excess(e.to) == 0 && "Pushing to vertex with non-zero excess");
       UnitFlow::Flow delta = std::min(
-          {excess(e->from), residual(*e), (UnitFlow::Flow)degree(e->to)});
+          {excess(e.from), e.residual(), (UnitFlow::Flow)degree(e.to)});
 
-      e->flow += delta;
-      absorbed[e->from] -= delta;
+      e.flow += delta;
+      absorbed[e.from] -= delta;
 
-      e->reverse->flow -= delta;
-      absorbed[e->to] += delta;
+      reverse(e).flow -= delta;
+      absorbed[e.to] += delta;
 
-      assert(excess(e->from) >= 0 && "Excess after pushing cannot be negative");
-      if (height[e->from] >= maxH || excess(e->from) == 0)
+      assert(excess(e.from) >= 0 && "Excess after pushing cannot be negative");
+      if (height[e.from] >= maxH || excess(e.from) == 0)
         q[level].pop();
 
-      if (height[e->to] < maxH && excess(e->to) > 0) {
-        q[height[e->to]].push(e->to);
-        level = std::min(level, height[e->to]);
+      if (height[e.to] < maxH && excess(e.to) > 0) {
+        q[height[e.to]].push(e.to);
+        level = std::min(level, height[e.to]);
       }
-    } else if (nextEdgeIdx[e->from] == (int)edges(e->from).size() - 1) {
+    } else if (nextEdgeIdx[e.from] == degree(e.from) - 1) {
       // all edges have been tried, relabel
       q[level].pop();
-      height[e->from]++;
-      nextEdgeIdx[e->from] = 0;
+      height[e.from]++;
+      nextEdgeIdx[e.from] = 0;
 
-      if (height[e->from] < maxH)
-        q[height[e->from]].push(e->from);
+      if (height[e.from] < maxH)
+        q[height[e.from]].push(e.from);
     } else {
-      nextEdgeIdx[e->from]++;
+      nextEdgeIdx[e.from]++;
     }
   }
 
@@ -117,7 +106,7 @@ std::vector<Vertex> Graph::levelCut(const int maxHeight,
     for (auto u : levels[level]) {
       volume += degree(u);
       curResult.push_back(u);
-      for (const auto &e : edges(u))
+      for (auto e = beginEdge(u); e != endEdge(u); ++e)
         if (alive.find(e->to) != alive.end() && height[u] == height[e->to] + 1)
           z++;
     }
@@ -130,9 +119,9 @@ std::vector<Vertex> Graph::levelCut(const int maxHeight,
 }
 
 void Graph::reset() {
-  for (Vertex u = 0; u < size(); ++u) {
-    for (auto &edge : edges(u))
-      edge->flow = 0;
+  for (auto u : *this) {
+    for (auto e = beginEdge(u); e != endEdge(u); ++e)
+      e->flow = 0;
     absorbed[u] = 0;
     sink[u] = 0;
     height[u] = 0;
@@ -161,13 +150,13 @@ Graph::matching(const absl::flat_hash_set<Vertex> &alive,
         return u;
       }
 
-      for (auto &e : edges(u)) {
+      for (auto e = beginEdge(u); e != endEdge(u); ++e) {
         int v = e->to;
         if (e->flow <= 0 || alive.find(v) == alive.end() ||
             visited.find(v) != visited.end())
           continue;
 
-        path.push_back(e.get());
+        path.push_back(&(*e));
         int m = dfs(v);
         if (m != -1)
           return m;

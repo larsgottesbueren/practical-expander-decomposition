@@ -4,8 +4,8 @@
 #include <vector>
 
 #include "absl/container/flat_hash_map.h"
-#include "ugraph.hpp"
-#include "unit_flow.hpp"
+#include "datastructures/undirected_graph.hpp"
+#include "datastructures/unit_flow.hpp"
 
 namespace CutMatching {
 

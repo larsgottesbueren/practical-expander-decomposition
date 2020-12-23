@@ -2,8 +2,8 @@
 
 #include <vector>
 
-#include "ugraph.hpp"
-#include "unit_flow.hpp"
+#include "datastructures/undirected_graph.hpp"
+#include "datastructures/unit_flow.hpp"
 
 namespace ExpanderDecomposition {
 
@@ -43,9 +43,29 @@ private:
   const double tFactor;
 
   /**
+     Number of finalized partitions.
+   */
+  int numPartitions;
+
+  /**
+     Vector of indices such that 'partitionOf[u]' is the partition index of
+     vertex 'u'.
+   */
+  std::vector<int> partitionOf;
+
+  /**
      Compute expander decomposition for subset of vertices 'xs'.
    */
-  void compute(const std::vector<int> &xs, int partition);
+  void compute(const std::vector<int> &xs);
+
+  /**
+     Create a partition with the given vertices.
+   */
+  template <typename It> void finalizePartition(It begin, It end) {
+    for (auto it = begin; it != end; ++it)
+      partitionOf[*it] = numPartitions;
+    numPartitions++;
+  }
 
 public:
   /**

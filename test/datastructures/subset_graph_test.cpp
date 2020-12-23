@@ -1,31 +1,11 @@
 #include "gtest/gtest.h"
 
 #include "lib/datastructures/subset_graph.hpp"
+#include "lib/ugraph.hpp"
 
 #include <iostream>
 
-/**
-   Basic undirected edge.
- */
-struct Edge {
-  int from, to, revIdx;
-
-  /**
-     Construct an edge 'from->to'. 'revIdx' remains undefined.
-   */
-  Edge(int from, int to) : from(from), to(to), revIdx(-1) {}
-
-  /**
-     Construct the reverse of this edge. 'revIdx' remains undefined since it is
-     maintained by the graph representation.
-   */
-  Edge reverse() const {
-    Edge e{to, from};
-    return e;
-  }
-};
-
-using Graph = SubsetGraph::Graph<int, Edge>;
+using Graph = Undirected::Graph;
 
 TEST(SubsetGraph, ConstructEmpty) {
   Graph g(0, {});

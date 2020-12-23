@@ -11,92 +11,33 @@ namespace ExpanderDecomposition {
 
 std::unique_ptr<UnitFlow::Graph>
 constructFlowGraph(const std::unique_ptr<Undirected::Graph> &g) {
-  auto f = std::make_unique<UnitFlow::Graph>(g->size());
-
-  for (UnitFlow::Vertex u = 0; u < g->size(); ++u)
-    for (const auto &e : g->edges(u))
+  std::vector<UnitFlow::Edge> es;
+  for (auto u : *g)
+    for (auto e = g->cbeginEdge(u); e != g->cendEdge(u); ++e)
       if (e->from < e->to)
-        f->addEdge(e->from, e->to, 0);
+        es.emplace_back(e->from, e->to, 0);
 
-  return f;
+  return std::make_unique<UnitFlow::Graph>(g->size(), es);
 }
 
 std::unique_ptr<UnitFlow::Graph>
 constructSubdivisionFlowGraph(const std::unique_ptr<Undirected::Graph> &g) {
-  auto f = std::make_unique<UnitFlow::Graph>(g->size() + g->edgeCount());
-
-  for (UnitFlow::Vertex u = 0; u < g->size(); ++u)
-    for (const auto &e : g->edges(u))
+  std::vector<UnitFlow::Edge> es;
+  for (auto u : *g)
+    for (auto e = g->cbeginEdge(u); e != g->cendEdge(u); ++e)
       if (e->from < e->to) {
-        UnitFlow::Vertex splitVertex = g->size() + f->edgeCount() / 2;
-        f->addEdge(e->from, splitVertex, 0);
-        f->addEdge(e->to, splitVertex, 0);
+        UnitFlow::Vertex splitVertex = g->size() + int(es.size()) / 2;
+        es.emplace_back(e->from, splitVertex, 0);
+        es.emplace_back(e->to, splitVertex, 0);
       }
-
-  return f;
-}
-
-void Solver::compute(const std::vector<int> &xs, int partition) {
-  VLOG(1) << "Attempting to find balanced cut for partition " << partition
-          << " (" << xs.size() << " vertices).";
-  if (xs.empty()) {
-    VLOG(2) << "Exiting early, partition " << partition << " was empty.";
-    return;
-  } else if (xs.size() == 1) {
-    VLOG(2) << "Exiting early, partition " << partition
-            << " was single vertex.";
-    return;
-  }
-
-  const auto &components = flowGraph->connectedComponents(xs);
-
-  if (components.size() > 1) {
-    VLOG(2) << "Found " << components.size() << " connected components.";
-    for (int i = 1; i < int(components.size()); ++i) {
-      int p = flowGraph->newPartition(components[i], xs);
-      if (components[i].size() > 1)
-        compute(components[i], p);
-    }
-    if (components[0].size() > 1)
-      compute(components[0], partition);
-  } else {
-    CutMatching::Solver cm(flowGraph.get(), subdivisionFlowGraph.get(), xs, phi,
-                           tConst, tFactor);
-    auto result = cm.compute();
-
-    switch (result.t) {
-    case CutMatching::Balanced: {
-      assert(!result.a.empty() && "Cut should be balanced but A was empty.");
-      assert(!result.r.empty() && "Cut should be balanced but R was empty.");
-      int newPartition = flowGraph->newPartition(result.a, xs);
-      compute(result.a, newPartition);
-      compute(result.r, partition);
-      break;
-    }
-    case CutMatching::NearExpander: {
-      assert(!result.a.empty() && "Near expander should have non-empty A.");
-      assert(!result.r.empty() && "Near expander should have non-empty R.");
-      Trimming::Solver trimming(flowGraph.get(), result.a, phi, partition);
-      const auto trimmingResult = trimming.compute();
-      result.r.insert(result.r.end(), trimmingResult.r.begin(),
-                      trimmingResult.r.end());
-      if (result.r.size() > 0 && result.r.size() < xs.size()) {
-        int newPartition = flowGraph->newPartition(result.r, xs);
-        compute(result.r, newPartition);
-      }
-      break;
-    }
-    case CutMatching::Expander: {
-      break;
-    }
-    }
-  }
+  return std::make_unique<UnitFlow::Graph>(g->size() + int(es.size()) / 2, es);
 }
 
 Solver::Solver(std::unique_ptr<Undirected::Graph> graph, const double phi,
                const int tConst, const double tFactor)
     : flowGraph(nullptr), subdivisionFlowGraph(nullptr), phi(phi),
-      tConst(tConst), tFactor(tFactor) {
+      tConst(tConst), tFactor(tFactor), numPartitions(0),
+      partitionOf(graph->size(), -1) {
   flowGraph = constructFlowGraph(graph);
   subdivisionFlowGraph = constructSubdivisionFlowGraph(graph);
 
@@ -110,13 +51,97 @@ Solver::Solver(std::unique_ptr<Undirected::Graph> graph, const double phi,
 
   std::vector<int> vertices(graph->size());
   std::iota(vertices.begin(), vertices.end(), 0);
-  compute(vertices, 0);
+  compute(vertices);
+}
+
+void Solver::compute(const std::vector<int> &xs) {
+  VLOG(1) << "Attempting to find balanced cut with " << xs.size() << " vertices.";
+  if (xs.empty()) {
+    VLOG(2) << "Exiting early, partition was empty.";
+        return;
+  } else if (xs.size() == 1) {
+    VLOG(2) << "Creating single vertex partition.";
+    finalizePartition(xs.begin(), xs.end());
+    return;
+  }
+
+  const auto &components = flowGraph->connectedComponents();
+
+  if (components.size() > 1) {
+    VLOG(2) << "Found " << components.size() << " connected components.";
+
+    for (auto &comp : components) {
+      auto subComp =
+          subdivisionFlowGraph->subdivisionVertices(comp.begin(), comp.end());
+
+      flowGraph->subgraph(comp.begin(), comp.end());
+      subdivisionFlowGraph->subgraph(subComp.begin(), subComp.end());
+
+      compute(comp);
+
+      flowGraph->restoreSubgraph();
+      subdivisionFlowGraph->restoreSubgraph();
+    }
+  } else {
+    CutMatching::Solver cm(flowGraph.get(), subdivisionFlowGraph.get(), xs, phi,
+                           tConst, tFactor);
+    auto result = cm.compute();
+
+    switch (result.t) {
+    case CutMatching::Balanced: {
+      assert(!result.a.empty() && "Cut should be balanced but A was empty.");
+      assert(!result.r.empty() && "Cut should be balanced but R was empty.");
+
+      auto subA = subdivisionFlowGraph->subdivisionVertices(result.a.begin(),
+                                                            result.a.end());
+      flowGraph->subgraph(result.a.begin(), result.a.end());
+      subdivisionFlowGraph->subgraph(subA.begin(), subA.end());
+      compute(result.a);
+      flowGraph->restoreSubgraph();
+      subdivisionFlowGraph->restoreSubgraph();
+
+      auto subR = subdivisionFlowGraph->subdivisionVertices(result.r.begin(),
+                                                            result.r.end());
+      flowGraph->subgraph(result.r.begin(), result.r.end());
+      subdivisionFlowGraph->subgraph(subR.begin(), subR.end());
+      compute(result.a);
+      flowGraph->restoreSubgraph();
+      subdivisionFlowGraph->restoreSubgraph();
+      break;
+    }
+    case CutMatching::NearExpander: {
+      assert(!result.a.empty() && "Near expander should have non-empty A.");
+      assert(!result.r.empty() && "Near expander should have non-empty R.");
+      Trimming::Solver trimming(flowGraph.get(), result.a, phi);
+      const auto trimmingResult = trimming.compute();
+
+      finalizePartition(flowGraph->begin(), flowGraph->end());
+
+      result.r.insert(result.r.end(), trimmingResult.r.begin(),
+                      trimmingResult.r.end());
+      if (result.r.size() > 0 && result.r.size() < xs.size()) {
+        auto subR = subdivisionFlowGraph->subdivisionVertices(result.r.begin(),
+                                                              result.r.end());
+        flowGraph->subgraph(result.r.begin(), result.r.end());
+        subdivisionFlowGraph->subgraph(subR.begin(), subR.end());
+        compute(result.r);
+        flowGraph->restoreSubgraph();
+        subdivisionFlowGraph->restoreSubgraph();
+      }
+      break;
+    }
+    case CutMatching::Expander: {
+      finalizePartition(xs.begin(), xs.end());
+      break;
+    }
+    }
+  }
 }
 
 std::vector<std::vector<int>> Solver::getPartition() const {
-  std::vector<std::vector<int>> result(flowGraph->partitionCount());
-  for (int u = 0; u < flowGraph->size(); ++u)
-    result[flowGraph->getPartition(u)].push_back(u);
+  std::vector<std::vector<int>> result(numPartitions);
+  for (auto u : *flowGraph)
+    result[partitionOf[u]].push_back(u);
 
   return result;
 }
@@ -125,17 +150,17 @@ std::vector<double> Solver::getConductance() const {
   auto partitions = getPartition();
   std::vector<double> result(int(partitions.size()));
 
-  std::vector<int> all(flowGraph->size());
-  std::iota(all.begin(), all.end(), 0);
-
-  const int totalVolume = flowGraph->globalVolume(all.begin(), all.end());
+  const int totalVolume = flowGraph->volume();
 
   for (const auto &p : partitions) {
-    int pId = flowGraph->getPartition(p[0]);
-    int edgesCut = 0, volume = flowGraph->globalVolume(p.begin(), p.end());
-    for (int u : p)
+    flowGraph->subgraph(p.begin(), p.end());
+
+    int pId = partitionOf[p[0]], edgesCut = 0, volume = flowGraph->volume();
+    for (int u : *flowGraph)
       edgesCut += flowGraph->globalDegree(u) - flowGraph->degree(u);
     result[pId] = double(edgesCut) / std::min(volume, totalVolume);
+
+    flowGraph->restoreSubgraph();
   }
 
   return result;
@@ -143,8 +168,16 @@ std::vector<double> Solver::getConductance() const {
 
 int Solver::getEdgesCut() const {
   int count = 0;
-  for (int u = 0; u < flowGraph->size(); ++u)
-    count += flowGraph->globalDegree(u) - flowGraph->degree(u);
+  auto partitions = getPartition();
+  for (const auto &p : partitions) {
+    flowGraph->subgraph(p.begin(), p.end());
+
+    for (auto u : *flowGraph)
+      count += flowGraph->globalDegree(u) - flowGraph->degree(u);
+
+    flowGraph->restoreSubgraph();
+  }
+
   return count / 2;
 }
 
