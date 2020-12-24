@@ -15,15 +15,14 @@ struct Result {
 
 class Solver {
 private:
-  UnitFlow::Graph *flowGraph;
-  const std::vector<int> &subset;
+  UnitFlow::Graph *graph;
   const double phi;
 
 public:
   /**
      Construct a trimming problem on the subgraph in 'g' induced by 'subset'.
    */
-  Solver(UnitFlow::Graph *g, const std::vector<int> &subset, const double phi);
+  Solver(UnitFlow::Graph *g, const double phi);
 
   Result compute();
 };

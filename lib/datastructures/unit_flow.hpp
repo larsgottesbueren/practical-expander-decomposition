@@ -146,25 +146,15 @@ public:
      Compute max flow with push relabel and max height h. Return those vertices
      with excess flow left over. If an empty vector is returned then all flow
      was possible to route.
-
-     Extra log factor compared to paper due to use of priority queue.
    */
   std::vector<Vertex> compute(const int maxHeight);
-
-  /**
-     Same as 'compute(maxHeight)' but only considers subgraph spanned by
-     vertices in 'alive'.
-   */
-  std::vector<Vertex> compute(const int maxHeight,
-                              const absl::flat_hash_set<Vertex> &alive);
 
   /**
      Compute a level cut. See Saranurak and Wang A.1.
 
      Precondition: A flow has been computed.
    */
-  std::vector<Vertex> levelCut(const int maxHeight,
-                               const absl::flat_hash_set<Vertex> &alive);
+  std::vector<Vertex> levelCut(const int maxHeight);
 
   /**
      Set all flow, sinks and source capacities to 0.
@@ -194,8 +184,6 @@ public:
      Method will mutate the flow such that it is no longer legal.
    */
   std::vector<std::pair<Vertex, Vertex>>
-  matching(const absl::flat_hash_set<Vertex> &alive,
-           const std::vector<Vertex> &sources,
-           const std::vector<Vertex> &targets);
+  matching(const std::vector<Vertex> &sources);
 };
 } // namespace UnitFlow

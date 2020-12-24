@@ -148,7 +148,7 @@ TEST(UnitFlow, CanMatchSimple) {
   uf.addSource(0, 5);
   uf.addSink(1, 5);
   uf.compute(10);
-  auto matches = uf.matching({0, 1}, {0}, {1});
+  auto matches = uf.matching({0});
   EXPECT_EQ(matches, (std::vector<std::pair<int, int>>{{0, 1}}));
 }
 
@@ -157,7 +157,7 @@ TEST(UnitFlow, WontMatchBeforeFlowComputed) {
   uf.addSource(0, 5);
   uf.addSink(1, 5);
 
-  auto matches = uf.matching({0, 1}, {0}, {1});
+  auto matches = uf.matching({0});
   EXPECT_TRUE(matches.empty());
 }
 
@@ -195,14 +195,11 @@ TEST(UnitFlow, CanMatchMultiple) {
     ASSERT_EQ(uf.flowIn(u), 0)
         << "Did not expect a left partition vertex absorbing flow.";
 
-  absl::flat_hash_set<int> alive;
-  for (int i = 0; i < n; ++i)
-    alive.insert(i);
   std::vector<int> sources(leftN), targets(rightN);
   std::iota(sources.begin(), sources.end(), 0);
-  std::iota(targets.begin(), targets.end(), 0);
+  std::iota(targets.begin(), targets.end(), leftN);
 
-  auto matches = uf.matching(alive, sources, targets);
+  auto matches = uf.matching(sources);
 
   ASSERT_EQ((int)matches.size(), leftN)
       << "Expected all vertices in left partition to be matched.";
@@ -233,7 +230,7 @@ TEST(UnitFlow, CanRouteAndMatchPathGraph) {
   auto levelCut = uf.compute(INT_MAX);
   ASSERT_TRUE(levelCut.empty());
 
-  auto matches = uf.matching({0, 1, 2, 3, 4, 5, 6}, {0, 1}, {5, 6});
+  auto matches = uf.matching({0, 1});
   ASSERT_EQ((int)matches.size(), 2);
 
   std::set<int> left, right;
@@ -262,7 +259,7 @@ TEST(UnitFlow, CanRouteAndMatchDiamondGraph) {
   auto levelCut = uf.compute(INT_MAX);
   ASSERT_TRUE(levelCut.empty());
 
-  auto matches = uf.matching({0, 1, 2, 3}, {0, 3}, {1, 2});
+  auto matches = uf.matching({0, 3});
   ASSERT_EQ((int)matches.size(), 2);
 }
 
@@ -286,11 +283,6 @@ TEST(UnitFlow, CanRouteAndMatchKBipartite) {
 
   UnitFlow::Graph uf(n, es);
 
-  absl::flat_hash_set<int> alive;
-  for (int l = 0; l < k; ++l)
-    for (int i = 0; i < layerSize; ++i)
-      alive.insert(l * layerSize + i);
-
   std::vector<int> sources, targets;
   for (int i = 0; i < layerSize; ++i) {
     int s = i, t = (k - 1) * layerSize + i;
@@ -302,7 +294,7 @@ TEST(UnitFlow, CanRouteAndMatchKBipartite) {
   auto hasExcess = uf.compute(INT_MAX);
   ASSERT_TRUE(hasExcess.empty());
 
-  auto matches = uf.matching(alive, sources, targets);
+  auto matches = uf.matching(sources);
   ASSERT_EQ((int)matches.size(), layerSize);
   for (auto [u, v] : matches) {
     ASSERT_GE(u, 0);
@@ -328,9 +320,6 @@ TEST(UnitFlow, CanMatchLargeGraph) {
 
     UnitFlow::Graph uf(n, es);
 
-    absl::flat_hash_set<int> alive;
-    for (int i = 0; i < n; ++i)
-      alive.insert(i);
     std::vector<int> sources = {0, 1, 2, 3, 4},
                      targets = {n - 5, n - 4, n - 3, n - 2, n - 1};
 
@@ -340,7 +329,7 @@ TEST(UnitFlow, CanMatchLargeGraph) {
       uf.addSink(u, 10);
 
     uf.compute(INT_MAX);
-    uf.matching(alive, sources, targets);
+    uf.matching(sources);
   }
 }
 

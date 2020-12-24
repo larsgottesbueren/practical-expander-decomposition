@@ -13,19 +13,11 @@ Graph::Graph(int n, const std::vector<Edge> &es)
       nextEdgeIdx(n), forest(n) {}
 
 std::vector<Vertex> Graph::compute(const int maxHeight) {
-  absl::flat_hash_set<int> vertices;
-  for (UnitFlow::Vertex u = 0; u < size(); ++u)
-    vertices.insert(u);
-  return compute(maxHeight, vertices);
-}
-
-std::vector<Vertex> Graph::compute(const int maxHeight,
-                                   const absl::flat_hash_set<Vertex> &alive) {
-  const int maxH = std::min(maxHeight, (int)alive.size() * 2 + 1);
+  const int maxH = std::min(maxHeight, size() * 2 + 1);
 
   std::vector<std::queue<Vertex>> q(maxH + 1);
 
-  for (auto u : alive)
+  for (auto u : *this)
     if (excess(u) > 0)
       q[0].push(u);
 
@@ -43,8 +35,7 @@ std::vector<Vertex> Graph::compute(const int maxHeight,
     }
 
     auto &e = getEdge(u, nextEdgeIdx[u]);
-    if (excess(u) > 0 && e.residual() > 0 && height[u] == height[e.to] + 1 &&
-        alive.find(e.to) != alive.end()) {
+    if (excess(u) > 0 && e.residual() > 0 && height[u] == height[e.to] + 1) {
       // Push flow across 'e'
       assert(excess(e.to) == 0 && "Pushing to vertex with non-zero excess");
       UnitFlow::Flow delta = std::min(
@@ -78,36 +69,31 @@ std::vector<Vertex> Graph::compute(const int maxHeight,
   }
 
   std::vector<UnitFlow::Vertex> hasExcess;
-  for (auto u : alive)
+  for (auto u : *this)
     if (excess(u) > 0)
       hasExcess.push_back(u);
 
   return hasExcess;
 }
 
-std::vector<Vertex> Graph::levelCut(const int maxHeight,
-                                    const absl::flat_hash_set<Vertex> &alive) {
-  const int h = maxHeight;
-  int m = 0;
-  for (auto u : alive)
-    m += degree(u);
-  m /= 2;
+std::vector<Vertex> Graph::levelCut(const int h) {
+  const int m = edgeCount();
 
   std::vector<std::vector<Vertex>> levels(h + 1);
-  for (auto u : alive)
+  for (auto u : *this)
     levels[height[u]].push_back(u);
 
   std::vector<Vertex> curResult;
   std::vector<Vertex> bestResult;
   int volume = 0;
   int bestZ = INT_MAX;
-  for (int level = maxHeight; level > 0; --level) {
+  for (int level = h; level > 0; --level) {
     int z = 0;
     for (auto u : levels[level]) {
       volume += degree(u);
       curResult.push_back(u);
       for (auto e = beginEdge(u); e != endEdge(u); ++e)
-        if (alive.find(e->to) != alive.end() && height[u] == height[e->to] + 1)
+        if (height[u] == height[e->to] + 1)
           z++;
     }
     if ((double)z <= 5.0 * volume * std::log(m) / (double)h)
@@ -130,20 +116,16 @@ void Graph::reset() {
 }
 
 std::vector<std::pair<Vertex, Vertex>>
-Graph::matching(const absl::flat_hash_set<Vertex> &alive,
-                const std::vector<Vertex> &sources,
-                const std::vector<Vertex> &targets) {
-  forest.reset(alive.begin(), alive.end());
+Graph::matching(const std::vector<Vertex> &sources) {
+  forest.reset(begin(), end());
 
   using Match = std::pair<Vertex, Vertex>;
   std::vector<Match> matches;
 
   auto search = [&](Vertex start) {
-    absl::flat_hash_set<Vertex> visited;
     std::vector<Edge *> path;
-
     std::function<Vertex(Vertex)> dfs = [&](Vertex u) {
-      visited.insert(u);
+      visited[u] = true;
 
       if (absorbed[u] > 0 && sink[u] > 0) {
         absorbed[u]--, sink[u]--;
@@ -152,8 +134,7 @@ Graph::matching(const absl::flat_hash_set<Vertex> &alive,
 
       for (auto e = beginEdge(u); e != endEdge(u); ++e) {
         int v = e->to;
-        if (e->flow <= 0 || alive.find(v) == alive.end() ||
-            visited.find(v) != visited.end())
+        if (visited[v] || e->flow <= 0)
           continue;
 
         path.push_back(&(*e));
@@ -171,6 +152,8 @@ Graph::matching(const absl::flat_hash_set<Vertex> &alive,
       for (auto e : path)
         e->flow--;
     }
+    for (auto it = cbegin(); it != cend(); ++it)
+      visited[*it] = false;
     return m;
   };
 

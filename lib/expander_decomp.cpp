@@ -55,7 +55,12 @@ Solver::Solver(std::unique_ptr<Undirected::Graph> graph, const double phi,
 
   std::vector<int> vertices(graph->size());
   std::iota(vertices.begin(), vertices.end(), 0);
+
+  flowGraph->subgraph(flowGraph->begin(), flowGraph->end());
+  subdivisionFlowGraph->subgraph(subdivisionFlowGraph->begin(), subdivisionFlowGraph->end());
   compute(vertices);
+  flowGraph->restoreSubgraph();
+  subdivisionFlowGraph->restoreSubgraph();
 }
 
 void Solver::compute(const std::vector<int> &xs) {
@@ -117,7 +122,7 @@ void Solver::compute(const std::vector<int> &xs) {
     case CutMatching::NearExpander: {
       assert(!result.a.empty() && "Near expander should have non-empty A.");
       assert(!result.r.empty() && "Near expander should have non-empty R.");
-      Trimming::Solver trimming(flowGraph.get(), result.a, phi);
+      Trimming::Solver trimming(flowGraph.get(), phi);
       const auto trimmingResult = trimming.compute();
 
       finalizePartition(flowGraph->begin(), flowGraph->end());
@@ -132,6 +137,8 @@ void Solver::compute(const std::vector<int> &xs) {
         compute(result.r);
         flowGraph->restoreSubgraph();
         subdivisionFlowGraph->restoreSubgraph();
+      } else {
+
       }
       break;
     }
@@ -147,7 +154,9 @@ void Solver::compute(const std::vector<int> &xs) {
 
 std::vector<std::vector<int>> Solver::getPartition() const {
   std::vector<std::vector<int>> result(numPartitions);
+  std::vector<int> tmp;
   for (auto u : *flowGraph) {
+    tmp.push_back(u);
     assert(partitionOf[u] != -1 && "Vertex not part of partition.");
     result[partitionOf[u]].push_back(u);
   }
@@ -162,9 +171,10 @@ std::vector<double> Solver::getConductance() const {
   const int totalVolume = flowGraph->volume();
 
   for (const auto &p : partitions) {
+    assert(!p.empty() && "Partitions should not be empty.");
     flowGraph->subgraph(p.begin(), p.end());
 
-    int pId = partitionOf[p[0]], edgesCut = 0, volume = flowGraph->volume();
+    int pId = partitionOf[p[0]], edgesCut = 0, volume = flowGraph->globalVolume();
     for (int u : *flowGraph)
       edgesCut += flowGraph->globalDegree(u) - flowGraph->degree(u);
     result[pId] = double(edgesCut) / std::min(volume, totalVolume);
@@ -179,6 +189,7 @@ int Solver::getEdgesCut() const {
   int count = 0;
   auto partitions = getPartition();
   for (const auto &p : partitions) {
+    assert(!p.empty() && "Partitions should not be empty.");
     flowGraph->subgraph(p.begin(), p.end());
 
     for (auto u : *flowGraph)
