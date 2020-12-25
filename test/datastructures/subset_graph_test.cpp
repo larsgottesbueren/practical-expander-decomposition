@@ -247,6 +247,28 @@ TEST(SubsetGraph, RestoreSubgraphSimple) {
   EXPECT_EQ(seen, subset1);
 }
 
+/**
+   Remove some vertices, restore removes, verify entire graph is restored.
+ */
+TEST(SubsetGraph, RestoreRemoves) {
+  Graph g(5, {{0,1}, {0,2}, {1,4}, {2,4}, {3,4}});
+  std::set<std::pair<int,int>> expected;
+  for (auto u : g)
+    for (auto e = g.cbeginEdge(u); e != g.cendEdge(u); ++e)
+      expected.insert({e->from, e->to});
+
+  g.remove(2);
+  g.remove(4);
+  g.restoreRemoves();
+
+  std::set<std::pair<int,int>> result;
+  for (auto u : g)
+    for (auto e = g.cbeginEdge(u); e != g.cendEdge(u); ++e)
+      result.insert({e->from, e->to});
+
+  EXPECT_EQ(result, expected);
+}
+
 TEST(SubsetGraph, SubdivisionVerticesSmall) {
   const int n = 10;
   const std::vector<Undirected::Edge> es = {{0, 1}, {1, 2}, {2, 3}};

@@ -96,6 +96,8 @@ void Solver::compute(const std::vector<int> &xs) {
     CutMatching::Solver cm(flowGraph.get(), subdivisionFlowGraph.get(), xs, phi,
                            tConst, tFactor);
     auto result = cm.compute();
+    flowGraph->restoreRemoves();
+    subdivisionFlowGraph->restoreRemoves();
 
     switch (result.t) {
     case CutMatching::Balanced: {
@@ -126,6 +128,10 @@ void Solver::compute(const std::vector<int> &xs) {
       const auto trimmingResult = trimming.compute();
 
       finalizePartition(flowGraph->begin(), flowGraph->end());
+
+      flowGraph->restoreRemoves();
+      subdivisionFlowGraph->restoreRemoves();
+
 
       result.r.insert(result.r.end(), trimmingResult.r.begin(),
                       trimmingResult.r.end());

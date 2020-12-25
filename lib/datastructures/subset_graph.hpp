@@ -472,6 +472,7 @@ public:
      Time complexity: O(n)
    */
   void restoreRemoves() {
+    vertexBound.top().middle = vertexBound.top().end;
     for (auto it = cbegin(); it != cend(); ++it)
       edgeBounds[*it].top().middle = edgeBounds[*it].top().end;
   }
