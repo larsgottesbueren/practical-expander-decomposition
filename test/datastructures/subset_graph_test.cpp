@@ -278,3 +278,16 @@ TEST(SubsetGraph, SubdivisionVerticesSmall) {
     EXPECT_EQ(vs, std::vector<int>({2, 3}));
   }
 }
+
+TEST(SubsetGraph, SubdivisionVerticesOnSubgraph) {
+  Graph g(5, {{0,1}, {0,2}, {0,3}, {0,4}});
+
+  std::vector<int> xs = {0,3,4};
+  g.subgraph(xs.begin(), xs.end());
+
+  std::vector<int> ys = {0};
+  auto rs = g.subdivisionVertices(ys.begin(), ys.end());
+  std::sort(rs.begin(), rs.end());
+
+  EXPECT_EQ(rs, std::vector<int>({0,3,4}));
+}

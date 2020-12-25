@@ -71,10 +71,10 @@ private:
 
 protected:
   /**
-     Used to mark vertex as visited in search algorithms. Set values to false
-     after use.
+     Used to mark vertex as visited in search algorithms. Set values to 0 after
+     use.
   */
-  std::vector<bool> visited;
+  std::vector<int> visited;
 
 public:
   /**
@@ -472,8 +472,8 @@ public:
      Time complexity: O(n)
    */
   void restoreRemoves() {
-    for (auto u = begin(); u != end(); ++u)
-      edgeBounds[u].top().middle = edgeBounds[u].top().end;
+    for (auto it = cbegin(); it != cend(); ++it)
+      edgeBounds[*it].top().middle = edgeBounds[*it].top().end;
   }
 
   /**
