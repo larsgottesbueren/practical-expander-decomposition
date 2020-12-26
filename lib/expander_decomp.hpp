@@ -56,7 +56,7 @@ private:
   /**
      Compute expander decomposition for subset of vertices 'xs'.
    */
-  void compute(const std::vector<int> &xs);
+  void compute();
 
   /**
      Create a partition with the given vertices.

@@ -10,16 +10,6 @@
 namespace CutMatching {
 
 enum ResultType { Balanced, Expander, NearExpander };
-/**
-   The cut-matching algorithm can return one of three types of result.
-   - Balanced: (a,r) is a balanced cut
-   - Expander: a is a phi expander
-   - NearExpander: a is a nearly phi expander
- */
-struct Result {
-  ResultType t;
-  std::vector<int> a, r;
-};
 
 using Matching = std::vector<std::pair<int, int>>;
 std::vector<double>
@@ -31,7 +21,6 @@ class Solver {
 private:
   UnitFlow::Graph *graph;
   UnitFlow::Graph *subdivGraph;
-  const std::vector<int> subset;
 
   const double phi;
   const double T;
@@ -45,9 +34,8 @@ public:
      Precondition: graph should not contain loops.
    */
   Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivGraph,
-         const std::vector<int> &subset, const double phi, const int tConst,
-         const double tFactor);
+         const double phi, const int tConst, const double tFactor);
 
-  Result compute();
+  ResultType compute();
 };
 }; // namespace CutMatching

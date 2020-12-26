@@ -53,25 +53,18 @@ Solver::Solver(std::unique_ptr<Undirected::Graph> graph, const double phi,
           << "\n\tSubdivision graph: " << subdivisionFlowGraph->size()
           << " vertices and " << subdivisionFlowGraph->edgeCount() << " edges.";
 
-  std::vector<int> vertices(graph->size());
-  std::iota(vertices.begin(), vertices.end(), 0);
-
-  flowGraph->subgraph(flowGraph->begin(), flowGraph->end());
-  subdivisionFlowGraph->subgraph(subdivisionFlowGraph->begin(), subdivisionFlowGraph->end());
-  compute(vertices);
-  flowGraph->restoreSubgraph();
-  subdivisionFlowGraph->restoreSubgraph();
+  compute();
 }
 
-void Solver::compute(const std::vector<int> &xs) {
-  VLOG(1) << "Attempting to find balanced cut with " << xs.size()
+void Solver::compute() {
+  VLOG(1) << "Attempting to find balanced cut with " << flowGraph->size()
           << " vertices.";
-  if (xs.empty()) {
+  if (flowGraph->size() == 0) {
     VLOG(2) << "Exiting early, partition was empty.";
     return;
-  } else if (xs.size() == 1) {
+  } else if (flowGraph->size() == 1) {
     VLOG(2) << "Creating single vertex partition.";
-    finalizePartition(xs.begin(), xs.end());
+    finalizePartition(flowGraph->begin(), flowGraph->end());
     return;
   }
 
@@ -87,43 +80,46 @@ void Solver::compute(const std::vector<int> &xs) {
       flowGraph->subgraph(comp.begin(), comp.end());
       subdivisionFlowGraph->subgraph(subComp.begin(), subComp.end());
 
-      compute(comp);
+      compute();
 
       flowGraph->restoreSubgraph();
       subdivisionFlowGraph->restoreSubgraph();
     }
   } else {
-    CutMatching::Solver cm(flowGraph.get(), subdivisionFlowGraph.get(), xs, phi,
+    CutMatching::Solver cm(flowGraph.get(), subdivisionFlowGraph.get(), phi,
                            tConst, tFactor);
-    auto result = cm.compute();
+    auto resultType = cm.compute();
+    std::vector<int> a,r;
+    std::copy(flowGraph->cbegin(), flowGraph->cend(), std::back_inserter(a));
+    std::copy(flowGraph->cbeginRemoved(), flowGraph->cendRemoved(), std::back_inserter(r));
+
     flowGraph->restoreRemoves();
     subdivisionFlowGraph->restoreRemoves();
 
-    switch (result.t) {
+    switch (resultType) {
     case CutMatching::Balanced: {
-      assert(!result.a.empty() && "Cut should be balanced but A was empty.");
-      assert(!result.r.empty() && "Cut should be balanced but R was empty.");
+      assert(!a.empty() && "Cut should be balanced but A was empty.");
+      assert(!r.empty() && "Cut should be balanced but R was empty.");
 
-      auto subA = subdivisionFlowGraph->subdivisionVertices(result.a.begin(),
-                                                            result.a.end());
-      flowGraph->subgraph(result.a.begin(), result.a.end());
+      auto subA = subdivisionFlowGraph->subdivisionVertices(a.begin(), a.end());
+      auto subR = subdivisionFlowGraph->subdivisionVertices(r.begin(), r.end());
+
+      flowGraph->subgraph(a.begin(), a.end());
       subdivisionFlowGraph->subgraph(subA.begin(), subA.end());
-      compute(result.a);
+      compute();
       flowGraph->restoreSubgraph();
       subdivisionFlowGraph->restoreSubgraph();
 
-      auto subR = subdivisionFlowGraph->subdivisionVertices(result.r.begin(),
-                                                            result.r.end());
-      flowGraph->subgraph(result.r.begin(), result.r.end());
+      flowGraph->subgraph(r.begin(), r.end());
       subdivisionFlowGraph->subgraph(subR.begin(), subR.end());
-      compute(result.r);
+      compute();
       flowGraph->restoreSubgraph();
       subdivisionFlowGraph->restoreSubgraph();
       break;
     }
     case CutMatching::NearExpander: {
-      assert(!result.a.empty() && "Near expander should have non-empty A.");
-      assert(!result.r.empty() && "Near expander should have non-empty R.");
+      assert(!a.empty() && "Near expander should have non-empty A.");
+      assert(!r.empty() && "Near expander should have non-empty R.");
       Trimming::Solver trimming(flowGraph.get(), phi);
       const auto trimmingResult = trimming.compute();
 
@@ -132,26 +128,23 @@ void Solver::compute(const std::vector<int> &xs) {
       flowGraph->restoreRemoves();
       subdivisionFlowGraph->restoreRemoves();
 
-
-      result.r.insert(result.r.end(), trimmingResult.r.begin(),
-                      trimmingResult.r.end());
-      if (result.r.size() > 0 && result.r.size() < xs.size()) {
-        auto subR = subdivisionFlowGraph->subdivisionVertices(result.r.begin(),
-                                                              result.r.end());
-        flowGraph->subgraph(result.r.begin(), result.r.end());
+      r.insert(r.end(), trimmingResult.r.begin(), trimmingResult.r.end());
+      if (!r.empty() && r.size() < flowGraph->size()) {
+        auto subR = subdivisionFlowGraph->subdivisionVertices(r.begin(), r.end());
+        flowGraph->subgraph(r.begin(), r.end());
         subdivisionFlowGraph->subgraph(subR.begin(), subR.end());
-        compute(result.r);
+        compute();
         flowGraph->restoreSubgraph();
         subdivisionFlowGraph->restoreSubgraph();
-      } else {
-
       }
       break;
     }
     case CutMatching::Expander: {
-      VLOG(3) << "Finalizing " << xs.size() << " vertices as partition "
+      assert(!a.empty() && "Expander should not be empty graph.");
+      assert(r.empty() && "Expander should not remove vertices.");
+      VLOG(3) << "Finalizing " << a.size() << " vertices as partition "
               << numPartitions << ".";
-      finalizePartition(xs.begin(), xs.end());
+      finalizePartition(a.begin(), a.end());
       break;
     }
     }

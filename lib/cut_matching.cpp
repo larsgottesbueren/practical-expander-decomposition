@@ -11,19 +11,19 @@
 namespace CutMatching {
 
 Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivGraph,
-               const std::vector<int> &subset, const double phi,
+               const double phi,
                const int tConst, const double tFactor)
-    : graph(g), subdivGraph(subdivGraph), subset(subset), phi(phi),
+    : graph(g), subdivGraph(subdivGraph), phi(phi),
       T(tConst + std::ceil(tFactor * std::log10(graph->edgeCount()) *
                            std::log10(graph->edgeCount()))) {
-  assert(!subset.empty() && "Cut-matching expected non-empty subset.");
+  assert(graph->size() != 0 && "Cut-matching expected non-empty subset.");
 
   std::random_device rd;
   // randomGen = std::mt19937(0);
   randomGen = std::mt19937(rd());
 
   const UnitFlow::Flow capacity = std::ceil(1.0 / phi / T);
-  for (const auto u : subset)
+  for (auto u : *graph)
     for (auto e = subdivGraph->beginEdge(u); e != subdivGraph->endEdge(u); ++e)
       e->capacity = capacity, subdivGraph->reverse(*e).capacity = capacity;
 }
@@ -58,8 +58,8 @@ projectFlow(const std::vector<Matching> &rounds,
    Fill a vector of size 'n' with random data such that it is orthogonal to the
    all ones vector.
  */
-void fillRandomUnitVector(std::mt19937 &gen, std::vector<double> &xs) {
-  const int n = (int)xs.size();
+std::vector<double> randomUnitVectorFast(std::mt19937 &gen, int n) {
+  std::vector<double> xs(n);
   for (int i = 0; i < n / 2; ++i)
     xs[i] = -1;
   for (int i = n / 2; i < n; ++i)
@@ -67,6 +67,7 @@ void fillRandomUnitVector(std::mt19937 &gen, std::vector<double> &xs) {
   if (n % 2 != 0)
     xs[0] = -2;
   std::shuffle(xs.begin(), xs.end(), gen);
+  return xs;
 }
 
 /**
@@ -99,16 +100,14 @@ double potential(const double avgFlow, const std::vector<double> &flow,
   return p;
 }
 
-Result Solver::compute() {
+ResultType Solver::compute() {
   std::vector<Matching> rounds;
 
   const int numSplitNodes = subdivGraph->size() - graph->size();
 
   if (numSplitNodes <= 1) {
-    Result result;
-    result.t = Expander;
-    result.a = subset;
-    return result;
+    VLOG(3) << "Cut matching exited early with " << numSplitNodes << " subdivision vertices.";
+    return Expander;
   }
 
   absl::flat_hash_map<int, int> fromSplitNode;
@@ -127,7 +126,7 @@ Result Solver::compute() {
     VLOG(3) << "Iteration " << iterations << " out of " << T << ".";
 
     auto flow = projectFlow(rounds, fromSplitNode,
-                            randomUnitVector(randomGen, numSplitNodes));
+                            randomUnitVectorFast(randomGen, numSplitNodes));
     double avgFlow =
         std::accumulate(flow.begin(), flow.end(), 0.0) / (double)flow.size();
 
@@ -227,43 +226,6 @@ Result Solver::compute() {
         removed.insert(u);
     }
 
-    for (auto it = graph->cbegin(); it != graph->cend(); ++it) {
-      const int u = *it;
-      bool allRemoved = true;
-      for (auto e = subdivGraph->beginEdge(u); e != subdivGraph->endEdge(u);
-           ++e)
-        if (removed.find(e->to) == removed.end()) {
-          allRemoved = false;
-          break;
-        }
-      if (allRemoved)
-        removed.insert(u);
-    }
-
-    for (auto u : *subdivGraph) {
-      if (subdivGraph->isSubdivision(u) && subdivGraph->degree(u) != 1) {
-        assert(subdivGraph->degree(u) == 2 &&
-               "Subdivision vertices should have degree two (or one if on edge"
-               "of subgraph).");
-
-        bool allNeighborsRemoved = true, noNeighborsRemoved = true;
-        for (auto e = subdivGraph->beginEdge(u); e != subdivGraph->endEdge(u);
-             ++e) {
-          if (removed.find(e->to) == removed.end())
-            allNeighborsRemoved = false;
-          else
-            noNeighborsRemoved = false;
-        }
-
-        if (removed.find(u) != removed.end()) {
-          if (noNeighborsRemoved)
-            removed.erase(u);
-        } else {
-          if (allNeighborsRemoved)
-            removed.insert(u);
-        }
-      }
-    }
     VLOG(3) << "\tRemoving " << removed.size() << " vertices.";
 
     auto isRemoved = [&removed](int u) {
@@ -277,6 +239,15 @@ Result Solver::compute() {
         graph->remove(u);
       subdivGraph->remove(u);
     }
+    std::vector<int> zeroDegrees;
+    for (auto it = subdivGraph->cbegin(); it != subdivGraph->cend(); ++it)
+      if (subdivGraph->degree(*it) == 0)
+        zeroDegrees.push_back(*it);
+    for (auto u : zeroDegrees) {
+      if (!subdivGraph->isSubdivision(u))
+        graph->remove(u);
+      subdivGraph->remove(u);
+    }
 
     VLOG(3) << "Computing matching with |S| = " << axLeft.size()
             << " |T| = " << axRight.size() << ".";
@@ -285,28 +256,25 @@ Result Solver::compute() {
     VLOG(3) << "Found matching of size " << matching.size() << ".";
   }
 
-  Result result;
-  std::copy(graph->cbegin(), graph->cend(), std::back_inserter(result.a));
-  std::copy(graph->cbeginRemoved(), graph->cendRemoved(),
-            std::back_inserter(result.r));
+  ResultType resultType;
 
-  if (!result.a.empty() && !result.r.empty() &&
+  if (graph->size() != 0 && graph->removedSize() != 0 &&
       subdivGraph->globalVolume(subdivGraph->cbeginRemoved(),
                           subdivGraph->cendRemoved()) > minBalance)
     // We have: graph.volume(R) > m / (10 * T)
-    result.t = Balanced;
-  else if (result.r.empty())
-    result.t = Expander;
+    resultType = Balanced;
+  else if (graph->removedSize() == 0)
+    resultType = Expander;
   else
-    result.t = NearExpander;
+    resultType = NearExpander;
 
-  switch (result.t) {
+  switch (resultType) {
   case Balanced: {
     VLOG(2) << "Cut matching ran " << iterations
             << " iterations and resulted in balanced cut with size ("
-            << result.a.size() << ", " << result.r.size() << ") and volume ("
-            << graph->volume(result.a.begin(), result.a.end()) << ", "
-            << graph->volume(result.r.begin(), result.r.end()) << ").";
+            << graph->size() << ", " << graph->removedSize() << ") and volume ("
+            << graph->globalVolume(graph->cbegin(), graph->cend()) << ", "
+            << graph->globalVolume(graph->cbeginRemoved(), graph->cendRemoved()) << ").";
     break;
   }
   case Expander: {
@@ -317,11 +285,11 @@ Result Solver::compute() {
   case NearExpander: {
     VLOG(2) << "Cut matching ran " << iterations
             << " iterations and resulted in near expander of size "
-            << result.a.size() << ".";
+            << graph->size() << ".";
     break;
   }
   }
 
-  return result;
+  return resultType;
 }
 } // namespace CutMatching

@@ -299,6 +299,11 @@ public:
   int size() const { return vertexBound.top().middle; }
 
   /**
+     Number of vertices removed in subgraph.
+   */
+  int removedSize() const { return vertexBound.top().end - vertexBound.top().middle; }
+
+  /**
      Degree of vertex 'u'.
 
      Time complexity: O(1)
