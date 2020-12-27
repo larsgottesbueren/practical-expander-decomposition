@@ -8,12 +8,7 @@ namespace Trimming {
 
 Solver::Solver(UnitFlow::Graph *g, const double phi) : graph(g), phi(phi) {}
 
-/*
-  TODO: consider making 'rSet' and 'result' the same.
-  TODO: what to do with partitions without edges? 'std::log(2 * m + 1)' really
-  should be 'std::log(2 * m)' but that crashes if subgraph does not have edges.
- */
-Result Solver::compute() {
+void Solver::compute() {
   VLOG(2) << "Trimming partition with " << graph->size() << " vertices.";
 
   graph->reset();
@@ -50,12 +45,6 @@ Result Solver::compute() {
         graph->addSource(e->to, (UnitFlow::Flow)ceil(2.0 / phi));
   }
 
-  Result result;
-  std::copy(graph->cbeginRemoved(), graph->cendRemoved(),
-            std::back_inserter(result.r));
-
-  VLOG(1) << "Trimmed " << result.r.size() << " vertices.";
-
-  return result;
+  VLOG(2) << "After trimming partition has " << graph->size() << " vertices.";
 }
 }; // namespace Trimming

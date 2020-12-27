@@ -266,6 +266,8 @@ ResultType Solver::compute() {
     resultType = Balanced;
   else if (graph->removedSize() == 0)
     resultType = Expander;
+  else if (graph->size() == 0)
+    graph->restoreRemoves(), resultType = Expander;
   else
     resultType = NearExpander;
 

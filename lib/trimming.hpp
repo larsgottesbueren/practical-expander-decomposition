@@ -6,13 +6,6 @@
 
 namespace Trimming {
 
-/**
-   The result of trimming is a vector of removed vertices 'r'.
- */
-struct Result {
-  std::vector<int> r;
-};
-
 class Solver {
 private:
   UnitFlow::Graph *graph;
@@ -24,6 +17,6 @@ public:
    */
   Solver(UnitFlow::Graph *g, const double phi);
 
-  Result compute();
+  void compute();
 };
 }; // namespace Trimming
