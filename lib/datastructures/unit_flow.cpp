@@ -125,7 +125,7 @@ Graph::matching(const std::vector<Vertex> &sources) {
   auto search = [&](Vertex start) {
     std::vector<Edge *> path;
     std::function<Vertex(Vertex)> dfs = [&](Vertex u) {
-      visited[u] = start+1;
+      visited[u] = start + 1;
 
       if (absorbed[u] > 0 && sink[u] > 0) {
         absorbed[u]--, sink[u]--;
@@ -134,7 +134,7 @@ Graph::matching(const std::vector<Vertex> &sources) {
 
       for (auto e = beginEdge(u); e != endEdge(u); ++e) {
         int v = e->to;
-        if (e->flow <= 0 || visited[v] == start+1)
+        if (e->flow <= 0 || visited[v] == start + 1)
           continue;
 
         path.push_back(&(*e));

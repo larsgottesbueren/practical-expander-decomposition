@@ -251,8 +251,8 @@ TEST(SubsetGraph, RestoreSubgraphSimple) {
    Remove some vertices, restore removes, verify entire graph is restored.
  */
 TEST(SubsetGraph, RestoreRemoves) {
-  Graph g(5, {{0,1}, {0,2}, {1,4}, {2,4}, {3,4}});
-  std::set<std::pair<int,int>> expected;
+  Graph g(5, {{0, 1}, {0, 2}, {1, 4}, {2, 4}, {3, 4}});
+  std::set<std::pair<int, int>> expected;
   for (auto u : g)
     for (auto e = g.cbeginEdge(u); e != g.cendEdge(u); ++e)
       expected.insert({e->from, e->to});
@@ -261,7 +261,7 @@ TEST(SubsetGraph, RestoreRemoves) {
   g.remove(4);
   g.restoreRemoves();
 
-  std::set<std::pair<int,int>> result;
+  std::set<std::pair<int, int>> result;
   for (auto u : g)
     for (auto e = g.cbeginEdge(u); e != g.cendEdge(u); ++e)
       result.insert({e->from, e->to});
@@ -302,14 +302,14 @@ TEST(SubsetGraph, SubdivisionVerticesSmall) {
 }
 
 TEST(SubsetGraph, SubdivisionVerticesOnSubgraph) {
-  Graph g(5, {{0,1}, {0,2}, {0,3}, {0,4}});
+  Graph g(5, {{0, 1}, {0, 2}, {0, 3}, {0, 4}});
 
-  std::vector<int> xs = {0,3,4};
+  std::vector<int> xs = {0, 3, 4};
   g.subgraph(xs.begin(), xs.end());
 
   std::vector<int> ys = {0};
   auto rs = g.subdivisionVertices(ys.begin(), ys.end());
   std::sort(rs.begin(), rs.end());
 
-  EXPECT_EQ(rs, std::vector<int>({0,3,4}));
+  EXPECT_EQ(rs, std::vector<int>({0, 3, 4}));
 }

@@ -11,8 +11,7 @@
 namespace CutMatching {
 
 Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivGraph,
-               const double phi,
-               const int tConst, const double tFactor)
+               const double phi, const int tConst, const double tFactor)
     : graph(g), subdivGraph(subdivGraph), phi(phi),
       T(tConst + std::ceil(tFactor * std::log10(graph->edgeCount()) *
                            std::log10(graph->edgeCount()))) {
@@ -37,10 +36,9 @@ Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivGraph,
    Time complexity: O(|rounds| + |start|)
  */
 using Matching = std::vector<std::pair<int, int>>;
-std::vector<double>
-projectFlow(const std::vector<Matching> &rounds,
-            const std::vector<int> &fromSplitNode,
-            std::vector<double> start) {
+std::vector<double> projectFlow(const std::vector<Matching> &rounds,
+                                const std::vector<int> &fromSplitNode,
+                                std::vector<double> start) {
   for (auto it = rounds.begin(); it != rounds.end(); ++it) {
     for (const auto &[u, v] : *it) {
       int i = fromSplitNode[u], j = fromSplitNode[v];
@@ -90,8 +88,7 @@ std::vector<double> randomUnitVector(std::mt19937 &gen, int n) {
 
 template <typename It>
 double potential(const double avgFlow, const std::vector<double> &flow,
-                 const std::vector<int> &fromSplitNode, It begin,
-                 It end) {
+                 const std::vector<int> &fromSplitNode, It begin, It end) {
   double p = 0;
   for (auto it = begin; it != end; it++) {
     double f = flow[fromSplitNode[*it]];
@@ -106,14 +103,16 @@ ResultType Solver::compute() {
   const int numSplitNodes = subdivGraph->size() - graph->size();
 
   if (numSplitNodes <= 1) {
-    VLOG(3) << "Cut matching exited early with " << numSplitNodes << " subdivision vertices.";
+    VLOG(3) << "Cut matching exited early with " << numSplitNodes
+            << " subdivision vertices.";
     return Expander;
   }
 
-  { int count = 0;
+  {
+    int count = 0;
     for (auto u : *subdivGraph)
       if (subdivGraph->isSubdivision(u))
-        subdivGraph->setSubdivision(u,count++);
+        subdivGraph->setSubdivision(u, count++);
   }
 
   const int goodBalance = 0.45 * subdivGraph->globalVolume(),
@@ -160,15 +159,17 @@ ResultType Solver::compute() {
     for (auto u : *subdivGraph)
       if (subdivGraph->isSubdivision(u))
         tmpSubdiv.push_back(u);
-    double pAll = potential(avgFlow, flow, subdivGraph->getSubdivisionVector(), tmpSubdiv.begin(),
-                            tmpSubdiv.end()),
-           pLeft = potential(avgFlow, flow, subdivGraph->getSubdivisionVector(), axLeft.begin(),
-                             axLeft.end());
+    double pAll = potential(avgFlow, flow, subdivGraph->getSubdivisionVector(),
+                            tmpSubdiv.begin(), tmpSubdiv.end()),
+           pLeft = potential(avgFlow, flow, subdivGraph->getSubdivisionVector(),
+                             axLeft.begin(), axLeft.end());
 
     if (pLeft >= pAll / 20.0) {
-      sort(axLeft.begin(), axLeft.end(), [&flow, &subdivGraph = subdivGraph](int u, int v) {
-        return flow[subdivGraph->getSubdivision(u)] < flow[subdivGraph->getSubdivision(v)];
-      });
+      sort(axLeft.begin(), axLeft.end(),
+           [&flow, &subdivGraph = subdivGraph](int u, int v) {
+             return flow[subdivGraph->getSubdivision(u)] <
+                    flow[subdivGraph->getSubdivision(v)];
+           });
       while (8 * axLeft.size() > tmpSubdiv.size())
         axLeft.pop_back();
     } else {
@@ -192,11 +193,14 @@ ResultType Solver::compute() {
       axLeft.clear();
       for (auto u : *subdivGraph)
         if (subdivGraph->isSubdivision(u))
-          if (flow[subdivGraph->getSubdivision(u)] >= avgFlow + 6.0 * l / tmpSubdiv.size())
+          if (flow[subdivGraph->getSubdivision(u)] >=
+              avgFlow + 6.0 * l / tmpSubdiv.size())
             axLeft.push_back(u);
-      sort(axLeft.begin(), axLeft.end(), [&flow, &subdivGraph = subdivGraph](int u, int v) {
-        return flow[subdivGraph->getSubdivision(u)] > flow[subdivGraph->getSubdivision(v)];
-      });
+      sort(axLeft.begin(), axLeft.end(),
+           [&flow, &subdivGraph = subdivGraph](int u, int v) {
+             return flow[subdivGraph->getSubdivision(u)] >
+                    flow[subdivGraph->getSubdivision(v)];
+           });
       while (8 * axLeft.size() > tmpSubdiv.size())
         axLeft.pop_back();
     }
@@ -232,8 +236,10 @@ ResultType Solver::compute() {
     auto isRemoved = [&removed](int u) {
       return removed.find(u) != removed.end();
     };
-    axLeft.erase(std::remove_if(axLeft.begin(), axLeft.end(), isRemoved), axLeft.end());
-    axRight.erase(std::remove_if(axRight.begin(), axRight.end(), isRemoved), axRight.end());
+    axLeft.erase(std::remove_if(axLeft.begin(), axLeft.end(), isRemoved),
+                 axLeft.end());
+    axRight.erase(std::remove_if(axRight.begin(), axRight.end(), isRemoved),
+                  axRight.end());
 
     for (auto u : removed) {
       if (!subdivGraph->isSubdivision(u))
@@ -261,7 +267,7 @@ ResultType Solver::compute() {
 
   if (graph->size() != 0 && graph->removedSize() != 0 &&
       subdivGraph->globalVolume(subdivGraph->cbeginRemoved(),
-                          subdivGraph->cendRemoved()) > minBalance)
+                                subdivGraph->cendRemoved()) > minBalance)
     // We have: graph.volume(R) > m / (10 * T)
     resultType = Balanced;
   else if (graph->removedSize() == 0)
@@ -277,7 +283,8 @@ ResultType Solver::compute() {
             << " iterations and resulted in balanced cut with size ("
             << graph->size() << ", " << graph->removedSize() << ") and volume ("
             << graph->globalVolume(graph->cbegin(), graph->cend()) << ", "
-            << graph->globalVolume(graph->cbeginRemoved(), graph->cendRemoved()) << ").";
+            << graph->globalVolume(graph->cbeginRemoved(), graph->cendRemoved())
+            << ").";
     break;
   }
   case Expander: {

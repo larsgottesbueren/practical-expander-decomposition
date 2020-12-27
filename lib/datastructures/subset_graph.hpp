@@ -86,8 +86,8 @@ public:
      Time complexity: O(n + m)
    */
   Graph(int n, const std::vector<E> &es)
-    : edges(n), edgeBounds(n), vertices(n), vertexIndices(n), subdivision(n,-1),
-        visited(n) {
+      : edges(n), edgeBounds(n), vertices(n), vertexIndices(n),
+        subdivision(n, -1), visited(n) {
     std::iota(vertices.begin(), vertices.end(), 0);
     std::iota(vertexIndices.begin(), vertexIndices.end(), 0);
     vertexBound.push({n});
@@ -319,7 +319,9 @@ public:
   /**
      Number of vertices removed in subgraph.
    */
-  int removedSize() const { return vertexBound.top().end - vertexBound.top().middle; }
+  int removedSize() const {
+    return vertexBound.top().end - vertexBound.top().middle;
+  }
 
   /**
      Degree of vertex 'u'.

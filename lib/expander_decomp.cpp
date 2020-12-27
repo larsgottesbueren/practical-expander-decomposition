@@ -89,9 +89,10 @@ void Solver::compute() {
     CutMatching::Solver cm(flowGraph.get(), subdivisionFlowGraph.get(), phi,
                            tConst, tFactor);
     auto resultType = cm.compute();
-    std::vector<int> a,r;
+    std::vector<int> a, r;
     std::copy(flowGraph->cbegin(), flowGraph->cend(), std::back_inserter(a));
-    std::copy(flowGraph->cbeginRemoved(), flowGraph->cendRemoved(), std::back_inserter(r));
+    std::copy(flowGraph->cbeginRemoved(), flowGraph->cendRemoved(),
+              std::back_inserter(r));
 
     switch (resultType) {
     case CutMatching::Balanced: {
@@ -124,11 +125,13 @@ void Solver::compute() {
       Trimming::Solver trimming(flowGraph.get(), phi);
       trimming.compute();
 
-      assert(flowGraph->size() > 0 && "Should not trim all vertices from graph.");
+      assert(flowGraph->size() > 0 &&
+             "Should not trim all vertices from graph.");
       finalizePartition(flowGraph->cbegin(), flowGraph->cend());
 
       r.clear();
-      std::copy(flowGraph->cbeginRemoved(), flowGraph->cendRemoved(), std::back_inserter(r));
+      std::copy(flowGraph->cbeginRemoved(), flowGraph->cendRemoved(),
+                std::back_inserter(r));
 
       flowGraph->restoreRemoves();
       subdivisionFlowGraph->restoreRemoves();
@@ -179,7 +182,8 @@ std::vector<double> Solver::getConductance() const {
     assert(!p.empty() && "Partitions should not be empty.");
     flowGraph->subgraph(p.begin(), p.end());
 
-    int pId = partitionOf[p[0]], edgesCut = 0, volume = flowGraph->globalVolume();
+    int pId = partitionOf[p[0]], edgesCut = 0,
+        volume = flowGraph->globalVolume();
     for (int u : *flowGraph)
       edgesCut += flowGraph->globalDegree(u) - flowGraph->degree(u);
     result[pId] = double(edgesCut) / std::min(volume, totalVolume);

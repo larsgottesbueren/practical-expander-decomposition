@@ -12,10 +12,9 @@ namespace CutMatching {
 enum ResultType { Balanced, Expander, NearExpander };
 
 using Matching = std::vector<std::pair<int, int>>;
-std::vector<double>
-projectFlow(const std::vector<Matching> &rounds,
-            const std::vector<int> &fromSplitNode,
-            std::vector<double> start);
+std::vector<double> projectFlow(const std::vector<Matching> &rounds,
+                                const std::vector<int> &fromSplitNode,
+                                std::vector<double> start);
 
 class Solver {
 private:
@@ -33,8 +32,8 @@ public:
 
      Precondition: graph should not contain loops.
    */
-  Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivGraph,
-         const double phi, const int tConst, const double tFactor);
+  Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivGraph, const double phi,
+         const int tConst, const double tFactor);
 
   ResultType compute();
 };
