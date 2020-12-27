@@ -1,4 +1,4 @@
-# Expander decomposition
+# Expander Decomposition & Clustering (EDC)
 
 This is an implementation of [Expander decomposition and pruning: Faster,
 stronger, and simpler.](https://arxiv.org/pdf/1812.08958.pdf) by Thatchaphol
