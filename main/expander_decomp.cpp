@@ -40,7 +40,8 @@ int main(int argc, char *argv[]) {
 
       int v;
       while (ss >> v)
-        es.emplace_back(u, v - 1);
+        if (u < --v)
+          es.emplace_back(u, v);
     }
   } else {
     for (int i = 0; i < m; ++i) {
