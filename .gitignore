@@ -1,3 +1,10 @@
+# Project
+experiment/out
+experiment/plot
+
+# macOS
+.DS_STORE
+
 # Bazel
 bazel-*
 
