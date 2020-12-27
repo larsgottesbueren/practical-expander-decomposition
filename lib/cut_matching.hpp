@@ -14,7 +14,7 @@ enum ResultType { Balanced, Expander, NearExpander };
 using Matching = std::vector<std::pair<int, int>>;
 std::vector<double>
 projectFlow(const std::vector<Matching> &rounds,
-            const absl::flat_hash_map<int, int> &fromSplitNode,
+            const std::vector<int> &fromSplitNode,
             std::vector<double> start);
 
 class Solver {

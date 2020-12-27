@@ -39,13 +39,13 @@ Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivGraph,
 using Matching = std::vector<std::pair<int, int>>;
 std::vector<double>
 projectFlow(const std::vector<Matching> &rounds,
-            const absl::flat_hash_map<int, int> &fromSplitNode,
+            const std::vector<int> &fromSplitNode,
             std::vector<double> start) {
   for (auto it = rounds.begin(); it != rounds.end(); ++it) {
     for (const auto &[u, v] : *it) {
-      auto uIt = fromSplitNode.find(u), vIt = fromSplitNode.find(v);
-      assert(uIt != fromSplitNode.end() && vIt != fromSplitNode.end());
-      int i = uIt->second, j = vIt->second;
+      int i = fromSplitNode[u], j = fromSplitNode[v];
+      assert(i >= 0 && "Given vertex is not a subdivision vertex.");
+      assert(j >= 0 && "Given vertex is not a subdivision vertex.");
       start[i] = 0.5 * (start[i] + start[j]);
       start[j] = start[i];
     }
@@ -90,11 +90,11 @@ std::vector<double> randomUnitVector(std::mt19937 &gen, int n) {
 
 template <typename It>
 double potential(const double avgFlow, const std::vector<double> &flow,
-                 const absl::flat_hash_map<int, int> &fromSplitNode, It begin,
+                 const std::vector<int> &fromSplitNode, It begin,
                  It end) {
   double p = 0;
   for (auto it = begin; it != end; it++) {
-    double f = flow[fromSplitNode.at(*it)];
+    double f = flow[fromSplitNode[*it]];
     p += (f - avgFlow) * (f - avgFlow);
   }
   return p;
@@ -110,10 +110,11 @@ ResultType Solver::compute() {
     return Expander;
   }
 
-  absl::flat_hash_map<int, int> fromSplitNode;
-  for (auto u : *subdivGraph)
-    if (subdivGraph->isSubdivision(u))
-      fromSplitNode[u] = int(fromSplitNode.size());
+  { int count = 0;
+    for (auto u : *subdivGraph)
+      if (subdivGraph->isSubdivision(u))
+        subdivGraph->setSubdivision(u,count++);
+  }
 
   const int goodBalance = 0.45 * subdivGraph->globalVolume(),
             minBalance = numSplitNodes / (10 * T);
@@ -125,7 +126,7 @@ ResultType Solver::compute() {
        ++iterations) {
     VLOG(3) << "Iteration " << iterations << " out of " << T << ".";
 
-    auto flow = projectFlow(rounds, fromSplitNode,
+    auto flow = projectFlow(rounds, subdivGraph->getSubdivisionVector(),
                             randomUnitVectorFast(randomGen, numSplitNodes));
     double avgFlow =
         std::accumulate(flow.begin(), flow.end(), 0.0) / (double)flow.size();
@@ -133,7 +134,7 @@ ResultType Solver::compute() {
     std::vector<int> axLeft, axRight;
     for (auto u : *subdivGraph) {
       if (subdivGraph->isSubdivision(u)) {
-        if (flow[fromSplitNode[u]] < avgFlow)
+        if (flow[subdivGraph->getSubdivision(u)] < avgFlow)
           axLeft.push_back(u);
         else
           axRight.push_back(u);
@@ -147,7 +148,7 @@ ResultType Solver::compute() {
       avgFlow *= -1;
       for (auto u : *subdivGraph) {
         if (subdivGraph->isSubdivision(u)) {
-          if (flow[fromSplitNode[u]] < avgFlow)
+          if (flow[subdivGraph->getSubdivision(u)] < avgFlow)
             axLeft.push_back(u);
           else
             axRight.push_back(u);
@@ -159,24 +160,24 @@ ResultType Solver::compute() {
     for (auto u : *subdivGraph)
       if (subdivGraph->isSubdivision(u))
         tmpSubdiv.push_back(u);
-    double pAll = potential(avgFlow, flow, fromSplitNode, tmpSubdiv.begin(),
+    double pAll = potential(avgFlow, flow, subdivGraph->getSubdivisionVector(), tmpSubdiv.begin(),
                             tmpSubdiv.end()),
-           pLeft = potential(avgFlow, flow, fromSplitNode, axLeft.begin(),
+           pLeft = potential(avgFlow, flow, subdivGraph->getSubdivisionVector(), axLeft.begin(),
                              axLeft.end());
 
     if (pLeft >= pAll / 20.0) {
-      sort(axLeft.begin(), axLeft.end(), [&flow, &fromSplitNode](int u, int v) {
-        return flow[fromSplitNode[u]] < flow[fromSplitNode[v]];
+      sort(axLeft.begin(), axLeft.end(), [&flow, &subdivGraph = subdivGraph](int u, int v) {
+        return flow[subdivGraph->getSubdivision(u)] < flow[subdivGraph->getSubdivision(v)];
       });
       while (8 * axLeft.size() > tmpSubdiv.size())
         axLeft.pop_back();
     } else {
       double leftL = 0;
       for (auto u : axLeft)
-        leftL += std::abs(flow[fromSplitNode[u]] - avgFlow);
+        leftL += std::abs(flow[subdivGraph->getSubdivision(u)] - avgFlow);
       double rightL = 0;
       for (auto u : axRight)
-        rightL += std::abs(flow[fromSplitNode[u]] - avgFlow);
+        rightL += std::abs(flow[subdivGraph->getSubdivision(u)] - avgFlow);
       assert(std::abs(leftL - rightL) < 1e-9 &&
              "Left and right sums should be equal.");
       const double l = leftL;
@@ -185,16 +186,16 @@ ResultType Solver::compute() {
       axRight.clear();
       for (auto u : *subdivGraph)
         if (subdivGraph->isSubdivision(u))
-          if (flow[fromSplitNode[u]] <= mu)
+          if (flow[subdivGraph->getSubdivision(u)] <= mu)
             axRight.push_back(u);
 
       axLeft.clear();
       for (auto u : *subdivGraph)
         if (subdivGraph->isSubdivision(u))
-          if (flow[fromSplitNode[u]] >= avgFlow + 6.0 * l / tmpSubdiv.size())
+          if (flow[subdivGraph->getSubdivision(u)] >= avgFlow + 6.0 * l / tmpSubdiv.size())
             axLeft.push_back(u);
-      sort(axLeft.begin(), axLeft.end(), [&flow, &fromSplitNode](int u, int v) {
-        return flow[fromSplitNode[u]] > flow[fromSplitNode[v]];
+      sort(axLeft.begin(), axLeft.end(), [&flow, &subdivGraph = subdivGraph](int u, int v) {
+        return flow[subdivGraph->getSubdivision(u)] > flow[subdivGraph->getSubdivision(v)];
       });
       while (8 * axLeft.size() > tmpSubdiv.size())
         axLeft.pop_back();
