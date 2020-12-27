@@ -27,6 +27,8 @@ Tests are run using Bazel and [Google Test](https://github.com/google/googletest
 
 ``` shell
 bazel test --test_output=all --compilation_mode dbg //test:cluster_util_test --sandbox_debug
+# or
+./test.sh
 ```
 
 ## Running
