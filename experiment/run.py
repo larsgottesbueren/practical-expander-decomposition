@@ -27,11 +27,11 @@ def run(iteration, executable, problemInput):
 
 parser = argparse.ArgumentParser(
     description=
-    'Utility for running expander-decomp multiple times on the same graph')
+    'Utility for running edc multiple times on the same graph')
 parser.add_argument(
     '--executable',
-    default='bazel-bin/main/expander-decomp',
-    help='location of expander-decomp binary')
+    default='bazel-bin/main/edc',
+    help='location of edc binary')
 parser.add_argument('-i',
                     '--iterations',
                     type=int,

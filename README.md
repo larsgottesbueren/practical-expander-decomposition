@@ -8,17 +8,17 @@ Saranurak and Di Wang.
 
 The project is built using the [Bazel](https://bazel.build) build system. Using
 the 'build' command a binary will be built and moved to
-'bazel-bin/main/expander-decomp':
+'bazel-bin/main/edc':
 
 ``` shell
 # Build optimized configuration
-bazel build -c opt //main:expander-decomp
+bazel build -c opt //main:edc
 
 # Build debug configuration
-bazel build -c dbg //main:expander-decomp
+bazel build -c dbg //main:edc
 
 # Build with better debug information and sanitizers
-bazel build --config debug --compilation_mode dbg --sandbox_debug //main:expander-decomp
+bazel build --config debug --compilation_mode dbg --sandbox_debug //main:edc
 ```
 
 ## Testing
@@ -37,7 +37,7 @@ The following will compute an expander decomposition of a dumbbell graph with 4
 cliques each of size 20:
 
 ``` shell
-./experiment/gen_graph.py dumbbell -n=20 -k=4 | ./bazel-bin/main/expander-decomp
+./experiment/gen_graph.py dumbbell -n=20 -k=4 | ./bazel-bin/main/edc
 ```
 
 This will output the number of edges cut and the number of partitions, followed
@@ -47,13 +47,13 @@ respect to the entire graph.
 To also output the vertices of each partition, use the option '-partitions':
 
 ``` shell
-./experiment/gen_graph.py dumbbell -n=20 -k=4 | ./bazel-bin/main/expander-decomp -partitions
+./experiment/gen_graph.py dumbbell -n=20 -k=4 | ./bazel-bin/main/edc -partitions
 ```
 
 To view the progress of the program during execution logging can be enabled:
 
 ``` shell
-./experiment/gen_graph.py dumbbell -n=20 -k=4 | ./bazel-bin/main/expander-decomp --logtostderr -v=2
+./experiment/gen_graph.py dumbbell -n=20 -k=4 | ./bazel-bin/main/edc --logtostderr -v=2
 ```
 
 The most useful verbosity level is '-v=2' but if one wants to see the progress
@@ -62,18 +62,18 @@ of each cut-matching step '-v=3' can be used instead.
 The target conductance can be changed using the '-phi' option:
 
 ``` shell
-./experiment/gen_graph.py dumbbell -n=20 -k=4 | ./bazel-bin/main/expander-decomp -phi=0.001
+./experiment/gen_graph.py dumbbell -n=20 -k=4 | ./bazel-bin/main/edc -phi=0.001
 ```
 
 All available options can be seen using the help command:
 
 ``` shell
-./bazel-bin/main/expander-decomp --help
+./bazel-bin/main/edc --help
 ```
 
 ## Graph formats
 
-The 'expander-decomp' executable reads graphs from standard input. There are two
+The 'edc' executable reads graphs from standard input. There are two
 graph formats supported:
 1. A line with two integers N, M specifying the number of vertices and edges
    respectively. This is followed by M lines each with two integers U,V
