@@ -182,6 +182,21 @@ public:
      going across it is <= to the flow going across it.
 
      Method will mutate the flow such that it is no longer legal.
+
+     Time complexity: O(m^2)
+   */
+  std::vector<std::pair<Vertex, Vertex>>
+  matchingSlow(const std::vector<Vertex> &sources);
+
+  /**
+     Compute a matching between vertices using the current state of the flow
+     graph. A matching between vertices (u,v) is possible iff there is a path
+     from u to v in the flow graph, where for each edge, the number of matchings
+     going across it is <= to the flow going across it.
+
+     Method will mutate the flow such that it is no longer legal.
+
+     Time complexity: O(m \log m)
    */
   std::vector<std::pair<Vertex, Vertex>>
   matching(const std::vector<Vertex> &sources);

@@ -162,6 +162,34 @@ TEST(UnitFlow, WontMatchBeforeFlowComputed) {
 }
 
 /**
+    s(0) - 1 - 2
+          /     \
+     3 - 4 - 5 - 6
+    /    \      /
+  s(7)   8 - t(9) - 10 - t(11)
+ */
+TEST(UnitFlow, CanMatchMediumGraph) {
+  std::vector<UnitFlow::Edge> es = {
+      {0, 1, 1}, {1, 2, 1},  {1, 4, 1},  {2, 6, 1}, {3, 4, 1},
+      {3, 7, 1}, {4, 5, 1},  {4, 8, 1},  {5, 6, 1}, {6, 9, 1},
+      {8, 9, 1}, {9, 10, 1}, {10, 11, 1}};
+  UnitFlow::Graph uf(12, es);
+  uf.addSource(0, 1), uf.addSource(7, 1);
+  uf.addSink(9, 1), uf.addSink(11, 1);
+
+  uf.compute(10);
+  auto matches = uf.matching({0,7});
+  EXPECT_EQ(matches.size(), 2);
+
+  std::set<int> left, right;
+  for (auto [u,v] : matches)
+    left.insert(u), right.insert(v);
+
+  EXPECT_EQ(left, std::set<int>({0,7}));
+  EXPECT_EQ(right, std::set<int>({9,11}));
+}
+
+/**
    Create two complete graphs and connect them with one vertex. Allow for high
    edge capacities and route flow from left component to right component through
    single edge. We expect all edges on left match with one on the right.
@@ -265,7 +293,7 @@ TEST(UnitFlow, CanRouteAndMatchDiamondGraph) {
 
 /**
    Can route flow from left to right hand side of a k-layered bipartite graph
-   and then find a matching for all source vertices.
+   and then find a matching for all source vertices..
  */
 TEST(UnitFlow, CanRouteAndMatchKBipartite) {
   constexpr int layerSize = 100, k = 100;

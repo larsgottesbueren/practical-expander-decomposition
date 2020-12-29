@@ -166,71 +166,20 @@ Result Solver::compute() {
           axRight.push_back(u);
       }
     }
-    // TODO: Is this what w.l.o.g in RST Lemma 3.3 refers to?
-    if (axLeft.size() > axRight.size()) {
-      axLeft.clear(), axRight.clear();
-      for (auto &f : flow)
-        f *= -1;
-      avgFlow *= -1;
-      for (auto u : *subdivGraph) {
-        if (subdivGraph->isSubdivision(u)) {
-          if (flow[subdivGraph->getSubdivision(u)] < avgFlow)
-            axLeft.push_back(u);
-          else
-            axRight.push_back(u);
-        }
-      }
-    }
 
-    std::vector<int> tmpSubdiv;
-    for (auto u : *subdivGraph)
-      if (subdivGraph->isSubdivision(u))
-        tmpSubdiv.push_back(u);
-    double pAll = potential(avgFlow, flow, subdivGraph->getSubdivisionVector(),
-                            tmpSubdiv.begin(), tmpSubdiv.end()),
-           pLeft = potential(avgFlow, flow, subdivGraph->getSubdivisionVector(),
-                             axLeft.begin(), axLeft.end());
+    auto cmpFlow = [&flow, &subdivGraph = subdivGraph](int u, int v) {
+      return flow[subdivGraph->getSubdivision(u)] <
+             flow[subdivGraph->getSubdivision(v)];
+    };
+    std::sort(axLeft.begin(), axLeft.end(), cmpFlow);
+    std::sort(axRight.begin(), axRight.end(), cmpFlow);
+    std::reverse(axRight.begin(), axRight.end());
 
-    if (pLeft >= pAll / 20.0) {
-      sort(axLeft.begin(), axLeft.end(),
-           [&flow, &subdivGraph = subdivGraph](int u, int v) {
-             return flow[subdivGraph->getSubdivision(u)] <
-                    flow[subdivGraph->getSubdivision(v)];
-           });
-      while (8 * axLeft.size() > tmpSubdiv.size())
-        axLeft.pop_back();
-    } else {
-      double leftL = 0;
-      for (auto u : axLeft)
-        leftL += std::abs(flow[subdivGraph->getSubdivision(u)] - avgFlow);
-      double rightL = 0;
-      for (auto u : axRight)
-        rightL += std::abs(flow[subdivGraph->getSubdivision(u)] - avgFlow);
-      assert(std::abs(leftL - rightL) < 1e-9 &&
-             "Left and right sums should be equal.");
-      const double l = leftL;
-      const double mu = avgFlow + 4.0 * l / tmpSubdiv.size();
-
-      axRight.clear();
-      for (auto u : *subdivGraph)
-        if (subdivGraph->isSubdivision(u))
-          if (flow[subdivGraph->getSubdivision(u)] <= mu)
-            axRight.push_back(u);
-
-      axLeft.clear();
-      for (auto u : *subdivGraph)
-        if (subdivGraph->isSubdivision(u))
-          if (flow[subdivGraph->getSubdivision(u)] >=
-              avgFlow + 6.0 * l / tmpSubdiv.size())
-            axLeft.push_back(u);
-      sort(axLeft.begin(), axLeft.end(),
-           [&flow, &subdivGraph = subdivGraph](int u, int v) {
-             return flow[subdivGraph->getSubdivision(u)] >
-                    flow[subdivGraph->getSubdivision(v)];
-           });
-      while (8 * axLeft.size() > tmpSubdiv.size())
-        axLeft.pop_back();
-    }
+    const int numSubdivVertices = int(axLeft.size() + axRight.size());
+    while (8 * axLeft.size() > numSubdivVertices)
+      axLeft.pop_back();
+    while (2 * axRight.size() > numSubdivVertices)
+      axRight.pop_back();
 
     subdivGraph->reset();
 
@@ -286,8 +235,12 @@ Result Solver::compute() {
     VLOG(3) << "Computing matching with |S| = " << axLeft.size()
             << " |T| = " << axRight.size() << ".";
     auto matching = subdivGraph->matching(axLeft);
-    rounds.push_back(matching);
     VLOG(3) << "Found matching of size " << matching.size() << ".";
+
+    // TODO: Can we expect complete matching after removing level cut?
+    // assert(matching.size() == axLeft.size() &&
+    // "Expected all source vertices to be matched.");
+    rounds.push_back(matching);
   }
 
   Result result;
