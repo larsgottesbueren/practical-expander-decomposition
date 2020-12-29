@@ -11,10 +11,12 @@
 namespace CutMatching {
 
 Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivGraph,
-               const double phi, const int tConst, const double tFactor)
+               const double phi, const int tConst, const double tFactor,
+               const int verifyExpansion)
     : graph(g), subdivGraph(subdivGraph), phi(phi),
       T(tConst + std::ceil(tFactor * std::log10(graph->edgeCount()) *
-                           std::log10(graph->edgeCount()))) {
+                           std::log10(graph->edgeCount()))),
+      verifyExpansion(verifyExpansion) {
   assert(graph->size() != 0 && "Cut-matching expected non-empty subset.");
 
   std::random_device rd;
@@ -97,7 +99,30 @@ double potential(const double avgFlow, const std::vector<double> &flow,
   return p;
 }
 
-ResultType Solver::compute() {
+/**
+   Sample an expansion ceritificate 'numSamples' times by generating a random
+   unit vector orthogonal to the all ones vector, project it on the matchings,
+   and computing the distance to the uniform unit vector.
+ */
+std::vector<double> sampleCertificate(std::mt19937 &gen,
+                                      const std::vector<Matching> &rounds,
+                                      const std::vector<int> &fromSplitNode,
+                                      int n, int numSamples) {
+  std::vector<double> result;
+
+  for (int sample = 0; sample < numSamples; ++sample) {
+    auto xs = projectFlow(rounds, fromSplitNode, randomUnitVector(gen, n));
+    const double invertN = 1.0 / double(n);
+    double sum = 0;
+    for (auto x : xs)
+      sum += (invertN - x) * (invertN - x);
+    result.push_back(std::sqrt(sum));
+  }
+
+  return result;
+}
+
+Result Solver::compute() {
   std::vector<Matching> rounds;
 
   const int numSplitNodes = subdivGraph->size() - graph->size();
@@ -105,7 +130,9 @@ ResultType Solver::compute() {
   if (numSplitNodes <= 1) {
     VLOG(3) << "Cut matching exited early with " << numSplitNodes
             << " subdivision vertices.";
-    return Expander;
+    Result result;
+    result.type = Expander;
+    return result;
   }
 
   {
@@ -263,21 +290,21 @@ ResultType Solver::compute() {
     VLOG(3) << "Found matching of size " << matching.size() << ".";
   }
 
-  ResultType resultType;
+  Result result;
 
   if (graph->size() != 0 && graph->removedSize() != 0 &&
       subdivGraph->globalVolume(subdivGraph->cbeginRemoved(),
                                 subdivGraph->cendRemoved()) > minBalance)
     // We have: graph.volume(R) > m / (10 * T)
-    resultType = Balanced;
+    result.type = Balanced;
   else if (graph->removedSize() == 0)
-    resultType = Expander;
+    result.type = Expander;
   else if (graph->size() == 0)
-    graph->restoreRemoves(), resultType = Expander;
+    graph->restoreRemoves(), result.type = Expander;
   else
-    resultType = NearExpander;
+    result.type = NearExpander;
 
-  switch (resultType) {
+  switch (result.type) {
   case Balanced: {
     VLOG(2) << "Cut matching ran " << iterations
             << " iterations and resulted in balanced cut with size ("
@@ -290,16 +317,22 @@ ResultType Solver::compute() {
   case Expander: {
     VLOG(2) << "Cut matching ran " << iterations
             << " iterations and resulted in expander.";
+    result.certificateSamples = sampleCertificate(
+        randomGen, rounds, subdivGraph->getSubdivisionVector(), numSplitNodes,
+        verifyExpansion);
     break;
   }
   case NearExpander: {
     VLOG(2) << "Cut matching ran " << iterations
             << " iterations and resulted in near expander of size "
             << graph->size() << ".";
+    result.certificateSamples = sampleCertificate(
+        randomGen, rounds, subdivGraph->getSubdivisionVector(), numSplitNodes,
+        verifyExpansion);
     break;
   }
   }
 
-  return resultType;
+  return result;
 }
 } // namespace CutMatching

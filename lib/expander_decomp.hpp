@@ -43,6 +43,12 @@ private:
   const double tFactor;
 
   /**
+     Number of times expansion certificate should be sampled when cut-matching
+     game results in an expander.
+   */
+  const int verifyExpansion;
+
+  /**
      Number of finalized partitions.
    */
   int numPartitions;
@@ -72,7 +78,7 @@ public:
      Create a decomposition problem with n vertices.
    */
   Solver(std::unique_ptr<Undirected::Graph> g, const double phi,
-         const int tConst, const double tFactor);
+         const int tConst, const double tFactor, const int verifyExpansion);
 
   /**
      Return the computed partition as a vector of disjoint vertex vectors.

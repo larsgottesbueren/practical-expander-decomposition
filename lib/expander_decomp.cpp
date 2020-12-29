@@ -38,10 +38,11 @@ constructSubdivisionFlowGraph(const std::unique_ptr<Undirected::Graph> &g) {
 }
 
 Solver::Solver(std::unique_ptr<Undirected::Graph> graph, const double phi,
-               const int tConst, const double tFactor)
+               const int tConst, const double tFactor,
+               const int verifyExpansion)
     : flowGraph(nullptr), subdivisionFlowGraph(nullptr), phi(phi),
-      tConst(tConst), tFactor(tFactor), numPartitions(0),
-      partitionOf(graph->size(), -1) {
+      tConst(tConst), tFactor(tFactor), verifyExpansion(verifyExpansion),
+      numPartitions(0), partitionOf(graph->size(), -1) {
   flowGraph = constructFlowGraph(graph);
   subdivisionFlowGraph = constructSubdivisionFlowGraph(graph);
 
@@ -60,10 +61,10 @@ void Solver::compute() {
   VLOG(1) << "Attempting to find balanced cut with " << flowGraph->size()
           << " vertices.";
   if (flowGraph->size() == 0) {
-    VLOG(2) << "Exiting early, partition was empty.";
+    VLOG(1) << "Exiting early, partition was empty.";
     return;
   } else if (flowGraph->size() == 1) {
-    VLOG(2) << "Creating single vertex partition.";
+    VLOG(1) << "Creating single vertex partition.";
     finalizePartition(flowGraph->begin(), flowGraph->end());
     return;
   }
@@ -71,7 +72,7 @@ void Solver::compute() {
   const auto &components = flowGraph->connectedComponents();
 
   if (components.size() > 1) {
-    VLOG(2) << "Found " << components.size() << " connected components.";
+    VLOG(1) << "Found " << components.size() << " connected components.";
 
     for (auto &comp : components) {
       auto subComp =
@@ -87,14 +88,14 @@ void Solver::compute() {
     }
   } else {
     CutMatching::Solver cm(flowGraph.get(), subdivisionFlowGraph.get(), phi,
-                           tConst, tFactor);
-    auto resultType = cm.compute();
+                           tConst, tFactor, verifyExpansion);
+    auto result = cm.compute();
     std::vector<int> a, r;
     std::copy(flowGraph->cbegin(), flowGraph->cend(), std::back_inserter(a));
     std::copy(flowGraph->cbeginRemoved(), flowGraph->cendRemoved(),
               std::back_inserter(r));
 
-    switch (resultType) {
+    switch (result.type) {
     case CutMatching::Balanced: {
       assert(!a.empty() && "Cut should be balanced but A was empty.");
       assert(!r.empty() && "Cut should be balanced but R was empty.");
@@ -151,8 +152,14 @@ void Solver::compute() {
       flowGraph->restoreRemoves();
       subdivisionFlowGraph->restoreRemoves();
 
-      VLOG(3) << "Finalizing " << a.size() << " vertices as partition "
+      VLOG(1) << "Finalizing " << a.size() << " vertices as partition "
               << numPartitions << ".";
+      if (verifyExpansion > 0)
+        VLOG(1) << "Expansion certificate: "
+                << std::accumulate(result.certificateSamples.begin(),
+                                   result.certificateSamples.end(), 0.0) /
+                       double(result.certificateSamples.size());
+
       finalizePartition(a.begin(), a.end());
       break;
     }
