@@ -213,7 +213,8 @@ Graph::matching(const std::vector<Vertex> &sources) {
   for (const auto u : sources) {
     const auto v = search(u);
     if (v != -1) {
-      assert(forest.findRoot(u) == v && "Matched vertex should be forest root.");
+      assert(forest.findRoot(u) == v &&
+             "Matched vertex should be forest root.");
       matches.push_back({u, v});
 
       forest.updatePath(u, -1);

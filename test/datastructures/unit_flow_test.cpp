@@ -178,15 +178,15 @@ TEST(UnitFlow, CanMatchMediumGraph) {
   uf.addSink(9, 1), uf.addSink(11, 1);
 
   uf.compute(10);
-  auto matches = uf.matching({0,7});
+  auto matches = uf.matching({0, 7});
   EXPECT_EQ(matches.size(), 2);
 
   std::set<int> left, right;
-  for (auto [u,v] : matches)
+  for (auto [u, v] : matches)
     left.insert(u), right.insert(v);
 
-  EXPECT_EQ(left, std::set<int>({0,7}));
-  EXPECT_EQ(right, std::set<int>({9,11}));
+  EXPECT_EQ(left, std::set<int>({0, 7}));
+  EXPECT_EQ(right, std::set<int>({9, 11}));
 }
 
 /**
