@@ -4,7 +4,7 @@
 """
 
 import argparse
-from random import randrange
+from random import randrange, seed
 
 
 def output(args, g, n, m):
@@ -99,7 +99,7 @@ def gen_clique_random(args):
                 if randrange(100) < 50:
                     v = c * n + j
                     g[u].append(v)
-                m += 1
+                    m += 1
     for r in range(args.r):
         u = randrange(n * k)
         v = u
@@ -134,6 +134,9 @@ parser = argparse.ArgumentParser(description='Utility for creating graphs')
 parser.add_argument('--one_indexed',
                     action='store_true',
                     help='make vertex labels one-indexed (default=false)')
+parser.add_argument('-s', '--seed',
+                    type=int,
+                    help='Seed to use when generating random values')
 
 subparsers = parser.add_subparsers()
 
@@ -205,4 +208,8 @@ lattice_parser.add_argument('-n',
                             help='width and height of lattice (default=10)')
 
 args = parser.parse_args()
+
+if args.seed is not None:
+    seed(args.seed)
+
 args.func(args)
