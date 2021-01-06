@@ -49,11 +49,15 @@ int main(int argc, char *argv[]) {
           es.emplace_back(u, v);
     }
   } else {
+    std::set<pair<int,int>> seen;
     for (int i = 0; i < m; ++i) {
       int u, v;
       cin >> u >> v;
-      if (u < v)
+      if (u > v) std::swap(u,v);
+      if (seen.find({u,v}) == seen.end()) {
+        seen.insert({u,v});
         es.emplace_back(u, v);
+      }
     }
   }
 
