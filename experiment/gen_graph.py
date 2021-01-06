@@ -103,7 +103,7 @@ def gen_clique_random(args):
     for r in range(args.r):
         u = randrange(n * k)
         v = u
-        while v == u or v in g[u] or u in g[v]:
+        while v == u or v in g[u] or u in g[v] or (u // n == v // n):
             v = randrange(n * k)
         g[u].append(v)
         m += 1
