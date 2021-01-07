@@ -1,0 +1,5 @@
+# Directory containing intermediate data
+gen
+
+# Directory storing plots
+out
