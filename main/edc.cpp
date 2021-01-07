@@ -9,6 +9,7 @@
 #include "lib/cut_matching.hpp"
 #include "lib/datastructures/undirected_graph.hpp"
 #include "lib/expander_decomp.hpp"
+#include "util.hpp"
 
 using namespace std;
 
@@ -31,40 +32,10 @@ int main(int argc, char *argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   VLOG(1) << "Reading input.";
-
-  int n, m;
-  cin >> n >> m;
-
-  vector<Undirected::Edge> es;
-  if (FLAGS_chaco) {
-    cin.ignore();
-    for (int u = 0; u < n; ++u) {
-      string line;
-      getline(cin, line);
-      stringstream ss(line);
-
-      int v;
-      while (ss >> v)
-        if (u < --v)
-          es.emplace_back(u, v);
-    }
-  } else {
-    std::set<pair<int,int>> seen;
-    for (int i = 0; i < m; ++i) {
-      int u, v;
-      cin >> u >> v;
-      if (u > v) std::swap(u,v);
-      if (seen.find({u,v}) == seen.end()) {
-        seen.insert({u,v});
-        es.emplace_back(u, v);
-      }
-    }
-  }
-
+  auto g = readGraph(FLAGS_chaco);
   VLOG(1) << "Finished reading input.";
 
-  ExpanderDecomposition::Solver solver(make_unique<Undirected::Graph>(n, es),
-                                       FLAGS_phi, FLAGS_t1, FLAGS_t2,
+  ExpanderDecomposition::Solver solver(move(g), FLAGS_phi, FLAGS_t1, FLAGS_t2,
                                        FLAGS_verify_expansion);
   auto partitions = solver.getPartition();
   auto conductances = solver.getConductance();
