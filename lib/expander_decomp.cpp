@@ -154,12 +154,6 @@ void Solver::compute() {
 
       VLOG(1) << "Finalizing " << a.size() << " vertices as partition "
               << numPartitions << ".";
-      if (verifyExpansion > 0)
-        VLOG(1) << "Expansion certificate: "
-                << std::accumulate(result.certificateSamples.begin(),
-                                   result.certificateSamples.end(), 0.0) /
-                       double(result.certificateSamples.size());
-
       finalizePartition(a.begin(), a.end());
       break;
     }

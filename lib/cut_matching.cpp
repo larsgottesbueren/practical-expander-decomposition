@@ -10,12 +10,13 @@
 
 namespace CutMatching {
 
-Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivGraph,
-               const double phi, const int tConst, const double tFactor,
+Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG, const double phi,
+               const int tConst, const double tFactor,
                const int verifyExpansion)
-    : graph(g), subdivGraph(subdivGraph), phi(phi),
+    : graph(g), subdivGraph(subdivG), phi(phi),
       T(tConst + std::ceil(tFactor * std::log10(graph->edgeCount()) *
                            std::log10(graph->edgeCount()))),
+      numSplitNodes(subdivGraph->size() - graph->size()),
       verifyExpansion(verifyExpansion) {
   assert(graph->size() != 0 && "Cut-matching expected non-empty subset.");
 
@@ -37,17 +38,18 @@ Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivGraph,
 
    Time complexity: O(|rounds| + |start|)
  */
-using Matching = std::vector<std::pair<int, int>>;
-std::vector<double> projectFlow(const std::vector<Matching> &rounds,
-                                const std::vector<int> &fromSplitNode,
-                                std::vector<double> start) {
+std::vector<double> Solver::projectFlow(const std::vector<Matching> &rounds,
+                                        std::vector<double> start) {
   for (auto it = rounds.begin(); it != rounds.end(); ++it) {
     for (const auto &[u, v] : *it) {
-      int i = fromSplitNode[u], j = fromSplitNode[v];
-      assert(i >= 0 && "Given vertex is not a subdivision vertex.");
-      assert(j >= 0 && "Given vertex is not a subdivision vertex.");
-      start[i] = 0.5 * (start[i] + start[j]);
-      start[j] = start[i];
+      if (subdivGraph->alive(u) && subdivGraph->alive(v)) {
+        int i = subdivGraph->getSubdivision(u),
+            j = subdivGraph->getSubdivision(v);
+        assert(i >= 0 && "Given vertex is not a subdivision vertex.");
+        assert(j >= 0 && "Given vertex is not a subdivision vertex.");
+        start[i] = 0.5 * (start[i] + start[j]);
+        start[j] = start[i];
+      }
     }
   }
 
@@ -70,62 +72,53 @@ std::vector<double> randomUnitVectorFast(std::mt19937 &gen, int n) {
   return xs;
 }
 
-/**
-   Construct a random unit vector by sampling from normal distribution. Based
-   on https://stackoverflow.com/a/8453514
- */
-std::vector<double> randomUnitVector(std::mt19937 &gen, int n) {
-  std::normal_distribution<> d(0, 1);
-  std::vector<double> xs(n);
-  double m = 0;
-  for (auto &x : xs) {
-    x = d(gen);
-    m += x * x;
+std::vector<double> Solver::randomUnitVector() {
+  std::normal_distribution<> dist(0, 1);
+  std::vector<double> result(numSplitNodes);
+  double total = 0;
+
+  for (auto it = subdivGraph->cbegin(); it != subdivGraph->cend(); ++it) {
+    const auto u = *it;
+    if (subdivGraph->isSubdivision(u)) {
+      double x = dist(randomGen);
+      result[subdivGraph->getSubdivision(u)] = x;
+      total += x * x;
+    }
   }
-  m = std::sqrt(m);
-  for (auto &x : xs)
-    x /= m;
-  return xs;
-}
 
-template <typename It>
-double potential(const double avgFlow, const std::vector<double> &flow,
-                 const std::vector<int> &fromSplitNode, It begin, It end) {
-  double p = 0;
-  for (auto it = begin; it != end; it++) {
-    double f = flow[fromSplitNode[*it]];
-    p += (f - avgFlow) * (f - avgFlow);
-  }
-  return p;
-}
-
-/**
-   Sample an expansion ceritificate 'numSamples' times by generating a random
-   unit vector orthogonal to the all ones vector, project it on the matchings,
-   and computing the distance to the uniform unit vector.
- */
-std::vector<double> sampleCertificate(std::mt19937 &gen,
-                                      const std::vector<Matching> &rounds,
-                                      const std::vector<int> &fromSplitNode,
-                                      int n, int numSamples) {
-  std::vector<double> result;
-
-  for (int sample = 0; sample < numSamples; ++sample) {
-    auto xs = projectFlow(rounds, fromSplitNode, randomUnitVector(gen, n));
-    const double invertN = 1.0 / double(n);
-    double sum = 0;
-    for (auto x : xs)
-      sum += (invertN - x) * (invertN - x);
-    result.push_back(std::sqrt(sum));
+  total = std::sqrt(total);
+  for (auto it = subdivGraph->cbegin(); it != subdivGraph->cend(); ++it) {
+    const auto u = *it;
+    if (subdivGraph->isSubdivision(u))
+      result[subdivGraph->getSubdivision(u)] /= total;
   }
 
   return result;
 }
 
+std::vector<double>
+Solver::sampleCertificate(const std::vector<Matching> &rounds) {
+  std::vector<double> result;
+  for (int sample = 0; sample < verifyExpansion; ++sample) {
+    const auto flow = projectFlow(rounds, randomUnitVector());
+
+    const int n = subdivGraph->size() - graph->size();
+    const double avgFlow = 1.0 / double(n);
+    double total = 0;
+    for (auto it = subdivGraph->cbegin(); it != subdivGraph->cend(); ++it) {
+      const auto u = *it;
+      if (subdivGraph->isSubdivision(u)) {
+        double f = flow[subdivGraph->getSubdivision(u)];
+        total += (avgFlow - f) * (avgFlow - f);
+      }
+    }
+    result.push_back(total);
+  }
+  return result;
+}
+
 Result Solver::compute() {
   std::vector<Matching> rounds;
-
-  const int numSplitNodes = subdivGraph->size() - graph->size();
 
   if (numSplitNodes <= 1) {
     VLOG(3) << "Cut matching exited early with " << numSplitNodes
@@ -142,20 +135,35 @@ Result Solver::compute() {
         subdivGraph->setSubdivision(u, count++);
   }
 
+  /**
+     Current number of subdivision vertices alive.
+   */
+  const auto curSubdivisionCount = [&graph = graph,
+                                    &subdivGraph = subdivGraph] {
+    return subdivGraph->size() - graph->size();
+  };
+
   const int goodBalance = 0.45 * subdivGraph->globalVolume(),
             minBalance = numSplitNodes / (10 * T);
 
-  int iterations = 1;
-  for (; iterations <= T &&
+  Result result;
+
+  int iterations = 0;
+  for (; iterations < T &&
          subdivGraph->globalVolume(subdivGraph->cbeginRemoved(),
                                    subdivGraph->cendRemoved()) <= goodBalance;
        ++iterations) {
     VLOG(3) << "Iteration " << iterations << " out of " << T << ".";
 
-    auto flow = projectFlow(rounds, subdivGraph->getSubdivisionVector(),
-                            randomUnitVectorFast(randomGen, numSplitNodes));
-    double avgFlow =
-        std::accumulate(flow.begin(), flow.end(), 0.0) / (double)flow.size();
+    if (verifyExpansion > 0) {
+      VLOG(4) << "Sampling conductance";
+      result.certificateSamples.push_back(sampleCertificate(rounds));
+      VLOG(4) << "Finished sampling conductance";
+    }
+
+    auto flow = projectFlow(rounds, randomUnitVector());
+    double avgFlow = std::accumulate(flow.begin(), flow.end(), 0.0) /
+                     (double)curSubdivisionCount();
 
     std::vector<int> axLeft, axRight;
     for (auto u : *subdivGraph) {
@@ -243,7 +251,11 @@ Result Solver::compute() {
     rounds.push_back(matching);
   }
 
-  Result result;
+  if (verifyExpansion > 0) {
+    VLOG(4) << "Sampling conductance";
+    result.certificateSamples.push_back(sampleCertificate(rounds));
+    VLOG(4) << "Finished sampling conductance";
+  }
 
   if (graph->size() != 0 && graph->removedSize() != 0 &&
       subdivGraph->globalVolume(subdivGraph->cbeginRemoved(),
@@ -270,18 +282,12 @@ Result Solver::compute() {
   case Expander: {
     VLOG(2) << "Cut matching ran " << iterations
             << " iterations and resulted in expander.";
-    result.certificateSamples = sampleCertificate(
-        randomGen, rounds, subdivGraph->getSubdivisionVector(), numSplitNodes,
-        verifyExpansion);
     break;
   }
   case NearExpander: {
     VLOG(2) << "Cut matching ran " << iterations
             << " iterations and resulted in near expander of size "
             << graph->size() << ".";
-    result.certificateSamples = sampleCertificate(
-        randomGen, rounds, subdivGraph->getSubdivisionVector(), numSplitNodes,
-        verifyExpansion);
     break;
   }
   }

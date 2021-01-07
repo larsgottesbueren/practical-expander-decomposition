@@ -324,6 +324,11 @@ public:
   }
 
   /**
+     True if vertex has not been removed.
+   */
+  bool alive(V u) const { return vertexIndices[u] < size(); }
+
+  /**
      Degree of vertex 'u'.
 
      Time complexity: O(1)
