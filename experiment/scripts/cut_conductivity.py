@@ -58,19 +58,35 @@ if __name__ == '__main__':
         'n': 100,
         'k': 2,
     }, {
-        'name': 'clique-random',
+        'name': 'dumbbell',
+        'n': 100,
+        'k': 3,
+    }, {
+        'name': 'clique',
         'n': 100,
         'k': 2,
-        'r': 0,
+    }, {
+        'name': 'clique',
+        'n': 250,
+        'k': 2,
     }, {
         'name': 'dumbbell',
         'n': 250,
         'k': 2,
     }, {
         'name': 'clique-random',
+        'n': 100,
+        'k': 2,
+        'r': 10,
+    }, {
+        'name': 'clique-random',
         'n': 250,
         'k': 2,
-        'r': 1,
+        'r': 10,
+    }, {
+        'name': 'clique-path',
+        'n': 20,
+        'k': 1000,
     }]
 
     def graphParamsToString(p):
@@ -100,7 +116,8 @@ if __name__ == '__main__':
 
     with mp.Pool() as pool:
         phis = [0.001, 0.01]
-        jobs = [(edc_cut_path, g, phi) for g, phi in itertools.product(graphs, phis)]
+        jobs = [(edc_cut_path, g, phi)
+                for g, phi in itertools.product(graphs, phis)]
         result = pool.starmap(cut, jobs, chunksize=1)
 
     with open(output_file, 'w') as f:
