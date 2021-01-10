@@ -4,6 +4,7 @@
 """
 
 import argparse
+import itertools
 from random import randrange, seed
 
 
@@ -130,11 +131,84 @@ def gen_lattice(args):
     output(args, g, n * n, m)
 
 
+def gen_margulis(args):
+    """See https://www.abelprize.no/c76018/binfil/download.php?tid=76133
+
+    """
+    n = args.n
+    k = args.k
+    r = args.r
+
+    es = set()
+
+    for comp in range(k):
+        for x, y in itertools.product(range(n), range(n)):
+
+            def S(a, b):
+                return (a, a + b)
+
+            def Sinv(a, b):
+                return (a, a - b)  # Sinv(S(a,b)) = Sinv(a,a+b) = (a,b)
+
+            def s(a, b):
+                return (a + 1, b)
+
+            def sinv(a, b):
+                return (a - 1, b)  # sinv(s(a,b)) = sinv(a+1,b) = (a,b)
+
+            def T(a, b):
+                return (a + b, b)
+
+            def Tinv(a, b):
+                return (a - b, b)  # Tinv(T(a,b)) = Tinv(a+b,b) = (a,b)
+
+            def t(a, b):
+                return (a, b + 1)
+
+            def tinv(a, b):
+                return (a, b - 1)  # tinv(t(a,b)) = tinv(a,b+1) = (a,b)
+
+            for z, w in [
+                    S(x, y),
+                    Sinv(x, y),
+                    s(x, y),
+                    sinv(x, y),
+                    T(x, y),
+                    Tinv(x, y),
+                    t(x, y),
+                    tinv(x, y)
+            ]:
+                z = (z + n) % n
+                w = (w + n) % n
+
+                offset = comp * n * n
+                u = x * n + y + offset
+                v = z * n + w + offset
+
+                es.add((min(u, v), max(u, v)))
+
+    for _ in range(r):
+        u = randrange(k * n * n)
+        v = u
+        while v == u or u // (n * n) == v // (n * n) or (min(u, v), max(
+                u, v)) in es:
+            v = randrange(k * n * n)
+        es.add((min(u, v), max(u, v)))
+
+    g = {}
+    m = len(es)
+    for u, v in es:
+        if u not in g: g[u] = []
+        g[u].append(v)
+    output(args, g, k * n * n, m)
+
+
 parser = argparse.ArgumentParser(description='Utility for creating graphs')
 parser.add_argument('--one_indexed',
                     action='store_true',
                     help='make vertex labels one-indexed (default=false)')
-parser.add_argument('-s', '--seed',
+parser.add_argument('-s',
+                    '--seed',
                     type=int,
                     help='Seed to use when generating random values')
 
@@ -206,6 +280,27 @@ lattice_parser.add_argument('-n',
                             type=int,
                             default=10,
                             help='width and height of lattice (default=10)')
+
+margulis_parser = subparsers.add_parser(
+    'margulis', help='k margulis-components, each with n^2 vertices.')
+margulis_parser.set_defaults(func=gen_margulis)
+margulis_parser.add_argument(
+    '-n',
+    type=int,
+    default=100,
+    help=
+    'integer n such that each margulis component has n^2 vertices (default=100)'
+)
+margulis_parser.add_argument('-k',
+                             type=int,
+                             default=1,
+                             help='number of margulis-components (default=1)')
+margulis_parser.add_argument(
+    '-r',
+    type=int,
+    default=0,
+    help='number of random extra edges between separate components (default=0)'
+)
 
 args = parser.parse_args()
 

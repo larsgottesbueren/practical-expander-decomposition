@@ -65,6 +65,13 @@ if __name__ == '__main__':
         'r': 1000,
         'expected_partitions': 100,
         'expected_edges_cut': 1000,
+    }, {
+        'name': 'margulis',
+        'n': 10,
+        'k': 100,
+        'r': 1000,
+        'expected_partitions': 100,
+        'expected_edges_cut': 1000,
     }]
 
     def graphParamsToString(p):
