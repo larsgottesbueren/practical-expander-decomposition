@@ -47,18 +47,19 @@ int main(int argc, char *argv[]) {
 
   switch (result.type) {
   case CutMatching::Balanced: {
-    cout << "balanced_cut" << endl;
+    cout << "balanced_cut";
     break;
   }
   case CutMatching::NearExpander: {
-    cout << "near_expander" << endl;
+    cout << "near_expander";
     break;
   }
   case CutMatching::Expander: {
-    cout << "expander" << endl;
+    cout << "expander";
     break;
   }
   }
+  cout << " " << result.iterations << endl;
 
   cout << a.size();
   for (auto u : a)

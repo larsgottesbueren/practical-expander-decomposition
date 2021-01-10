@@ -125,6 +125,7 @@ Result Solver::compute() {
             << " subdivision vertices.";
     Result result;
     result.type = Expander;
+    result.iterations = 0;
     return result;
   }
 
@@ -250,6 +251,8 @@ Result Solver::compute() {
     // "Expected all source vertices to be matched.");
     rounds.push_back(matching);
   }
+
+  result.iterations = iterations;
 
   if (verifyExpansion > 0) {
     VLOG(4) << "Sampling conductance";

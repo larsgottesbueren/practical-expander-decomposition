@@ -27,7 +27,7 @@ def cut(edc_cut_path, graph, phi):
         exit(1)
     else:
         lines = result.stdout.split('\n')
-        resultType = lines[0]
+        resultType = lines[0].split()[0]
         if resultType != 'balanced_cut':
             print(f'Cut did not result in balanced_cut: {resultType}')
             exit(1)

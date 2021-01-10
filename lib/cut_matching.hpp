@@ -14,15 +14,25 @@ enum ResultType { Balanced, Expander, NearExpander };
 /**
    The result of running the cut-matching game is a balanced cut, an expander,
    or a near expander.
-
-   If 'Solver::verifyExpansion' is positive, result also contains a vector of
-   expansion samples for each iteration. Vector should have length
-   'iterations+1' corresponding to one entry before every iteration plus one
-   entry after the final iteration.
  */
 struct Result {
+  /**
+     Type of cut-matching result.
+   */
   ResultType type;
+
+  /**
+     If 'Solver::verifyExpansion' is positive, this a vector of expansion
+     samples for each iteration. Vector should have length 'iterations+1'
+     corresponding to one entry before every iteration plus one entry after the
+     final iteration.
+   */
   std::vector<std::vector<double>> certificateSamples;
+
+  /**
+     Number of iterations the cut-matching step ran.
+   */
+  int iterations;
 };
 
 using Matching = std::vector<std::pair<int, int>>;

@@ -27,7 +27,7 @@ def cut(edc_cut_path, graph, phi):
         exit(1)
     else:
         lines = result.stdout.split('\n')
-        resultType = lines[0]
+        resultType = lines[0].split()[0]
         if resultType != 'expander':
             print(f'Cut did not result in expander: {resultType}')
             exit(1)
