@@ -20,7 +20,7 @@ plot <-
     labs(y="Mean distance",
          x="Iteration",
          col="Graph type") +
-    stat_summary(fun=mean, geom="line") +
+    stat_summary(fun=median, geom="line") +
     facet_grid(phi ~ ., label="label_parsed")
 
 ggsave(output_file, plot)
