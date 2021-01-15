@@ -32,14 +32,14 @@ Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG, const double phi,
 
 /**
    Given a number of matchings 'M_i' and a start state, compute the flow
-   projection.
+   projection in place.
 
    Assumes no pairs of vertices in single round overlap.
 
    Time complexity: O(|rounds| + |start|)
  */
-std::vector<double> Solver::projectFlow(const std::vector<Matching> &rounds,
-                                        std::vector<double> start) {
+void Solver::projectFlow(const std::vector<Matching> &rounds,
+                         std::vector<double> &start) {
   for (auto it = rounds.begin(); it != rounds.end(); ++it) {
     for (const auto &[u, v] : *it) {
       if (subdivGraph->alive(u) && subdivGraph->alive(v)) {
@@ -52,8 +52,6 @@ std::vector<double> Solver::projectFlow(const std::vector<Matching> &rounds,
       }
     }
   }
-
-  return start;
 }
 
 /**
@@ -100,7 +98,8 @@ std::vector<double>
 Solver::sampleCertificate(const std::vector<Matching> &rounds) {
   std::vector<double> result;
   for (int sample = 0; sample < verifyExpansion; ++sample) {
-    const auto flow = projectFlow(rounds, randomUnitVector());
+    auto flow = randomUnitVector();
+    projectFlow(rounds, flow);
 
     const int n = subdivGraph->size() - graph->size();
     const double avgFlow = 1.0 / double(n);
@@ -162,7 +161,10 @@ Result Solver::compute() {
       VLOG(4) << "Finished sampling conductance";
     }
 
-    auto flow = projectFlow(rounds, randomUnitVector());
+    auto flow = randomUnitVector();
+    for (int i = 0; i < 10; ++i)
+      projectFlow(rounds, flow);
+
     double avgFlow = std::accumulate(flow.begin(), flow.end(), 0.0) /
                      (double)curSubdivisionCount();
 

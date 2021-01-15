@@ -36,9 +36,6 @@ struct Result {
 };
 
 using Matching = std::vector<std::pair<int, int>>;
-std::vector<double> projectFlow(const std::vector<Matching> &rounds,
-                                const std::vector<int> &fromSplitNode,
-                                std::vector<double> start);
 
 class Solver {
 private:
@@ -73,8 +70,8 @@ private:
   /**
      Project flow across the sparse matrices represented by the round matchings.
    */
-  std::vector<double> projectFlow(const std::vector<Matching> &rounds,
-                                  std::vector<double> start);
+  void projectFlow(const std::vector<Matching> &rounds,
+                   std::vector<double> &start);
 
   /**
      Sample the expansion certificate 'verifyExpansion' times.
