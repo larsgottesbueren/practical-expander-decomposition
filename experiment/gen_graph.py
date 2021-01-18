@@ -24,43 +24,31 @@ def gen_clique(args):
     g = {}
     n = args.n
     k = args.k
-    m = 0
+    r = args.r
+    p = args.p
 
+    es = set()
     for c in range(k):
         for i in range(n):
             u = c * n + i
-            g[u] = []
             for j in range(i + 1, n):
-                v = c * n + j
-                g[u].append(v)
-                m += 1
+                if randrange(100) < p:
+                    v = c * n + j
+                    es.add((min(u, v), max(u, v)))
 
-    output(args, g, n * k, m)
+    for _ in range(r):
+        u = randrange(k * n)
+        v = u
+        while v == u or u // n == v // n or (min(u, v), max(u, v)) in es:
+            v = randrange(k * n)
+        es.add((min(u, v), max(u, v)))
 
-
-def gen_dumbbell(args):
     g = {}
-    n = args.n
-    k = args.k
-    m = 0
-
-    for c in range(k):
-        for i in range(n):
-            u = c * n + i
-            g[u] = []
-            for j in range(i + 1, n):
-                v = c * n + j
-                g[u].append(v)
-                m += 1
-
-    for c1 in range(k):
-        u = c1 * n
-        for c2 in range(c1 + 1, k):
-            v = c2 * n
-            g[u].append(v)
-            m += 1
-
-    output(args, g, n * k, m)
+    m = len(es)
+    for u, v in es:
+        if u not in g: g[u] = []
+        g[u].append(v)
+    output(args, g, k * n, m)
 
 
 def gen_clique_path(args):
@@ -81,31 +69,6 @@ def gen_clique_path(args):
     for c in range(k - 1):
         u = c * n
         v = (c + 1) * n
-        g[u].append(v)
-        m += 1
-
-    output(args, g, n * k, m)
-
-
-def gen_clique_random(args):
-    g = {}
-    n = args.n
-    k = args.k
-    m = 0
-    for c in range(k):
-        for i in range(n):
-            u = c * n + i
-            g[u] = []
-            for j in range(i + 1, n):
-                if randrange(100) < 50:
-                    v = c * n + j
-                    g[u].append(v)
-                    m += 1
-    for r in range(args.r):
-        u = randrange(n * k)
-        v = u
-        while v == u or v in g[u] or u in g[v] or (u // n == v // n):
-            v = randrange(n * k)
         g[u].append(v)
         m += 1
 
@@ -226,19 +189,18 @@ clique_parser.add_argument('-k',
                            type=int,
                            default=1,
                            help='number of cliques (default=1)')
-
-dumbbell_parser = subparsers.add_parser(
-    'dumbbell', help='k subgraphs, each with n vertices, forming a clique')
-dumbbell_parser.set_defaults(func=gen_dumbbell)
-dumbbell_parser.add_argument(
-    '-n',
+clique_parser.add_argument(
+    '-r',
+    type=int,
+    default=0,
+    help='number of random edges between different cliques (default=0)')
+clique_parser.add_argument(
+    '-p',
     type=int,
     default=100,
-    help='number of vertices in each clique (default=100)')
-dumbbell_parser.add_argument('-k',
-                             type=int,
-                             default=2,
-                             help='number of cliques (default=2)')
+    help=
+    'value 0 <= p <= 100 such that every clique edge is added with probability p/100 (default=100)'
+)
 
 clique_path_parser = subparsers.add_parser(
     'clique-path', help='k cliques, each with n vertices, forming a path')
@@ -252,27 +214,6 @@ clique_path_parser.add_argument('-k',
                                 type=int,
                                 default=10,
                                 help='number of cliques in path (default=10)')
-
-clique_random_parser = subparsers.add_parser(
-    'clique-random',
-    help=
-    'k almost-cliques (each edge has 50% probability), each with n vertices, with r random edges'
-)
-clique_random_parser.set_defaults(func=gen_clique_random)
-clique_random_parser.add_argument(
-    '-n',
-    type=int,
-    default=100,
-    help='number of vertices in each clique (default=100)')
-clique_random_parser.add_argument('-k',
-                                  type=int,
-                                  default=10,
-                                  help='number of cliques (default=10)')
-clique_random_parser.add_argument(
-    '-r',
-    type=int,
-    default=100,
-    help='number of random edges added (default=100)')
 
 lattice_parser = subparsers.add_parser('lattice', help='n by n lattice')
 lattice_parser.set_defaults(func=gen_lattice)

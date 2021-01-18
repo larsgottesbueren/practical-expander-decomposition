@@ -41,17 +41,19 @@ if __name__ == '__main__':
         'expected_partitions': 1,
         'expected_edges_cut': 0,
     }, {
-        'name': 'dumbbell',
+        'name': 'clique',
         'n': 100,
         'k': 2,
+        'r': 1,
         'expected_partitions': 2,
         'expected_edges_cut': 1,
     }, {
-        'name': 'dumbbell',
+        'name': 'clique',
         'n': 100,
         'k': 10,
+        'r': 100,
         'expected_partitions': 10,
-        'expected_edges_cut': 10 * 9 // 2,
+        'expected_edges_cut': 100,
     }, {
         'name': 'clique-path',
         'n': 50,
@@ -59,10 +61,11 @@ if __name__ == '__main__':
         'expected_partitions': 100,
         'expected_edges_cut': 99,
     }, {
-        'name': 'clique-random',
+        'name': 'clique',
         'n': 30,
         'k': 100,
         'r': 1000,
+        'p': 50,
         'expected_partitions': 100,
         'expected_edges_cut': 1000,
     }, {

@@ -7,9 +7,9 @@ import subprocess
 import csv
 
 
-def partition(edc_path, graph_string, t1, t2):
-    """ Run 'edc' and return number of edges cut and partitions created """
-    result = subprocess.run([edc_path, f'-t1={t1}', f'-t2={t2}'],
+def cut(edc_cut_path, graph_string, t1, t2):
+    """Run 'edc-cut' and return number of edges cut and partitions created"""
+    result = subprocess.run([edc_cut_path, f'-t1={t1}', f'-t2={t2}'],
                             input=graph_string,
                             text=True,
                             check=True,
@@ -19,34 +19,31 @@ def partition(edc_path, graph_string, t1, t2):
         print('Failed partitioning: {}'.format(result.stdout))
         exit(1)
     else:
-        edges_cut, numPartitions = list(map(int, result.stdout.split()[0:2]))
-        return (edges_cut, numPartitions)
+        lines = result.stdout.strip().split('\n')
+        resultType = lines[0].split()[0]
+
+        xlen, *xs = list(map(int, lines[1].split()))
+        assert xlen == len(xs)
+        ylen, *ys = list(map(int, lines[2].split()))
+        assert ylen == len(ys)
+
+        return (resultType == "balanced_cut"  and (max(xs) < min(ys) or max(ys) < min(xs)) and xlen == ylen)
 
 
 if __name__ == '__main__':
     if len(sys.argv) != 6:
         print('Expected five arguments')
         exit(1)
-    _, edc_path, _, seed, gen_graph, output_file = sys.argv
+    _, _, edc_cut_path, seed, gen_graph, output_file = sys.argv
 
     graph_params = [{
-        'name': 'clique-random',
+        'name': 'clique',
         'n': 30,
         'k': 2,
         'r': 1,
     }, {
-        'name': 'clique-random',
+        'name': 'clique',
         'n': 100,
-        'k': 2,
-        'r': 1,
-    }, {
-        'name': 'clique-random',
-        'n': 200,
-        'k': 2,
-        'r': 1,
-    }, {
-        'name': 'clique-random',
-        'n': 500,
         'k': 2,
         'r': 1,
     }]
@@ -70,14 +67,11 @@ if __name__ == '__main__':
     def test(t1, t2):
         with mp.Pool() as pool:
             numIterations = 4
-            jobs = [(edc_path, g, t1, t2)
+            jobs = [(edc_cut_path, g, t1, t2)
                     for g, _ in itertools.product(graphs, range(numIterations))
                     ]
-            results = pool.starmap(partition, jobs, chunksize=1)
-            for eCount, pCount in results:
-                if eCount != 1 or pCount != 2:
-                    return False
-            return True
+            results = pool.starmap(cut, jobs, chunksize=1)
+            return all(results)
 
     points = {}
     for t1 in range(20, 40):

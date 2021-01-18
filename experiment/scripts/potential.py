@@ -9,12 +9,14 @@ import numpy
 
 
 def cut(edc_cut_path, graph, phi):
-    """Run 'edc-cut', assert expander is returned, and return the graph parameters,
-    phi, and conductivity sampling.
+    """Run 'edc-cut', return graph parameters, phi, and conductivity sampling.
 
     """
     graph_string, graph_params = graph
-    numSamples = 20
+
+    n = int(graph_string.strip().split('\n')[0].strip().split()[0])
+
+    numSamples = 50
     result = subprocess.run(
         [edc_cut_path, f'-phi={phi}', f'-verify_expansion={numSamples}'],
         input=graph_string,
@@ -23,21 +25,25 @@ def cut(edc_cut_path, graph, phi):
         timeout=480,
         stdout=subprocess.PIPE)
     if result.returncode != 0:
-        print(f'Failed cut: {result.stdout}')
+        print(f'edc-cut failed: {result.stdout}')
         exit(1)
     else:
-        lines = result.stdout.split('\n')
+        lines = result.stdout.strip().split('\n')
         resultType = lines[0].split()[0]
-        if resultType != 'expander':
-            print(f'Cut did not result in expander: {resultType}')
-            exit(1)
+
         xlen, *xs = list(map(int, lines[1].split()))
-        assert (xlen == len(xs))
+        assert xlen == len(xs)
         ylen, *ys = list(map(int, lines[2].split()))
-        assert (ylen == len(ys))
+        assert ylen == len(ys)
+
+        if resultType == "balanced_cut" or resultType == "near_expander":
+            assert max(xs) < min(ys) or max(ys) < min(xs)
+            assert xlen > 0 and ylen > 0
+        else:
+            assert max(xlen,ylen) == n and min(xlen,ylen) == 0
 
         iterations, numSamples = list(map(int, lines[3].split()))
-        assert (len(lines) - 4 - 1 == iterations)
+        assert len(lines) - 4 == iterations
 
         samples = {}
         for i in range(4, len(lines)):
@@ -57,27 +63,37 @@ if __name__ == '__main__':
         'name': 'clique',
         'n': 10,
         'k': 1,
-    }, {
-        'name': 'clique',
-        'n': 100,
-        'k': 1,
-    }, {
-        'name': 'clique-random',
-        'n': 100,
-        'k': 1,
         'r': 0,
+        'p': 100,
     }, {
         'name': 'clique',
         'n': 500,
         'k': 1,
+        'r': 0,
+        'p': 100,
+    }, {
+        'name': 'clique',
+        'n': 250,
+        'k': 2,
+        'r': 10,
+        'p': 100,
+    }, {
+        'name': 'margulis',
+        'n': 150,
+        'k': 1,
+        'r': 0,
+    }, {
+        'name': 'margulis',
+        'n': 100,
+        'k': 2,
+        'r': 10,
     }]
 
     def graphParamsToString(p):
-        result = p['name']
-        for k, v in p.items():
-            if k == 'name': continue
-            result += f'-{k}={v}'
-        return result
+        ps = [p['name'], str(p['n']), str(p['k'])]
+        if 'r' in p: ps.append(str(p['r']))
+        if 'p' in p: ps.append(str(p['p']))
+        return '-'.join(ps)
 
     graphs = []
     for ps in graph_params:
@@ -99,7 +115,8 @@ if __name__ == '__main__':
 
     with mp.Pool() as pool:
         phis = [0.001, 0.01]
-        jobs = [(edc_cut_path, g, phi) for g, phi in itertools.product(graphs, phis)]
+        jobs = [(edc_cut_path, g, phi)
+                for g, phi in itertools.product(graphs, phis)]
         result = pool.starmap(cut, jobs, chunksize=1)
 
     with open(output_file, 'w') as f:
@@ -108,16 +125,16 @@ if __name__ == '__main__':
                                     'graph',
                                     'phi',
                                     'iteration',
-                                    'conductivity',
+                                    'potential',
                                 ])
         writer.writeheader()
 
         for p, phi, samples in result:
-            for iteration, cs in samples.items():
-                for c in cs:
+            for iteration, potentials in samples.items():
+                for potential in potentials:
                     writer.writerow({
                         'graph': graphParamsToString(p),
                         'phi': phi,
                         'iteration': iteration,
-                        'conductivity': c
+                        'potential': potential
                     })

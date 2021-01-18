@@ -5,7 +5,7 @@ SEED = 0
 .PHONY: clean
 .PRECIOUS: gen/%.csv
 
-all: out/t1_vs_t2.pdf out/partitions_and_edges_cut.pdf out/expander_conductivity.pdf out/cut_conductivity.pdf out/iterations_until_cut.pdf
+all: out/expander_potential.pdf out/cut_potential.pdf out/potential.pdf out/iterations_until_cut.pdf
 
 clean:
 	rm -f gen/*.csv out/*.pdf

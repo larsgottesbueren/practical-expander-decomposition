@@ -9,14 +9,13 @@ import csv
 import numpy
 
 
-def cut(edc_cut_path, graph_info, phi):
+def cut(edc_cut_path, graph_info, phi, random_walk_steps):
     """Run 'edc-cut', assert balanced cut is returned, and return the graph
     parameters, phi, and the number of iterations run.
 
     """
     graph_string, graph_params, graph_edges = graph_info
-    numSamples = 20
-    result = subprocess.run([edc_cut_path, f'-phi={phi}'],
+    result = subprocess.run([edc_cut_path, f'-phi={phi}', f'-random_walk_steps={random_walk_steps}'],
                             input=graph_string,
                             text=True,
                             check=True,
@@ -32,8 +31,14 @@ def cut(edc_cut_path, graph_info, phi):
         if resultType != 'balanced_cut':
             print(f'Cut did not result in balanced_cut: {resultType}')
             exit(1)
+        xlen, *xs = list(map(int, lines[1].split()))
+        assert (xlen == len(xs))
+        ylen, *ys = list(map(int, lines[2].split()))
+        assert (ylen == len(ys))
 
-        return (graph_params, phi, graph_edges, iterations)
+        assert(max(xs) < min(ys) or max(ys) < min(xs))
+
+        return (graph_params, phi, random_walk_steps, graph_edges, iterations)
 
 
 if __name__ == '__main__':
@@ -43,25 +48,29 @@ if __name__ == '__main__':
     _, _, edc_cut_path, seed, gen_graph, output_file = sys.argv
 
     graph_params = [{
-        'name': 'clique-random',
+        'name': 'clique',
         'n': 30,
         'k': 2,
         'r': 1,
+        'p': 100,
     }, {
-        'name': 'clique-random',
+        'name': 'clique',
         'n': 100,
         'k': 2,
         'r': 1,
+        'p': 100,
     }, {
-        'name': 'clique-random',
+        'name': 'clique',
         'n': 200,
         'k': 2,
         'r': 1,
+        'p': 100,
     }, {
-        'name': 'clique-random',
+        'name': 'clique',
         'n': 500,
         'k': 2,
         'r': 1,
+        'p': 100,
     }, {
         'name': 'margulis',
         'n': 10,
@@ -77,10 +86,18 @@ if __name__ == '__main__':
         'n': 100,
         'k': 2,
         'r': 1,
+    }, {
+        'name': 'margulis',
+        'n': 150,
+        'k': 2,
+        'r': 1,
     }]
 
     def graphParamsToString(p):
-        return '-'.join([p['name'], str(p['n']), str(p['k']), str(p['r'])])
+        ps = [p['name'], str(p['n']), str(p['k']), str(p['r'])]
+        if 'p' in p:
+            ps.append(str(p['p']))
+        return '-'.join(ps)
 
     # contains tuples (graph_string, parameters for generating graph, edges in graph)
     graphs = []
@@ -105,10 +122,11 @@ if __name__ == '__main__':
 
     with mp.Pool() as pool:
         phis = [0.001]
+        random_walk_stepss = [1,10,100]
         numIterations = 8
-        jobs = [(edc_cut_path, graph_info, phi)
-                for graph_info, phi, _ in itertools.product(
-                    graphs, phis, range(numIterations))]
+        jobs = [(edc_cut_path, graph_info, phi, random_walk_steps)
+                for graph_info, phi, random_walk_steps, _ in itertools.product(
+                        graphs, phis, random_walk_stepss, range(numIterations))]
         result = pool.starmap(cut, jobs, chunksize=1)
 
     with open(output_file, 'w') as f:
@@ -116,15 +134,17 @@ if __name__ == '__main__':
                                 fieldnames=[
                                     'graph',
                                     'phi',
+                                    'random_walk_steps',
                                     'log10_squared_edges',
                                     'iterations',
                                 ])
         writer.writeheader()
 
-        for p, phi, edges, iterations in result:
+        for p, phi, random_walk_steps, edges, iterations in result:
             writer.writerow({
                 'graph': graphParamsToString(p),
                 'phi': phi,
+                'random_walk_steps': random_walk_steps,
                 'log10_squared_edges': log10(edges) * log10(edges),
                 'iterations': iterations,
             })

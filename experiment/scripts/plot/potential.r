@@ -15,12 +15,12 @@ df <- df %>%
     mutate(phi = recode_factor(phi, `0.01`="phi == 0.01", `0.001`="phi == 0.001"))
 
 plot <-
-    ggplot(df, aes(x=iteration, y=conductivity, color=graph)) +
-    scale_y_log10(labels = scales::number) +
-    labs(y="Mean distance",
+    ggplot(df, aes(x=iteration, y=potential, color=graph)) +
+    labs(y="Potential",
          x="Iteration",
          col="Graph type") +
     stat_summary(fun=median, geom="line") +
+    scale_y_log10(labels = scales::number) +
     facet_grid(phi ~ ., label="label_parsed")
 
 ggsave(output_file, plot)

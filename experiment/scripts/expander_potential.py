@@ -9,8 +9,8 @@ import numpy
 
 
 def cut(edc_cut_path, graph, phi):
-    """Run 'edc-cut', assert balanced cut is returned, and return the graph
-    parameters, phi, and conductivity sampling.
+    """Run 'edc-cut', assert expander is returned, and return the graph parameters,
+    phi, and conductivity sampling.
 
     """
     graph_string, graph_params = graph
@@ -26,18 +26,20 @@ def cut(edc_cut_path, graph, phi):
         print(f'Failed cut: {result.stdout}')
         exit(1)
     else:
-        lines = result.stdout.split('\n')
+        lines = result.stdout.strip().split('\n')
         resultType = lines[0].split()[0]
-        if resultType != 'balanced_cut':
-            print(f'Cut did not result in balanced_cut: {resultType}')
+        if resultType != 'expander':
+            print(f'Cut did not result in expander: {resultType}')
             exit(1)
         xlen, *xs = list(map(int, lines[1].split()))
-        assert (xlen == len(xs))
+        assert xlen == len(xs)
         ylen, *ys = list(map(int, lines[2].split()))
-        assert (ylen == len(ys))
+        assert ylen == len(ys)
+
+        assert (xlen == 0 or ylen == 0)
 
         iterations, numSamples = list(map(int, lines[3].split()))
-        assert (len(lines) - 4 - 1 == iterations)
+        assert (len(lines) - 4 == iterations)
 
         samples = {}
         for i in range(4, len(lines)):
@@ -54,47 +56,30 @@ if __name__ == '__main__':
     _, _, edc_cut_path, seed, gen_graph, output_file = sys.argv
 
     graph_params = [{
-        'name': 'dumbbell',
-        'n': 100,
-        'k': 2,
-    }, {
-        'name': 'dumbbell',
-        'n': 100,
-        'k': 3,
+        'name': 'clique',
+        'n': 10,
+        'k': 1,
+        'r': 0,
+        'p': 100,
     }, {
         'name': 'clique',
         'n': 100,
-        'k': 2,
+        'k': 1,
+        'r': 0,
+        'p': 100,
     }, {
         'name': 'clique',
-        'n': 250,
-        'k': 2,
-    }, {
-        'name': 'dumbbell',
-        'n': 250,
-        'k': 2,
-    }, {
-        'name': 'clique-random',
-        'n': 100,
-        'k': 2,
-        'r': 10,
-    }, {
-        'name': 'clique-random',
-        'n': 250,
-        'k': 2,
-        'r': 10,
-    }, {
-        'name': 'clique-path',
-        'n': 20,
-        'k': 1000,
+        'n': 500,
+        'k': 1,
+        'r': 0,
+        'p': 100,
     }]
 
     def graphParamsToString(p):
-        result = p['name']
-        for k, v in p.items():
-            if k == 'name': continue
-            result += f'-{k}={v}'
-        return result
+        ps = [p['name'], str(p['n']), str(p['k'])]
+        if 'r' in p: ps.append(str(p['r']))
+        if 'p' in p: ps.append(str(p['p']))
+        return '-'.join(ps)
 
     graphs = []
     for ps in graph_params:
@@ -116,8 +101,7 @@ if __name__ == '__main__':
 
     with mp.Pool() as pool:
         phis = [0.001, 0.01]
-        jobs = [(edc_cut_path, g, phi)
-                for g, phi in itertools.product(graphs, phis)]
+        jobs = [(edc_cut_path, g, phi) for g, phi in itertools.product(graphs, phis)]
         result = pool.starmap(cut, jobs, chunksize=1)
 
     with open(output_file, 'w') as f:
@@ -126,16 +110,16 @@ if __name__ == '__main__':
                                     'graph',
                                     'phi',
                                     'iteration',
-                                    'conductivity',
+                                    'potential',
                                 ])
         writer.writeheader()
 
         for p, phi, samples in result:
-            for iteration, cs in samples.items():
-                for c in cs:
+            for iteration, potentials in samples.items():
+                for potential in potentials:
                     writer.writerow({
                         'graph': graphParamsToString(p),
                         'phi': phi,
                         'iteration': iteration,
-                        'conductivity': c
+                        'potential': potential
                     })
