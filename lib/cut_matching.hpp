@@ -51,6 +51,11 @@ private:
   const int numSplitNodes;
 
   /**
+     Number of steps in random walk.
+   */
+  const int randomWalkSteps;
+
+  /**
      Number of times the current graph embedding should be sampled each
      iteration.
    */
@@ -84,8 +89,8 @@ public:
 
      Precondition: graph should not contain loops.
    */
-  Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivGraph, const double phi,
-         const int tConst, const double tFactor, const int verifyExpansion);
+  Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivGraph, double phi,
+         int tConst, double tFactor, int randomWalkSteps, int verifyExpansion);
 
   Result compute();
 };

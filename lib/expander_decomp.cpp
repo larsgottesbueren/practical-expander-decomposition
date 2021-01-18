@@ -37,12 +37,12 @@ constructSubdivisionFlowGraph(const std::unique_ptr<Undirected::Graph> &g) {
   return f;
 }
 
-Solver::Solver(std::unique_ptr<Undirected::Graph> graph, const double phi,
-               const int tConst, const double tFactor,
-               const int verifyExpansion)
+Solver::Solver(std::unique_ptr<Undirected::Graph> graph, double phi, int tConst,
+               double tFactor, int randomWalkSteps, int verifyExpansion)
     : flowGraph(nullptr), subdivisionFlowGraph(nullptr), phi(phi),
-      tConst(tConst), tFactor(tFactor), verifyExpansion(verifyExpansion),
-      numPartitions(0), partitionOf(graph->size(), -1) {
+      tConst(tConst), tFactor(tFactor), randomWalkSteps(randomWalkSteps),
+      verifyExpansion(verifyExpansion), numPartitions(0),
+      partitionOf(graph->size(), -1) {
   flowGraph = constructFlowGraph(graph);
   subdivisionFlowGraph = constructSubdivisionFlowGraph(graph);
 
@@ -88,7 +88,7 @@ void Solver::compute() {
     }
   } else {
     CutMatching::Solver cm(flowGraph.get(), subdivisionFlowGraph.get(), phi,
-                           tConst, tFactor, verifyExpansion);
+                           tConst, tFactor, randomWalkSteps, verifyExpansion);
     auto result = cm.compute();
     std::vector<int> a, r;
     std::copy(flowGraph->cbegin(), flowGraph->cend(), std::back_inserter(a));

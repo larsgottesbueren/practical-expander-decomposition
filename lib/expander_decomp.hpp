@@ -43,6 +43,11 @@ private:
   const double tFactor;
 
   /**
+     Number of steps of the random walk in cut-matching game.
+   */
+  const int randomWalkSteps;
+
+  /**
      Number of times expansion certificate should be sampled when cut-matching
      game results in an expander.
    */
@@ -77,8 +82,8 @@ public:
   /**
      Create a decomposition problem with n vertices.
    */
-  Solver(std::unique_ptr<Undirected::Graph> g, const double phi,
-         const int tConst, const double tFactor, const int verifyExpansion);
+  Solver(std::unique_ptr<Undirected::Graph> g, double phi, int tConst,
+         double tFactor, int randomWalkSteps, int verifyExpansion);
 
   /**
      Return the computed partition as a vector of disjoint vertex vectors.

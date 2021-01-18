@@ -18,6 +18,8 @@ DEFINE_double(
     "Value of \\phi such that expansion of each cluster is at least \\phi");
 DEFINE_int32(t1, 40, "Constant 't1' in 'T = t1 + t2 \\log^2 m'");
 DEFINE_double(t2, 2.2, "Constant 't2' in 'T = t1 + t2 \\log^2 m'");
+DEFINE_int32(random_walk_steps, 10,
+             "Number of random walk steps in cut-matching game.");
 DEFINE_bool(chaco, false,
             "Input graph is given in the Chaco graph file format");
 DEFINE_int32(verify_expansion, 0,
@@ -38,7 +40,8 @@ int main(int argc, char *argv[]) {
   auto subdivGraph = ExpanderDecomposition::constructSubdivisionFlowGraph(g);
 
   CutMatching::Solver solver(graph.get(), subdivGraph.get(), FLAGS_phi,
-                             FLAGS_t1, FLAGS_t2, FLAGS_verify_expansion);
+                             FLAGS_t1, FLAGS_t2, FLAGS_random_walk_steps,
+                             FLAGS_verify_expansion);
   auto result = solver.compute();
   std::vector<int> a, r;
   std::copy(graph->cbegin(), graph->cend(), std::back_inserter(a));

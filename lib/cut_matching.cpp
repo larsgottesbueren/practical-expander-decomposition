@@ -10,14 +10,14 @@
 
 namespace CutMatching {
 
-Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG, const double phi,
-               const int tConst, const double tFactor,
-               const int verifyExpansion)
+Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG, double phi,
+               int tConst, double tFactor, int randomWalkSteps,
+               int verifyExpansion)
     : graph(g), subdivGraph(subdivG), phi(phi),
       T(tConst + std::ceil(tFactor * std::log10(graph->edgeCount()) *
                            std::log10(graph->edgeCount()))),
       numSplitNodes(subdivGraph->size() - graph->size()),
-      verifyExpansion(verifyExpansion) {
+      randomWalkSteps(randomWalkSteps), verifyExpansion(verifyExpansion) {
   assert(graph->size() != 0 && "Cut-matching expected non-empty subset.");
 
   std::random_device rd;
@@ -162,7 +162,7 @@ Result Solver::compute() {
     }
 
     auto flow = randomUnitVector();
-    for (int i = 0; i < 10; ++i)
+    for (int i = 0; i < randomWalkSteps; ++i)
       projectFlow(rounds, flow);
 
     double avgFlow = std::accumulate(flow.begin(), flow.end(), 0.0) /
