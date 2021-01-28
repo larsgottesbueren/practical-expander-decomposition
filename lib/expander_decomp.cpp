@@ -54,6 +54,8 @@ Solver::Solver(std::unique_ptr<Undirected::Graph> graph, double phi, int tConst,
           << "\n\tSubdivision graph: " << subdivisionFlowGraph->size()
           << " vertices and " << subdivisionFlowGraph->edgeCount() << " edges.";
 
+  graph.reset(nullptr);
+
   compute();
 }
 
