@@ -33,11 +33,11 @@ bazel test --test_output=all --compilation_mode dbg //test:cluster_util_test --s
 
 ## Running
 
-The following will compute an expander decomposition of a dumbbell graph with 4
+The following will compute an expander decomposition of four sparsely connected
 cliques each of size 20:
 
 ``` shell
-./experiment/gen_graph.py dumbbell -n=20 -k=4 | ./bazel-bin/main/edc
+./experiment/gen_graph.py clique -n=20 -k=4 -r=10 | ./bazel-bin/main/edc
 ```
 
 This will output the number of edges cut and the number of partitions, followed
@@ -47,13 +47,13 @@ respect to the entire graph.
 To also output the vertices of each partition, use the option '-partitions':
 
 ``` shell
-./experiment/gen_graph.py dumbbell -n=20 -k=4 | ./bazel-bin/main/edc -partitions
+./experiment/gen_graph.py clique -n=20 -k=4 -r=10 | ./bazel-bin/main/edc -partitions
 ```
 
 To view the progress of the program during execution logging can be enabled:
 
 ``` shell
-./experiment/gen_graph.py dumbbell -n=20 -k=4 | ./bazel-bin/main/edc --logtostderr -v=2
+./experiment/gen_graph.py clique -n=20 -k=4 -r=10 | ./bazel-bin/main/edc --logtostderr -v=2
 ```
 
 The most useful verbosity level is '-v=2' but if one wants to see the progress
@@ -62,7 +62,7 @@ of each cut-matching step '-v=3' can be used instead.
 The target conductance can be changed using the '-phi' option:
 
 ``` shell
-./experiment/gen_graph.py dumbbell -n=20 -k=4 | ./bazel-bin/main/edc -phi=0.001
+./experiment/gen_graph.py clique -n=50 -k=4 -r=10 | ./bazel-bin/main/edc -phi=0.001
 ```
 
 All available options can be seen using the help command:
