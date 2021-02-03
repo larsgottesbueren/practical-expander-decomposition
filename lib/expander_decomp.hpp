@@ -48,6 +48,11 @@ private:
   const int randomWalkSteps;
 
   /**
+     Minimum volume balance before cut-matching game should terminate.
+   */
+  const double minBalance;
+
+  /**
      Number of times expansion certificate should be sampled when cut-matching
      game results in an expander.
    */
@@ -83,7 +88,7 @@ public:
      Create a decomposition problem with n vertices.
    */
   Solver(std::unique_ptr<Undirected::Graph> g, double phi, int tConst,
-         double tFactor, int randomWalkSteps, int verifyExpansion);
+         double tFactor, int randomWalkSteps, double minBalance, int verifyExpansion);
 
   /**
      Return the computed partition as a vector of disjoint vertex vectors.

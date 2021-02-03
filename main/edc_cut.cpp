@@ -20,6 +20,7 @@ DEFINE_int32(t1, 40, "Constant 't1' in 'T = t1 + t2 \\log^2 m'");
 DEFINE_double(t2, 2.2, "Constant 't2' in 'T = t1 + t2 \\log^2 m'");
 DEFINE_int32(random_walk_steps, 10,
              "Number of random walk steps in cut-matching game.");
+DEFINE_double(min_balance, 0.45, "The amount of cut balance before the cut-matching game is terminated.");
 DEFINE_bool(chaco, false,
             "Input graph is given in the Chaco graph file format");
 DEFINE_int32(verify_expansion, 0,
@@ -40,13 +41,14 @@ int main(int argc, char *argv[]) {
   auto subdivGraph = ExpanderDecomposition::constructSubdivisionFlowGraph(g);
 
   CutMatching::Solver solver(graph.get(), subdivGraph.get(), FLAGS_phi,
-                             FLAGS_t1, FLAGS_t2, FLAGS_random_walk_steps,
+                             FLAGS_t1, FLAGS_t2, FLAGS_random_walk_steps, FLAGS_min_balance,
                              FLAGS_verify_expansion);
   auto result = solver.compute();
   std::vector<int> a, r;
   std::copy(graph->cbegin(), graph->cend(), std::back_inserter(a));
   std::copy(graph->cbeginRemoved(), graph->cendRemoved(),
             std::back_inserter(r));
+  graph->restoreRemoves();
 
   switch (result.type) {
   case CutMatching::Balanced: {
@@ -62,7 +64,8 @@ int main(int argc, char *argv[]) {
     break;
   }
   }
-  cout << " " << result.iterations << endl;
+  cout << " " << result.iterations << " " << graph->volume(a.begin(), a.end())
+       << " " << graph->volume(r.begin(), r.end())       << endl;
 
   cout << a.size();
   for (auto u : a)

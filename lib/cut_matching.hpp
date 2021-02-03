@@ -56,6 +56,11 @@ private:
   const int randomWalkSteps;
 
   /**
+     Minimum cut balance required to terminate.
+   */
+  const double minBalance;
+
+  /**
      Number of times the current graph embedding should be sampled each
      iteration.
    */
@@ -90,7 +95,7 @@ public:
      Precondition: graph should not contain loops.
    */
   Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivGraph, double phi,
-         int tConst, double tFactor, int randomWalkSteps, int verifyExpansion);
+         int tConst, double tFactor, int randomWalkSteps, double minBalance, int verifyExpansion);
 
   Result compute();
 };
