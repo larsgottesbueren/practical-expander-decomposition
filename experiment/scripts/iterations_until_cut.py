@@ -15,7 +15,7 @@ def cut(edc_cut_path, graph_info, phi, random_walk_steps):
 
     """
     graph_string, graph_params, graph_edges = graph_info
-    result = subprocess.run([edc_cut_path, f'-phi={phi}', f'-random_walk_steps={random_walk_steps}'],
+    result = subprocess.run([edc_cut_path, f'-phi={phi}', f'-random_walk_steps={random_walk_steps}', '-t1=100', '-t2=2'],
                             input=graph_string,
                             text=True,
                             check=True,
@@ -29,14 +29,15 @@ def cut(edc_cut_path, graph_info, phi, random_walk_steps):
         resultType = lines[0].split()[0]
         iterations = int(lines[0].split()[1])
         if resultType != 'balanced_cut':
-            print(f'Cut did not result in balanced_cut: {resultType}')
+            print(f'Cut did not result in: {resultType} with params {graph_params}')
             exit(1)
         xlen, *xs = list(map(int, lines[1].split()))
-        assert (xlen == len(xs))
+        assert xlen == len(xs)
         ylen, *ys = list(map(int, lines[2].split()))
-        assert (ylen == len(ys))
+        assert ylen == len(ys)
 
-        assert(max(xs) < min(ys) or max(ys) < min(xs))
+        assert xlen == ylen
+        assert (max(xs) < min(ys) or max(ys) < min(xs))
 
         return (graph_params, phi, random_walk_steps, graph_edges, iterations)
 
@@ -70,6 +71,24 @@ if __name__ == '__main__':
         'n': 500,
         'k': 2,
         'r': 1,
+        'p': 100,
+    }, {
+        'name': 'clique',
+        'n': 100,
+        'k': 2,
+        'r': 10,
+        'p': 100,
+    }, {
+        'name': 'clique',
+        'n': 200,
+        'k': 2,
+        'r': 10,
+        'p': 100,
+    }, {
+        'name': 'clique',
+        'n': 500,
+        'k': 2,
+        'r': 10,
         'p': 100,
     }, {
         'name': 'margulis',
