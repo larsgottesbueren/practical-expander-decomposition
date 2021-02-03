@@ -88,7 +88,8 @@ public:
      Create a decomposition problem with n vertices.
    */
   Solver(std::unique_ptr<Undirected::Graph> g, double phi, int tConst,
-         double tFactor, int randomWalkSteps, double minBalance, int verifyExpansion);
+         double tFactor, int randomWalkSteps, double minBalance,
+         int verifyExpansion);
 
   /**
      Return the computed partition as a vector of disjoint vertex vectors.

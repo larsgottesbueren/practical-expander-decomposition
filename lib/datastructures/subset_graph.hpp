@@ -46,7 +46,7 @@ private:
      Current active edges for vertex 'u' are described by:
        '{edges[i] | i \in [0,edgeBounds[u].top().middle)}'
    */
-  std::vector<std::stack<Bound,std::vector<Bound>>> edgeBounds;
+  std::vector<std::stack<Bound, std::vector<Bound>>> edgeBounds;
 
   /**
      List of vertices in arbitrary order.

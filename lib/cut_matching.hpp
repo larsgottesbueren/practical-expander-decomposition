@@ -43,7 +43,7 @@ private:
   UnitFlow::Graph *subdivGraph;
 
   const double phi;
-  const double T;
+  const int T;
 
   /**
      Number of subdivision vertices at beginning of computation.
@@ -95,7 +95,8 @@ public:
      Precondition: graph should not contain loops.
    */
   Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivGraph, double phi,
-         int tConst, double tFactor, int randomWalkSteps, double minBalance, int verifyExpansion);
+         int tConst, double tFactor, int randomWalkSteps, double minBalance,
+         int verifyExpansion);
 
   Result compute();
 };

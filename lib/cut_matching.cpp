@@ -11,13 +11,14 @@
 namespace CutMatching {
 
 Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG, double phi,
-               int tConst, double tFactor, int randomWalkSteps, double minBalance,
-               int verifyExpansion)
+               int tConst, double tFactor, int randomWalkSteps,
+               double minBalance, int verifyExpansion)
     : graph(g), subdivGraph(subdivG), phi(phi),
       T(tConst + std::ceil(tFactor * std::log10(graph->edgeCount()) *
                            std::log10(graph->edgeCount()))),
       numSplitNodes(subdivGraph->size() - graph->size()),
-      randomWalkSteps(randomWalkSteps), minBalance(minBalance), verifyExpansion(verifyExpansion) {
+      randomWalkSteps(randomWalkSteps), minBalance(minBalance),
+      verifyExpansion(verifyExpansion) {
   assert(graph->size() != 0 && "Cut-matching expected non-empty subset.");
 
   std::random_device rd;
@@ -144,14 +145,16 @@ Result Solver::compute() {
   };
 
   const int lowerVolumeBalance = numSplitNodes / (10 * T);
-  const int targetVolumeBalance = std::max(lowerVolumeBalance, int(minBalance * subdivGraph->globalVolume()));
+  const int targetVolumeBalance = std::max(
+      lowerVolumeBalance, int(minBalance * subdivGraph->globalVolume()));
 
   Result result;
 
   int iterations = 0;
   for (; iterations < T &&
          subdivGraph->globalVolume(subdivGraph->cbeginRemoved(),
-                                   subdivGraph->cendRemoved()) <= targetVolumeBalance;
+                                   subdivGraph->cendRemoved()) <=
+             targetVolumeBalance;
        ++iterations) {
     VLOG(3) << "Iteration " << iterations << " out of " << T << ".";
 
@@ -264,7 +267,8 @@ Result Solver::compute() {
 
   if (graph->size() != 0 && graph->removedSize() != 0 &&
       subdivGraph->globalVolume(subdivGraph->cbeginRemoved(),
-                                subdivGraph->cendRemoved()) > lowerVolumeBalance)
+                                subdivGraph->cendRemoved()) >
+          lowerVolumeBalance)
     // We have: graph.volume(R) > m / (10 * T)
     result.type = Balanced;
   else if (graph->removedSize() == 0)

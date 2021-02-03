@@ -20,7 +20,9 @@ DEFINE_int32(t1, 40, "Constant 't1' in 'T = t1 + t2 \\log^2 m'");
 DEFINE_double(t2, 2.2, "Constant 't2' in 'T = t1 + t2 \\log^2 m'");
 DEFINE_int32(random_walk_steps, 10,
              "Number of random walk steps in cut-matching game.");
-DEFINE_double(min_balance, 0.45, "The amount of cut balance before the cut-matching game is terminated.");
+DEFINE_double(
+    min_balance, 0.45,
+    "The amount of cut balance before the cut-matching game is terminated.");
 DEFINE_bool(chaco, false,
             "Input graph is given in the Chaco graph file format");
 DEFINE_bool(partitions, false, "Output indices of partitions");
@@ -38,9 +40,9 @@ int main(int argc, char *argv[]) {
   auto g = readGraph(FLAGS_chaco);
   VLOG(1) << "Finished reading input.";
 
-  ExpanderDecomposition::Solver solver(move(g), FLAGS_phi, FLAGS_t1, FLAGS_t2,
-                                       FLAGS_random_walk_steps, FLAGS_min_balance,
-                                       FLAGS_verify_expansion);
+  ExpanderDecomposition::Solver solver(
+      move(g), FLAGS_phi, FLAGS_t1, FLAGS_t2, FLAGS_random_walk_steps,
+      FLAGS_min_balance, FLAGS_verify_expansion);
   auto partitions = solver.getPartition();
   auto conductances = solver.getConductance();
 
