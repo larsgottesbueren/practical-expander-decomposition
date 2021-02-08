@@ -42,9 +42,17 @@ int main(int argc, char *argv[]) {
   auto graph = ExpanderDecomposition::constructFlowGraph(g);
   auto subdivGraph = ExpanderDecomposition::constructSubdivisionFlowGraph(g);
 
-  CutMatching::Solver solver(graph.get(), subdivGraph.get(), FLAGS_phi,
-                             FLAGS_t1, FLAGS_t2, FLAGS_random_walk_steps,
-                             FLAGS_min_balance, FLAGS_verify_expansion);
+  auto subdivisionIdx =
+      std::make_unique<std::vector<int>>(subdivGraph->size(), -1);
+  auto fromSubdivisionIdx =
+      std::make_unique<std::vector<int>>(subdivGraph->size(), -1);
+  for (int u = graph->size(); u < subdivGraph->size(); ++u)
+    (*subdivisionIdx)[u] = 0;
+
+  CutMatching::Solver solver(
+      graph.get(), subdivGraph.get(), subdivisionIdx.get(),
+      fromSubdivisionIdx.get(), FLAGS_phi, FLAGS_t1, FLAGS_t2,
+      FLAGS_random_walk_steps, FLAGS_min_balance, FLAGS_verify_expansion);
   auto result = solver.compute();
   std::vector<int> a, r;
   std::copy(graph->cbegin(), graph->cend(), std::back_inserter(a));

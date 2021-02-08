@@ -30,6 +30,16 @@ private:
      \in E}' is the vertex ids of the split vertices in 'subdivisionFlowGraph'.
    */
   std::unique_ptr<UnitFlow::Graph> flowGraph, subdivisionFlowGraph;
+
+  /**
+     Map to and from subdivision vertices.
+
+     Value associated with each vertex such that 'subdivision[u] == -1' if 'u'
+     is not a subdivision vertex and 'subdivision[u] >= 0' if 'u' is a
+     subdivision vertex.
+   */
+  std::unique_ptr<std::vector<int>> subdivisionIdx, fromSubdivisionIdx;
+
   const double phi;
   /**
       In Sanurak and Wang, the parameter 'T' is bounded by '\Theta(\log^2 m)'.

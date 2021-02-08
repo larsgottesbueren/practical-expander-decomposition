@@ -10,10 +10,13 @@
 
 namespace CutMatching {
 
-Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG, double phi,
-               int tConst, double tFactor, int randomWalkSteps,
-               double minBalance, int verifyExpansion)
-    : graph(g), subdivGraph(subdivG), phi(phi),
+Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG,
+               std::vector<int> *subdivisionIdx,
+               std::vector<int> *fromSubdivisionIdx, double phi, int tConst,
+               double tFactor, int randomWalkSteps, double minBalance,
+               int verifyExpansion)
+    : graph(g), subdivGraph(subdivG), subdivisionIdx(subdivisionIdx),
+      fromSubdivisionIdx(fromSubdivisionIdx), phi(phi),
       T(tConst + std::ceil(tFactor * std::log10(graph->edgeCount()) *
                            std::log10(graph->edgeCount()))),
       numSplitNodes(subdivGraph->size() - graph->size()),
@@ -42,15 +45,11 @@ Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG, double phi,
 void Solver::projectFlow(const std::vector<Matching> &rounds,
                          std::vector<double> &start) {
   for (auto it = rounds.begin(); it != rounds.end(); ++it) {
-    for (const auto &[u, v] : *it) {
-      if (subdivGraph->alive(u) && subdivGraph->alive(v)) {
-        int i = subdivGraph->getSubdivision(u),
-            j = subdivGraph->getSubdivision(v);
-        assert(i >= 0 && "Given vertex is not a subdivision vertex.");
-        assert(j >= 0 && "Given vertex is not a subdivision vertex.");
-        start[i] = 0.5 * (start[i] + start[j]);
-        start[j] = start[i];
-      }
+    for (auto [i, j] : *it) {
+      assert(i >= 0 && "Given vertex is not a subdivision vertex.");
+      assert(j >= 0 && "Given vertex is not a subdivision vertex.");
+      start[i] = 0.5 * (start[i] + start[j]);
+      start[j] = start[i];
     }
   }
 }
@@ -78,9 +77,9 @@ std::vector<double> Solver::randomUnitVector() {
 
   for (auto it = subdivGraph->cbegin(); it != subdivGraph->cend(); ++it) {
     const auto u = *it;
-    if (subdivGraph->isSubdivision(u)) {
+    if ((*subdivisionIdx)[u] >= 0) {
       double x = dist(randomGen);
-      result[subdivGraph->getSubdivision(u)] = x;
+      result[(*subdivisionIdx)[u]] = x;
       total += x * x;
     }
   }
@@ -88,8 +87,8 @@ std::vector<double> Solver::randomUnitVector() {
   total = std::sqrt(total);
   for (auto it = subdivGraph->cbegin(); it != subdivGraph->cend(); ++it) {
     const auto u = *it;
-    if (subdivGraph->isSubdivision(u))
-      result[subdivGraph->getSubdivision(u)] /= total;
+    if ((*subdivisionIdx)[u] >= 0)
+      result[(*subdivisionIdx)[u]] /= total;
   }
 
   return result;
@@ -107,8 +106,8 @@ Solver::sampleCertificate(const std::vector<Matching> &rounds) {
     double total = 0;
     for (auto it = subdivGraph->cbegin(); it != subdivGraph->cend(); ++it) {
       const auto u = *it;
-      if (subdivGraph->isSubdivision(u)) {
-        double f = flow[subdivGraph->getSubdivision(u)];
+      if ((*subdivisionIdx)[u]) {
+        double f = flow[(*subdivisionIdx)[u]];
         total += (avgFlow - f) * (avgFlow - f);
       }
     }
@@ -118,8 +117,6 @@ Solver::sampleCertificate(const std::vector<Matching> &rounds) {
 }
 
 Result Solver::compute() {
-  std::vector<Matching> rounds;
-
   if (numSplitNodes <= 1) {
     VLOG(3) << "Cut matching exited early with " << numSplitNodes
             << " subdivision vertices.";
@@ -129,11 +126,14 @@ Result Solver::compute() {
     return result;
   }
 
+  std::vector<Matching> rounds;
   {
     int count = 0;
     for (auto u : *subdivGraph)
-      if (subdivGraph->isSubdivision(u))
-        subdivGraph->setSubdivision(u, count++);
+      if ((*subdivisionIdx)[u] >= 0) {
+        (*subdivisionIdx)[u] = count++;
+        (*fromSubdivisionIdx)[(*subdivisionIdx)[u]] = u;
+      }
   }
 
   /**
@@ -173,17 +173,16 @@ Result Solver::compute() {
 
     std::vector<int> axLeft, axRight;
     for (auto u : *subdivGraph) {
-      if (subdivGraph->isSubdivision(u)) {
-        if (flow[subdivGraph->getSubdivision(u)] < avgFlow)
+      if ((*subdivisionIdx)[u] >= 0) {
+        if (flow[(*subdivisionIdx)[u]] < avgFlow)
           axLeft.push_back(u);
         else
           axRight.push_back(u);
       }
     }
 
-    auto cmpFlow = [&flow, &subdivGraph = subdivGraph](int u, int v) {
-      return flow[subdivGraph->getSubdivision(u)] <
-             flow[subdivGraph->getSubdivision(v)];
+    auto cmpFlow = [&flow, &subdivisionIdx = subdivisionIdx](int u, int v) {
+      return flow[(*subdivisionIdx)[u]] < flow[(*subdivisionIdx)[v]];
     };
     std::sort(axLeft.begin(), axLeft.end(), cmpFlow);
     std::sort(axRight.begin(), axRight.end(), cmpFlow);
@@ -232,28 +231,46 @@ Result Solver::compute() {
                   axRight.end());
 
     for (auto u : removed) {
-      if (!subdivGraph->isSubdivision(u))
+      if ((*subdivisionIdx)[u] == -1)
         graph->remove(u);
       subdivGraph->remove(u);
     }
+
     std::vector<int> zeroDegrees;
     for (auto it = subdivGraph->cbegin(); it != subdivGraph->cend(); ++it)
       if (subdivGraph->degree(*it) == 0)
-        zeroDegrees.push_back(*it);
+        zeroDegrees.push_back(*it), removed.insert(*it);
     for (auto u : zeroDegrees) {
-      if (!subdivGraph->isSubdivision(u))
+      if ((*subdivisionIdx)[u] == -1)
         graph->remove(u);
       subdivGraph->remove(u);
+    }
+
+    {
+      auto condition = [&isRemoved, &fromSubdivisionIdx = fromSubdivisionIdx](
+                           std::pair<int, int> p) {
+        return isRemoved((*fromSubdivisionIdx)[p.first]) ||
+               isRemoved((*fromSubdivisionIdx)[p.second]);
+      };
+      for (auto &matchings : rounds)
+        matchings.erase(
+            std::remove_if(matchings.begin(), matchings.end(), condition),
+            matchings.end());
     }
 
     VLOG(3) << "Computing matching with |S| = " << axLeft.size()
             << " |T| = " << axRight.size() << ".";
     auto matching = subdivGraph->matching(axLeft);
+    for (auto &p : matching) {
+      p.first = (*subdivisionIdx)[p.first];
+      p.second = (*subdivisionIdx)[p.second];
+    }
     VLOG(3) << "Found matching of size " << matching.size() << ".";
 
     // TODO: Can we expect complete matching after removing level cut?
     // assert(matching.size() == axLeft.size() &&
     // "Expected all source vertices to be matched.");
+
     rounds.push_back(matching);
   }
 

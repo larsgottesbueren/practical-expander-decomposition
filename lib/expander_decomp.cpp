@@ -30,22 +30,26 @@ constructSubdivisionFlowGraph(const std::unique_ptr<Undirected::Graph> &g) {
         es.emplace_back(e->from, splitVertex, 0);
         es.emplace_back(e->to, splitVertex, 0);
       }
-  auto f =
-      std::make_unique<UnitFlow::Graph>(g->size() + int(es.size()) / 2, es);
-  for (int u = g->size(); u < f->size(); ++u)
-    f->setSubdivision(u);
-  return f;
+  return std::make_unique<UnitFlow::Graph>(g->size() + int(es.size()) / 2, es);
 }
 
 Solver::Solver(std::unique_ptr<Undirected::Graph> graph, double phi, int tConst,
                double tFactor, int randomWalkSteps, double minBalance,
                int verifyExpansion)
-    : flowGraph(nullptr), subdivisionFlowGraph(nullptr), phi(phi),
+    : flowGraph(nullptr), subdivisionFlowGraph(nullptr),
+      subdivisionIdx(nullptr), fromSubdivisionIdx(nullptr), phi(phi),
       tConst(tConst), tFactor(tFactor), randomWalkSteps(randomWalkSteps),
       minBalance(minBalance), verifyExpansion(verifyExpansion),
       numPartitions(0), partitionOf(graph->size(), -1) {
   flowGraph = constructFlowGraph(graph);
   subdivisionFlowGraph = constructSubdivisionFlowGraph(graph);
+
+  subdivisionIdx =
+      std::make_unique<std::vector<int>>(subdivisionFlowGraph->size(), -1);
+  fromSubdivisionIdx =
+      std::make_unique<std::vector<int>>(subdivisionFlowGraph->size(), -1);
+  for (int u = flowGraph->size(); u < subdivisionFlowGraph->size(); ++u)
+    (*subdivisionIdx)[u] = 0;
 
   VLOG(1) << "Preparing to run expander decomposition."
           << "\n\tGraph: " << graph->size() << " vertices and "
@@ -90,7 +94,8 @@ void Solver::compute() {
       subdivisionFlowGraph->restoreSubgraph();
     }
   } else {
-    CutMatching::Solver cm(flowGraph.get(), subdivisionFlowGraph.get(), phi,
+    CutMatching::Solver cm(flowGraph.get(), subdivisionFlowGraph.get(),
+                           subdivisionIdx.get(), fromSubdivisionIdx.get(), phi,
                            tConst, tFactor, randomWalkSteps, minBalance,
                            verifyExpansion);
     auto result = cm.compute();

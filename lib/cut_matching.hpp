@@ -42,6 +42,9 @@ private:
   UnitFlow::Graph *graph;
   UnitFlow::Graph *subdivGraph;
 
+  std::vector<int> *subdivisionIdx;
+  std::vector<int> *fromSubdivisionIdx;
+
   const double phi;
   const int T;
 
@@ -94,9 +97,10 @@ public:
 
      Precondition: graph should not contain loops.
    */
-  Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivGraph, double phi,
-         int tConst, double tFactor, int randomWalkSteps, double minBalance,
-         int verifyExpansion);
+  Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivGraph,
+         std::vector<int> *subdivisionIdx, std::vector<int> *fromSubdivisionIdx,
+         double phi, int tConst, double tFactor, int randomWalkSteps,
+         double minBalance, int verifyExpansion);
 
   Result compute();
 };

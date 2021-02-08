@@ -64,13 +64,6 @@ private:
    */
   std::vector<int> vertexIndices;
 
-  /**
-     Value associated with each vertex such that 'subdivision[u] == -1' if 'u'
-     is not a subdivision vertex and 'subdivision[u] >= 0' if 'u' is a
-     subdivision vertex.
-   */
-  std::vector<int> subdivision;
-
 protected:
   /**
      Used to mark vertex as visited in search algorithms. Set values to 0 after
@@ -86,8 +79,7 @@ public:
      Time complexity: O(n + m)
    */
   Graph(int n, const std::vector<E> &es)
-      : edges(n), edgeBounds(n), vertices(n), vertexIndices(n),
-        subdivision(n, -1), visited(n) {
+      : edges(n), edgeBounds(n), vertices(n), vertexIndices(n), visited(n) {
     std::iota(vertices.begin(), vertices.end(), 0);
     std::iota(vertexIndices.begin(), vertexIndices.end(), 0);
     vertexBound.push({n});
@@ -258,32 +250,6 @@ public:
       result.push_back(e->to);
     return result;
   }
-
-  /**
-     Set subdivision value of vertex 'u'. 'idx == -1' implies 'u' is not a
-     subdivision vertex.
-   */
-  void setSubdivision(V u, int idx) { subdivision[u] = idx; }
-
-  /**
-     Mark vertex 'u' as a subdivision vertex.
-   */
-  void setSubdivision(V u) { subdivision[u] = 0; }
-
-  /**
-     Return true if vertex is a subdivision vertex.
-   */
-  bool isSubdivision(V u) const { return subdivision[u] >= 0; }
-
-  /**
-     Return subdivision index value.
-   */
-  int getSubdivision(V u) const { return subdivision[u]; }
-
-  /**
-     The entire subdivision vector.
-   */
-  const std::vector<int> &getSubdivisionVector() const { return subdivision; }
 
   /**
      Given a subset of vertices, return the same vertices where all of their
