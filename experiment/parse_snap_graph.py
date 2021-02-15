@@ -3,7 +3,7 @@
 """Parse an undirected or directed graph as an undirected graph readable by
 'edc'.
 
-Graphs from the Stan archive are given as a list of edges. Vertices are not
+Graphs from the SNAP archive are given as a list of edges. Vertices are not
 necessarily in the range [0,n). This program remaps vertices such that they are
 within the range.
 
