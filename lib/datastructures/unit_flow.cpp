@@ -36,17 +36,24 @@ std::vector<Vertex> Graph::compute(const int maxHeight) {
       continue;
     }
 
+    assert(excess(u) > 0 &&
+           "Vertex popped from queue should have excess flow.");
+
     auto &e = getEdge(u, nextEdgeIdx[u]);
-    if (excess(u) > 0 && e.residual() > 0 && height[u] == height[e.to] + 1) {
+
+    assert(e.flow + reverse(e).flow == 0 &&
+           "Flow across edge and its reverse should cancel.");
+
+    if (e.residual() > 0 && height[u] == height[e.to] + 1) {
       // Push flow across 'e'
       assert(excess(e.to) == 0 && "Pushing to vertex with non-zero excess");
       UnitFlow::Flow delta = std::min(
           {excess(e.from), e.residual(), (UnitFlow::Flow)degree(e.to)});
 
       e.flow += delta;
-      absorbed[e.from] -= delta;
-
       reverse(e).flow -= delta;
+
+      absorbed[e.from] -= delta;
       absorbed[e.to] += delta;
 
       assert(excess(e.from) >= 0 && "Excess after pushing cannot be negative");
@@ -56,6 +63,7 @@ std::vector<Vertex> Graph::compute(const int maxHeight) {
       if (height[e.to] < maxH && excess(e.to) > 0) {
         q[height[e.to]].push(e.to);
         level = std::min(level, height[e.to]);
+        nextEdgeIdx[e.to] = 0;
       }
     } else if (nextEdgeIdx[e.from] == degree(e.from) - 1) {
       // all edges have been tried, relabel
@@ -85,25 +93,28 @@ std::vector<Vertex> Graph::levelCut(const int h) {
   for (auto u : *this)
     levels[height[u]].push_back(u);
 
-  std::vector<Vertex> curResult;
-  std::vector<Vertex> bestResult;
   int volume = 0;
   int bestZ = INT_MAX;
+  int bestLevel = h;
   for (int level = h; level > 0; --level) {
     int z = 0;
     for (auto u : levels[level]) {
       volume += degree(u);
-      curResult.push_back(u);
       for (auto e = beginEdge(u); e != endEdge(u); ++e)
         if (height[u] == height[e->to] + 1)
           z++;
     }
     if ((double)z <= 5.0 * volume * std::log(m) / (double)h)
       if (z < bestZ)
-        bestZ = z, bestResult = curResult;
+        bestZ = z, bestLevel = level;
   }
 
-  return bestResult;
+  std::vector<int> result;
+  for (int level = h; level >= bestLevel; --level)
+    for (auto u : levels[level])
+      result.push_back(u);
+
+  return result;
 }
 
 void Graph::reset() {
