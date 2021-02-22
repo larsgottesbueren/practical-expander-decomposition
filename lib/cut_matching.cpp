@@ -12,16 +12,14 @@ namespace CutMatching {
 
 Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG,
                std::vector<int> *subdivisionIdx,
-               std::vector<int> *fromSubdivisionIdx, double phi, int tConst,
-               double tFactor, int randomWalkSteps, double minBalance,
-               int verifyExpansion)
+               std::vector<int> *fromSubdivisionIdx, double phi,
+               Parameters params)
     : graph(g), subdivGraph(subdivG), subdivisionIdx(subdivisionIdx),
       fromSubdivisionIdx(fromSubdivisionIdx), phi(phi),
-      T(tConst + std::ceil(tFactor * std::log10(graph->edgeCount()) *
-                           std::log10(graph->edgeCount()))),
-      numSplitNodes(subdivGraph->size() - graph->size()),
-      randomWalkSteps(randomWalkSteps), minBalance(minBalance),
-      verifyExpansion(verifyExpansion) {
+      T(params.tConst +
+        std::ceil(params.tFactor * std::log10(graph->edgeCount()) *
+                  std::log10(graph->edgeCount()))),
+      numSplitNodes(subdivGraph->size() - graph->size()) {
   assert(graph->size() != 0 && "Cut-matching expected non-empty subset.");
 
   std::random_device rd;
@@ -40,7 +38,7 @@ Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG,
 
    Assumes no pairs of vertices in single round overlap.
 
-   Time complexity: O(|rounds| + |start|)
+   Time complexity: O(|rounds| * |start|)
  */
 void Solver::projectFlow(const std::vector<Matching> &rounds,
                          std::vector<double> &start) {
@@ -52,22 +50,6 @@ void Solver::projectFlow(const std::vector<Matching> &rounds,
       start[j] = start[i];
     }
   }
-}
-
-/**
-   Fill a vector of size 'n' with random data such that it is orthogonal to the
-   all ones vector.
- */
-std::vector<double> randomUnitVectorFast(std::mt19937 &gen, int n) {
-  std::vector<double> xs(n);
-  for (int i = 0; i < n / 2; ++i)
-    xs[i] = -1;
-  for (int i = n / 2; i < n; ++i)
-    xs[i] = 1;
-  if (n % 2 != 0)
-    xs[0] = -2;
-  std::shuffle(xs.begin(), xs.end(), gen);
-  return xs;
 }
 
 std::vector<double> Solver::randomUnitVector() {
@@ -94,10 +76,10 @@ std::vector<double> Solver::randomUnitVector() {
   return result;
 }
 
-std::vector<double>
-Solver::sampleCertificate(const std::vector<Matching> &rounds) {
+std::vector<double> Solver::samplePotential(const std::vector<Matching> &rounds,
+                                            int k) {
   std::vector<double> result;
-  for (int sample = 0; sample < verifyExpansion; ++sample) {
+  for (int sample = 0; sample < k; ++sample) {
     auto flow = randomUnitVector();
     projectFlow(rounds, flow);
 
@@ -116,7 +98,7 @@ Solver::sampleCertificate(const std::vector<Matching> &rounds) {
   return result;
 }
 
-Result Solver::compute() {
+Result Solver::compute(Parameters params) {
   if (numSplitNodes <= 1) {
     VLOG(3) << "Cut matching exited early with " << numSplitNodes
             << " subdivision vertices.";
@@ -126,7 +108,6 @@ Result Solver::compute() {
     return result;
   }
 
-  std::vector<Matching> rounds;
   {
     int count = 0;
     for (auto u : *subdivGraph)
@@ -146,9 +127,15 @@ Result Solver::compute() {
 
   const int lowerVolumeBalance = numSplitNodes / (10 * T);
   const int targetVolumeBalance = std::max(
-      lowerVolumeBalance, int(minBalance * subdivGraph->globalVolume()));
+      lowerVolumeBalance, int(params.minBalance * subdivGraph->globalVolume()));
 
+  const bool shouldMaintainMatchings =
+      params.resampleUnitVector || (params.samplePotential > 0);
+
+  std::vector<Matching> rounds;
   Result result;
+
+  auto flow = randomUnitVector();
 
   int iterations = 0;
   for (; iterations < T &&
@@ -158,15 +145,19 @@ Result Solver::compute() {
        ++iterations) {
     VLOG(3) << "Iteration " << iterations << " out of " << T << ".";
 
-    if (verifyExpansion > 0) {
-      VLOG(4) << "Sampling conductance";
-      result.certificateSamples.push_back(sampleCertificate(rounds));
-      VLOG(4) << "Finished sampling conductance";
+    if (params.samplePotential > 0) {
+      VLOG(4) << "Sampling potential function";
+      result.sampledPotentials.push_back(
+          samplePotential(rounds, params.samplePotential));
+      VLOG(4) << "Finished sampling potential function";
     }
 
-    auto flow = randomUnitVector();
-    for (int i = 0; i < randomWalkSteps; ++i)
-      projectFlow(rounds, flow);
+    if (params.resampleUnitVector) {
+      flow = randomUnitVector();
+
+      for (int i = 0; i < params.randomWalkSteps; ++i)
+        projectFlow(rounds, flow);
+    }
 
     double avgFlow = std::accumulate(flow.begin(), flow.end(), 0.0) /
                      (double)curSubdivisionCount();
@@ -189,10 +180,13 @@ Result Solver::compute() {
     std::reverse(axRight.begin(), axRight.end());
 
     const int numSubdivVertices = int(axLeft.size() + axRight.size());
-    while (8 * axLeft.size() > numSubdivVertices)
-      axLeft.pop_back();
     while (2 * axRight.size() > numSubdivVertices)
       axRight.pop_back();
+    while (8 * axLeft.size() > numSubdivVertices ||
+           axLeft.size() > axRight.size())
+      axLeft.pop_back();
+    VLOG(3) << "Number of sources: " << axLeft.size()
+            << " sinks: " << axRight.size();
 
     subdivGraph->reset();
 
@@ -215,7 +209,6 @@ Result Solver::compute() {
               << " vertices with excess. Computing level cut.";
       const auto levelCut = subdivGraph->levelCut(h);
       VLOG(3) << "\tHas level cut with " << levelCut.size() << " vertices.";
-
       for (auto u : levelCut)
         removed.insert(u);
     }
@@ -246,15 +239,15 @@ Result Solver::compute() {
       subdivGraph->remove(u);
     }
 
-    {
-      auto condition = [&isRemoved, &fromSubdivisionIdx = fromSubdivisionIdx](
-                           std::pair<int, int> p) {
+    if (shouldMaintainMatchings) {
+      auto removeCond = [&isRemoved, &fromSubdivisionIdx = fromSubdivisionIdx](
+                            std::pair<int, int> p) {
         return isRemoved((*fromSubdivisionIdx)[p.first]) ||
                isRemoved((*fromSubdivisionIdx)[p.second]);
       };
       for (auto &matchings : rounds)
         matchings.erase(
-            std::remove_if(matchings.begin(), matchings.end(), condition),
+            std::remove_if(matchings.begin(), matchings.end(), removeCond),
             matchings.end());
     }
 
@@ -264,6 +257,10 @@ Result Solver::compute() {
     for (auto &p : matching) {
       p.first = (*subdivisionIdx)[p.first];
       p.second = (*subdivisionIdx)[p.second];
+
+      const double matchedFlow = 0.5 * (flow[p.first] + flow[p.second]);
+      flow[p.first] = matchedFlow;
+      flow[p.second] = matchedFlow;
     }
     VLOG(3) << "Found matching of size " << matching.size() << ".";
 
@@ -271,15 +268,17 @@ Result Solver::compute() {
     // assert(matching.size() == axLeft.size() &&
     // "Expected all source vertices to be matched.");
 
-    rounds.push_back(matching);
+    if (shouldMaintainMatchings)
+      rounds.push_back(matching);
   }
 
   result.iterations = iterations;
 
-  if (verifyExpansion > 0) {
-    VLOG(4) << "Sampling conductance";
-    result.certificateSamples.push_back(sampleCertificate(rounds));
-    VLOG(4) << "Finished sampling conductance";
+  if (params.samplePotential > 0) {
+    VLOG(4) << "Sampling potential function";
+    result.sampledPotentials.push_back(
+        samplePotential(rounds, params.samplePotential));
+    VLOG(4) << "Finished sampling potential function";
   }
 
   if (graph->size() != 0 && graph->removedSize() != 0 &&

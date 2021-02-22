@@ -4,6 +4,7 @@
 
 #include "datastructures/undirected_graph.hpp"
 #include "datastructures/unit_flow.hpp"
+#include "cut_matching.hpp"
 
 namespace ExpanderDecomposition {
 
@@ -41,32 +42,11 @@ private:
   std::unique_ptr<std::vector<int>> subdivisionIdx, fromSubdivisionIdx;
 
   const double phi;
-  /**
-      In Sanurak and Wang, the parameter 'T' is bounded by '\Theta(\log^2 m)'.
-      This is a constant factor which is added.
-   */
-  const int tConst;
-  /**
-      In Sanurak and Wang, the parameter 'T' is bounded by '\Theta(\log^2 m)'.
-      This is a constant factor such that 'T = tConst + tFactor (\log^2 m)'.
-   */
-  const double tFactor;
 
   /**
-     Number of steps of the random walk in cut-matching game.
+     Parameters given to cut-matching game.
    */
-  const int randomWalkSteps;
-
-  /**
-     Minimum volume balance before cut-matching game should terminate.
-   */
-  const double minBalance;
-
-  /**
-     Number of times expansion certificate should be sampled when cut-matching
-     game results in an expander.
-   */
-  const int verifyExpansion;
+  const CutMatching::Parameters cutMatchingParams;
 
   /**
      Number of finalized partitions.
@@ -97,9 +77,8 @@ public:
   /**
      Create a decomposition problem with n vertices.
    */
-  Solver(std::unique_ptr<Undirected::Graph> g, double phi, int tConst,
-         double tFactor, int randomWalkSteps, double minBalance,
-         int verifyExpansion);
+  Solver(std::unique_ptr<Undirected::Graph> g, double phi,
+         CutMatching::Parameters params);
 
   /**
      Return the computed partition as a vector of disjoint vertex vectors.

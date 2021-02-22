@@ -118,8 +118,17 @@ TEST(ExpanderDecomposition, BasicGraph) {
   const double phi = 0.1;
   const int tConst = 100;
   const double tFactor = 20.0;
-  const auto solver = ExpanderDecomposition::Solver(std::move(g), phi, tConst,
-                                                    tFactor, 10, 0.45, 0);
+  CutMatching::Parameters params = {
+    .tConst = tConst,
+    .tFactor = tFactor,
+    .resampleUnitVector = false,
+    .computeFlowMatrix = false,
+    .minBalance = 0.45,
+    .randomWalkSteps = 1,
+    .samplePotential = 0,
+  };
+
+  const auto solver = ExpanderDecomposition::Solver(std::move(g), phi, params);
   for (const auto &partition : solver.getPartition())
     for (const auto &u : partition)
       EXPECT_TRUE(u >= 0 && u < n);

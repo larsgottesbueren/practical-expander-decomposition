@@ -18,8 +18,12 @@ DEFINE_double(
     "Value of \\phi such that expansion of each cluster is at least \\phi");
 DEFINE_int32(t1, 40, "Constant 't1' in 'T = t1 + t2 \\log^2 m'");
 DEFINE_double(t2, 2.2, "Constant 't2' in 'T = t1 + t2 \\log^2 m'");
+DEFINE_bool(resample_unit_vector, false,
+            "Should random unit vector in cut-matching game be resampled every "
+            "iteration. Results in slower execution time.");
 DEFINE_int32(random_walk_steps, 10,
-             "Number of random walk steps in cut-matching game.");
+             "Number of random walk steps in cut-matching game if "
+             "'resample_unit_vector=true'.");
 DEFINE_double(
     min_balance, 0.45,
     "The amount of cut balance before the cut-matching game is terminated.");
@@ -39,6 +43,15 @@ int main(int argc, char *argv[]) {
   auto g = readGraph(FLAGS_chaco);
   VLOG(1) << "Finished reading input.";
 
+  CutMatching::Parameters params = {.tConst = FLAGS_t1,
+                                    .tFactor = FLAGS_t2,
+                                    .resampleUnitVector =
+                                        FLAGS_resample_unit_vector,
+                                    .computeFlowMatrix = false,
+                                    .minBalance = FLAGS_min_balance,
+                                    .randomWalkSteps = FLAGS_random_walk_steps,
+                                    .samplePotential = FLAGS_verify_expansion};
+
   auto graph = ExpanderDecomposition::constructFlowGraph(g);
   auto subdivGraph = ExpanderDecomposition::constructSubdivisionFlowGraph(g);
 
@@ -49,11 +62,10 @@ int main(int argc, char *argv[]) {
   for (int u = graph->size(); u < subdivGraph->size(); ++u)
     (*subdivisionIdx)[u] = 0;
 
-  CutMatching::Solver solver(
-      graph.get(), subdivGraph.get(), subdivisionIdx.get(),
-      fromSubdivisionIdx.get(), FLAGS_phi, FLAGS_t1, FLAGS_t2,
-      FLAGS_random_walk_steps, FLAGS_min_balance, FLAGS_verify_expansion);
-  auto result = solver.compute();
+  CutMatching::Solver solver(graph.get(), subdivGraph.get(),
+                             subdivisionIdx.get(), fromSubdivisionIdx.get(),
+                             FLAGS_phi, params);
+  auto result = solver.compute(params);
   std::vector<int> a, r;
   std::copy(graph->cbegin(), graph->cend(), std::back_inserter(a));
   std::copy(graph->cbeginRemoved(), graph->cendRemoved(),
@@ -87,11 +99,11 @@ int main(int argc, char *argv[]) {
   cout << endl;
 
   if (FLAGS_verify_expansion > 0) {
-    cout << result.certificateSamples.size() << " " << FLAGS_verify_expansion
+    cout << result.sampledPotentials.size() << " " << params.samplePotential
          << endl;
-    for (const auto &samples : result.certificateSamples) {
-      assert(samples.size() == FLAGS_verify_expansion &&
-             "Incorrect number of expansion certificate samples.");
+    for (const auto &samples : result.sampledPotentials) {
+      assert(samples.size() == params.samplePotential &&
+             "Incorrect number of potentials sampled.");
       bool first = true;
       for (auto sample : samples) {
         if (!first)
