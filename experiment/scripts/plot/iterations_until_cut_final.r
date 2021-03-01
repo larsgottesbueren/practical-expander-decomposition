@@ -18,13 +18,13 @@ df <- read.csv(input_file)
 f <- y ~ x
 
 plot <-
-    ggplot(df, aes(x=log10_squared_edges, y=iterations, group=factor(random_walk_steps), color=factor(random_walk_steps))) +
+    ggplot(df, aes(x=log10_squared_edges,
+                   y=iterations)) +
     geom_point() +
     geom_smooth(method="lm", formula=f, fullrange=TRUE) +
     stat_poly_eq(aes(label = ..eq.label..), formula=f, parse=TRUE) +
     expand_limits(x=0, y=0) +
     labs(y="Iterations",
-         x=expression("log"^2 ~ "m"),
-         col="Random walk steps")
+         x=expression("log"^2 ~ "m"))
 
 ggsave(output_file, plot)

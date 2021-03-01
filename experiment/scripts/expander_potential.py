@@ -57,22 +57,24 @@ if __name__ == '__main__':
 
     graph_params = [{
         'name': 'clique',
-        'n': 10,
-        'k': 1,
-        'r': 0,
-        'p': 100,
-    }, {
-        'name': 'clique',
         'n': 100,
         'k': 1,
         'r': 0,
-        'p': 100,
     }, {
-        'name': 'clique',
-        'n': 500,
+        'name': 'margulis',
+        'n': 10,
         'k': 1,
         'r': 0,
-        'p': 100,
+    }, {
+        'name': 'clique',
+        'n': 400,
+        'k': 1,
+        'r': 0,
+    }, {
+        'name': 'margulis',
+        'n': 20,
+        'k': 1,
+        'r': 0,
     }]
 
     def graphParamsToString(p):

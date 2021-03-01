@@ -6,12 +6,13 @@ SEED = 0
 .PRECIOUS: gen/%.csv
 
 all: \
-  out/expander_potential.pdf \
-  out/cut_potential.pdf \
-  out/potential.pdf \
   out/iterations_until_cut.pdf \
   out/iterations_until_cut_final.pdf \
+  out/iterations_until_cut_random_walk.pdf \
+  out/expander_potential.pdf \
+  out/cut_potential.pdf \
   out/cut_balance.pdf \
+  out/expected_edges_cut.pdf \
   out/time_to_edges.pdf \
   out/edge_ratio_to_edges.pdf
 

@@ -9,13 +9,15 @@ import csv
 import numpy
 
 
-def cut(edc_cut_path, graph_info, phi, random_walk_steps):
+def cut(edc_cut_path, graph_info, phi):
     """Run 'edc-cut', assert balanced cut is returned, and return the graph
     parameters, phi, and the number of iterations run.
 
     """
     graph_string, graph_params, graph_edges = graph_info
-    result = subprocess.run([edc_cut_path, f'-phi={phi}', f'-random_walk_steps={random_walk_steps}', '-t1=40', '-t2=2.2'],
+    result = subprocess.run([
+        edc_cut_path, f'-phi={phi}', '-t1=40', '-t2=1'
+    ],
                             input=graph_string,
                             text=True,
                             check=True,
@@ -29,7 +31,9 @@ def cut(edc_cut_path, graph_info, phi, random_walk_steps):
         resultType = lines[0].split()[0]
         iterations = int(lines[0].split()[1])
         if resultType != 'balanced_cut':
-            print(f'Cut did not result in: {resultType} with params {graph_params}')
+            print(
+                f'Failed to find cut: {resultType} with params {graph_params}'
+            )
             exit(1)
         xlen, *xs = list(map(int, lines[1].split()))
         assert xlen == len(xs)
@@ -39,7 +43,7 @@ def cut(edc_cut_path, graph_info, phi, random_walk_steps):
         assert xlen == ylen
         assert (max(xs) < min(ys) or max(ys) < min(xs))
 
-        return (graph_params, phi, random_walk_steps, graph_edges, iterations)
+        return (graph_params, phi, graph_edges, iterations)
 
 
 if __name__ == '__main__':
@@ -49,68 +53,16 @@ if __name__ == '__main__':
     _, _, edc_cut_path, seed, gen_graph, output_file = sys.argv
 
     graph_params = [{
-        'name': 'clique',
-        'n': 30,
-        'k': 2,
-        'r': 1,
-        'p': 100,
-    }, {
-        'name': 'clique',
-        'n': 100,
-        'k': 2,
-        'r': 1,
-        'p': 100,
-    }, {
-        'name': 'clique',
-        'n': 200,
-        'k': 2,
-        'r': 1,
-        'p': 100,
-    }, {
-        'name': 'clique',
-        'n': 500,
-        'k': 2,
-        'r': 1,
-        'p': 100,
-    }, {
-        'name': 'clique',
-        'n': 100,
-        'k': 2,
-        'r': 10,
-        'p': 100,
-    }, {
-        'name': 'clique',
-        'n': 200,
-        'k': 2,
-        'r': 10,
-        'p': 100,
-    }, {
-        'name': 'clique',
-        'n': 500,
-        'k': 2,
-        'r': 10,
-        'p': 100,
-    }, {
         'name': 'margulis',
-        'n': 10,
+        'n': i * 5 + 10,
         'k': 2,
         'r': 1,
-    }, {
-        'name': 'margulis',
-        'n': 50,
+    } for i in range(30)] + [{
+        'name': 'clique',
+        'n': i * 10 + 30,
         'k': 2,
         'r': 1,
-    }, {
-        'name': 'margulis',
-        'n': 100,
-        'k': 2,
-        'r': 1,
-    }, {
-        'name': 'margulis',
-        'n': 150,
-        'k': 2,
-        'r': 1,
-    }]
+    } for i in range(30)]
 
     def graphParamsToString(p):
         ps = [p['name'], str(p['n']), str(p['k']), str(p['r'])]
@@ -140,12 +92,12 @@ if __name__ == '__main__':
         graphs.append((result.stdout, ps, m))
 
     with mp.Pool() as pool:
-        phis = [0.001]
-        random_walk_stepss = [1,10,100]
-        numIterations = 8
-        jobs = [(edc_cut_path, graph_info, phi, random_walk_steps)
-                for graph_info, phi, random_walk_steps, _ in itertools.product(
-                        graphs, phis, random_walk_stepss, range(numIterations))]
+        jobs = []
+        for graph_info in graphs:
+            for phi in [0.001]:
+                for it in range(8):
+                    jobs.append((edc_cut_path, graph_info, phi))
+
         result = pool.starmap(cut, jobs, chunksize=1)
 
     with open(output_file, 'w') as f:
@@ -153,17 +105,15 @@ if __name__ == '__main__':
                                 fieldnames=[
                                     'graph',
                                     'phi',
-                                    'random_walk_steps',
                                     'log10_squared_edges',
                                     'iterations',
                                 ])
         writer.writeheader()
 
-        for p, phi, random_walk_steps, edges, iterations in result:
+        for p, phi, edges, iterations in result:
             writer.writerow({
                 'graph': graphParamsToString(p),
                 'phi': phi,
-                'random_walk_steps': random_walk_steps,
                 'log10_squared_edges': log10(edges) * log10(edges),
                 'iterations': iterations,
             })

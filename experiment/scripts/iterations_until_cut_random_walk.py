@@ -9,14 +9,17 @@ import csv
 import numpy
 
 
-def cut(edc_cut_path, graph_info, phi):
+def cut(edc_cut_path, graph_info, phi, resample_unit_vector,
+        random_walk_steps):
     """Run 'edc-cut', assert balanced cut is returned, and return the graph
     parameters, phi, and the number of iterations run.
 
     """
     graph_string, graph_params, graph_edges = graph_info
     result = subprocess.run([
-        edc_cut_path, f'-phi={phi}', '-t1=40', '-t2=2'
+        edc_cut_path, f'-phi={phi}',
+        f'-resample_unit_vector={resample_unit_vector}',
+        f'-random_walk_steps={random_walk_steps}', '-t1=60', '-t2=2'
     ],
                             input=graph_string,
                             text=True,
@@ -43,7 +46,8 @@ def cut(edc_cut_path, graph_info, phi):
         assert xlen == ylen
         assert (max(xs) < min(ys) or max(ys) < min(xs))
 
-        return (graph_params, phi, graph_edges, iterations)
+        return (graph_params, phi, resample_unit_vector, random_walk_steps,
+                graph_edges, iterations)
 
 
 if __name__ == '__main__':
@@ -95,8 +99,9 @@ if __name__ == '__main__':
         jobs = []
         for graph_info in graphs:
             for phi in [0.001]:
-                for it in range(8):
-                    jobs.append((edc_cut_path, graph_info, phi))
+                for random_walk_steps in [1, 5, 10]:
+                    for it in range(1):
+                        jobs.append((edc_cut_path, graph_info, phi, True, random_walk_steps))
 
         result = pool.starmap(cut, jobs, chunksize=1)
 
@@ -105,15 +110,19 @@ if __name__ == '__main__':
                                 fieldnames=[
                                     'graph',
                                     'phi',
+                                    'resample_unit_vector',
+                                    'random_walk_steps',
                                     'log10_squared_edges',
                                     'iterations',
                                 ])
         writer.writeheader()
 
-        for p, phi, edges, iterations in result:
+        for p, phi, resample_unit_vector, random_walk_steps, edges, iterations in result:
             writer.writerow({
                 'graph': graphParamsToString(p),
                 'phi': phi,
+                'resample_unit_vector': resample_unit_vector,
+                'random_walk_steps': random_walk_steps,
                 'log10_squared_edges': log10(edges) * log10(edges),
                 'iterations': iterations,
             })
