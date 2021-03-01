@@ -70,7 +70,7 @@ void Solver::compute() {
     return;
   } else if (flowGraph->size() == 1) {
     VLOG(1) << "Creating single vertex partition.";
-    finalizePartition(flowGraph->begin(), flowGraph->end());
+    finalizePartition(flowGraph->begin(), flowGraph->end(), 1);
     return;
   }
 
@@ -134,7 +134,7 @@ void Solver::compute() {
 
       assert(flowGraph->size() > 0 &&
              "Should not trim all vertices from graph.");
-      finalizePartition(flowGraph->cbegin(), flowGraph->cend());
+      finalizePartition(flowGraph->cbegin(), flowGraph->cend(), 0);
 
       r.clear();
       std::copy(flowGraph->cbeginRemoved(), flowGraph->cendRemoved(),
@@ -159,8 +159,9 @@ void Solver::compute() {
       subdivisionFlowGraph->restoreRemoves();
 
       VLOG(1) << "Finalizing " << a.size() << " vertices as partition "
-              << numPartitions << ".";
-      finalizePartition(a.begin(), a.end());
+              << numPartitions << "."
+              << " Conductance: " << 1.0 / double(result.congestion) << ".";
+      finalizePartition(a.begin(), a.end(), result.congestion);
       break;
     }
     }
@@ -180,23 +181,11 @@ std::vector<std::vector<int>> Solver::getPartition() const {
 }
 
 std::vector<double> Solver::getConductance() const {
-  auto partitions = getPartition();
-  std::vector<double> result(int(partitions.size()));
+  std::vector<double> result(numPartitions);
 
-  const int totalVolume = flowGraph->volume();
-
-  for (const auto &p : partitions) {
-    assert(!p.empty() && "Partitions should not be empty.");
-    flowGraph->subgraph(p.begin(), p.end());
-
-    int pId = partitionOf[p[0]], edgesCut = 0,
-        volume = flowGraph->globalVolume();
-    for (int u : *flowGraph)
-      edgesCut += flowGraph->globalDegree(u) - flowGraph->degree(u);
-    result[pId] = double(edgesCut) / std::min(volume, totalVolume);
-
-    flowGraph->restoreSubgraph();
-  }
+  for (int i = 0; i < numPartitions; ++i)
+    if (congestionOf[i] > 0)
+      result[i] = 1.0 / double(congestionOf[i]);
 
   return result;
 }

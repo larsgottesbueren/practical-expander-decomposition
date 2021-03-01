@@ -2,9 +2,9 @@
 
 #include <vector>
 
+#include "cut_matching.hpp"
 #include "datastructures/undirected_graph.hpp"
 #include "datastructures/unit_flow.hpp"
-#include "cut_matching.hpp"
 
 namespace ExpanderDecomposition {
 
@@ -60,6 +60,11 @@ private:
   std::vector<int> partitionOf;
 
   /**
+     Congestion of expander embedding in each partition.
+   */
+  std::vector<long long> congestionOf;
+
+  /**
      Compute expander decomposition for subset of vertices 'xs'.
    */
   void compute();
@@ -67,7 +72,10 @@ private:
   /**
      Create a partition with the given vertices.
    */
-  template <typename It> void finalizePartition(It begin, It end) {
+  template <typename It> void finalizePartition(It begin, It end, long long c) {
+    congestionOf.push_back(c);
+    assert(congestionOf.size() == numPartitions + 1);
+
     for (auto it = begin; it != end; ++it)
       partitionOf[*it] = numPartitions;
     numPartitions++;
@@ -86,7 +94,7 @@ public:
   std::vector<std::vector<int>> getPartition() const;
 
   /**
-     Compute the conductance of each partition relative the rest of the graph.
+     Compute lower bound on conductance using congestion from cut-matching game.
    */
   std::vector<double> getConductance() const;
 

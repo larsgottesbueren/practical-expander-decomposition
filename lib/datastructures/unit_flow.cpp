@@ -4,8 +4,12 @@
 
 namespace UnitFlow {
 
+Edge::Edge(Vertex from, Vertex to, Flow flow, Flow capacity, Flow congestion)
+    : from(from), to(to), revIdx(-1), flow(flow), capacity(capacity),
+      congestion(congestion) {}
+
 Edge::Edge(Vertex from, Vertex to, Flow flow, Flow capacity)
-    : from(from), to(to), revIdx(-1), flow(flow), capacity(capacity) {}
+    : Edge(from, to, flow, capacity, 0) {}
 
 Edge::Edge(Vertex from, Vertex to, Flow capacity)
     : Edge(from, to, 0, capacity) {}
@@ -77,6 +81,11 @@ std::vector<Vertex> Graph::compute(const int maxHeight) {
       nextEdgeIdx[e.from]++;
     }
   }
+
+  for (auto u : *this)
+    for (auto e = beginEdge(u); e != endEdge(u); ++e)
+      if (e->flow > 0)
+        e->congestion += e->flow;
 
   std::vector<UnitFlow::Vertex> hasExcess;
   for (auto u : *this)

@@ -16,7 +16,9 @@ using Flow = long long;
 
 struct Edge {
   Vertex from, to, revIdx;
-  Flow flow, capacity;
+  Flow flow, capacity, congestion;
+
+  Edge(Vertex from, Vertex to, Flow flow, Flow capacity, Flow congestion);
 
   Edge(Vertex from, Vertex to, Flow flow, Flow capacity);
   /**

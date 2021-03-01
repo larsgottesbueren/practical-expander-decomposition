@@ -77,6 +77,12 @@ struct Result {
   int iterations;
 
   /**
+     Congestion of the embedding. If result is an expander, then conductance of
+     graph is '1/congestion'.
+   */
+  long long congestion;
+
+  /**
      If 'samplePotential' is greater than zero, this a vector of expansion
      samples for each iteration. Vector should have length 'iterations+1'
      corresponding to one entry before every iteration plus one entry after the

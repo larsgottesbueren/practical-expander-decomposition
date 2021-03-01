@@ -119,13 +119,13 @@ TEST(ExpanderDecomposition, BasicGraph) {
   const int tConst = 100;
   const double tFactor = 20.0;
   CutMatching::Parameters params = {
-    .tConst = tConst,
-    .tFactor = tFactor,
-    .resampleUnitVector = false,
-    .computeFlowMatrix = false,
-    .minBalance = 0.45,
-    .randomWalkSteps = 1,
-    .samplePotential = 0,
+      .tConst = tConst,
+      .tFactor = tFactor,
+      .resampleUnitVector = false,
+      .computeFlowMatrix = false,
+      .minBalance = 0.45,
+      .randomWalkSteps = 1,
+      .samplePotential = 0,
   };
 
   const auto solver = ExpanderDecomposition::Solver(std::move(g), phi, params);

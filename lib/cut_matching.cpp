@@ -29,7 +29,8 @@ Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG,
   const UnitFlow::Flow capacity = std::ceil(1.0 / phi / T);
   for (auto u : *graph)
     for (auto e = subdivGraph->beginEdge(u); e != subdivGraph->endEdge(u); ++e)
-      e->capacity = capacity, subdivGraph->reverse(*e).capacity = capacity;
+      e->capacity = capacity, subdivGraph->reverse(*e).capacity = capacity,
+      e->congestion = 0, subdivGraph->reverse(*e).congestion = 0;
 }
 
 /**
@@ -105,6 +106,7 @@ Result Solver::compute(Parameters params) {
     Result result;
     result.type = Expander;
     result.iterations = 0;
+    result.congestion = 1;
     return result;
   }
 
@@ -180,11 +182,14 @@ Result Solver::compute(Parameters params) {
     std::reverse(axRight.begin(), axRight.end());
 
     const int numSubdivVertices = int(axLeft.size() + axRight.size());
+    if (axRight.size() < axLeft.size())
+      swap(axRight, axLeft);
     while (2 * axRight.size() > numSubdivVertices)
       axRight.pop_back();
-    while (8 * axLeft.size() > numSubdivVertices ||
-           axLeft.size() > axRight.size())
+    while (8 * axLeft.size() > numSubdivVertices)
       axLeft.pop_back();
+    assert(axLeft.size() <= axRight.size() &&
+           "Cannot have more sources than sinks.");
     VLOG(3) << "Number of sources: " << axLeft.size()
             << " sinks: " << axRight.size();
 
@@ -273,6 +278,10 @@ Result Solver::compute(Parameters params) {
   }
 
   result.iterations = iterations;
+  result.congestion = 0;
+  for (auto u : *subdivGraph)
+    for (auto e = subdivGraph->beginEdge(u); e != subdivGraph->endEdge(u); ++e)
+      result.congestion = std::max(result.congestion, e->congestion);
 
   if (params.samplePotential > 0) {
     VLOG(4) << "Sampling potential function";
