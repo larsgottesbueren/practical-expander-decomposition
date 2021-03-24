@@ -31,6 +31,15 @@ Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG,
     for (auto e = subdivGraph->beginEdge(u); e != subdivGraph->endEdge(u); ++e)
       e->capacity = capacity, subdivGraph->reverse(*e).capacity = capacity,
       e->congestion = 0, subdivGraph->reverse(*e).congestion = 0;
+
+  if (params.samplePotential) {
+    flowMatrix.resize(subdivGraph->size());
+    for (int u : *subdivGraph)
+      flowMatrix[u].resize(subdivGraph->size());
+
+    for (int i = 0; i < subdivGraph->size(); ++i)
+      flowMatrix[i][i] = 1.0;
+  }
 }
 
 /**
@@ -54,48 +63,51 @@ void Solver::projectFlow(const std::vector<Matching> &rounds,
 }
 
 std::vector<double> Solver::randomUnitVector() {
-  std::normal_distribution<> dist(0, 1);
   std::vector<double> result(numSplitNodes);
-  double total = 0;
 
+  int count = 0;
   for (auto it = subdivGraph->cbegin(); it != subdivGraph->cend(); ++it) {
-    const auto u = *it;
-    if ((*subdivisionIdx)[u] >= 0) {
-      double x = dist(randomGen);
-      result[(*subdivisionIdx)[u]] = x;
-      total += x * x;
+    const auto u = (*subdivisionIdx)[*it];
+    if (u >= 0) {
+      count++;
+      result[u] = (rand() % 2 == 0 ? -1 : 1);
     }
   }
-
-  total = std::sqrt(total);
   for (auto it = subdivGraph->cbegin(); it != subdivGraph->cend(); ++it) {
-    const auto u = *it;
-    if ((*subdivisionIdx)[u] >= 0)
-      result[(*subdivisionIdx)[u]] /= total;
+    const auto u = (*subdivisionIdx)[*it];
+    if (u >= 0) {
+      result[u] /= double(count);
+    }
   }
 
   return result;
 }
 
-std::vector<double> Solver::samplePotential(const std::vector<Matching> &rounds,
-                                            int k) {
-  std::vector<double> result;
-  for (int sample = 0; sample < k; ++sample) {
-    auto flow = randomUnitVector();
-    projectFlow(rounds, flow);
-
-    const int n = subdivGraph->size() - graph->size();
-    const double avgFlow = 1.0 / double(n);
-    double total = 0;
-    for (auto it = subdivGraph->cbegin(); it != subdivGraph->cend(); ++it) {
-      const auto u = *it;
-      if ((*subdivisionIdx)[u]) {
-        double f = flow[(*subdivisionIdx)[u]];
-        total += (avgFlow - f) * (avgFlow - f);
-      }
-    }
-    result.push_back(total);
+double Solver::samplePotential() const {
+  // Subdivision vertices remaining.
+  std::vector<int> alive;
+  for (auto it = subdivGraph->cbegin(); it != subdivGraph->cend(); ++it) {
+    const auto u = (*subdivisionIdx)[*it];
+    if (u >= 0)
+      alive.push_back(u);
   }
+
+  double result = 0;
+  std::vector<double> avgFlowVector(numSplitNodes);
+
+  for (int u : alive)
+    for (int v : alive)
+      avgFlowVector[v] += flowMatrix[u][v];
+  for (auto &f : avgFlowVector)
+    f /= double(alive.size());
+
+  for (int u : alive) {
+    for (int v : alive) {
+      double x = flowMatrix[u][v] - avgFlowVector[v];
+      result += x * x;
+    }
+  }
+
   return result;
 }
 
@@ -131,13 +143,11 @@ Result Solver::compute(Parameters params) {
   const int targetVolumeBalance = std::max(
       lowerVolumeBalance, int(params.minBalance * subdivGraph->globalVolume()));
 
-  const bool shouldMaintainMatchings =
-      params.resampleUnitVector || (params.samplePotential > 0);
-
   std::vector<Matching> rounds;
   Result result;
 
   auto flow = randomUnitVector();
+  auto startFlow = flow;
 
   int iterations = 0;
   for (; iterations < T &&
@@ -147,10 +157,9 @@ Result Solver::compute(Parameters params) {
        ++iterations) {
     VLOG(3) << "Iteration " << iterations << " out of " << T << ".";
 
-    if (params.samplePotential > 0) {
+    if (params.samplePotential) {
       VLOG(4) << "Sampling potential function";
-      result.sampledPotentials.push_back(
-          samplePotential(rounds, params.samplePotential));
+      result.sampledPotentials.push_back(samplePotential());
       VLOG(4) << "Finished sampling potential function";
     }
 
@@ -181,12 +190,11 @@ Result Solver::compute(Parameters params) {
     std::sort(axRight.begin(), axRight.end(), cmpFlow);
     std::reverse(axRight.begin(), axRight.end());
 
-    const int numSubdivVertices = int(axLeft.size() + axRight.size());
     if (axRight.size() < axLeft.size())
       swap(axRight, axLeft);
-    while (2 * axRight.size() > numSubdivVertices)
-      axRight.pop_back();
-    while (8 * axLeft.size() > numSubdivVertices)
+    while (axRight.size() > curSubdivisionCount() / 2)
+      axLeft.push_back(axRight.back()), axRight.pop_back();
+    while (axLeft.size() > curSubdivisionCount() / 8)
       axLeft.pop_back();
     assert(axLeft.size() <= axRight.size() &&
            "Cannot have more sources than sinks.");
@@ -194,14 +202,12 @@ Result Solver::compute(Parameters params) {
             << " sinks: " << axRight.size();
 
     subdivGraph->reset();
-
     for (const auto u : axLeft)
       subdivGraph->addSource(u, 1);
     for (const auto u : axRight)
       subdivGraph->addSink(u, 1);
 
-    const int h = std::max((int)round(1.0 / phi / std::log10(numSplitNodes)),
-                           (int)std::log10(numSplitNodes));
+    const int h = std::max((int)round(1.0 / phi / std::log10(numSplitNodes)), 1);
     VLOG(3) << "Computing flow with |S| = " << axLeft.size()
             << " |T| = " << axRight.size() << " and max height " << h << ".";
     const auto hasExcess = subdivGraph->compute(h);
@@ -244,7 +250,7 @@ Result Solver::compute(Parameters params) {
       subdivGraph->remove(u);
     }
 
-    if (shouldMaintainMatchings) {
+    if (params.resampleUnitVector) {
       auto removeCond = [&isRemoved, &fromSubdivisionIdx = fromSubdivisionIdx](
                             std::pair<int, int> p) {
         return isRemoved((*fromSubdivisionIdx)[p.first]) ||
@@ -258,14 +264,23 @@ Result Solver::compute(Parameters params) {
 
     VLOG(3) << "Computing matching with |S| = " << axLeft.size()
             << " |T| = " << axRight.size() << ".";
-    auto matching = subdivGraph->matching(axLeft);
+    auto matching = subdivGraph->matchingSlow(axLeft);
     for (auto &p : matching) {
-      p.first = (*subdivisionIdx)[p.first];
-      p.second = (*subdivisionIdx)[p.second];
+      int u = (*subdivisionIdx)[p.first];
+      int v = (*subdivisionIdx)[p.second];
 
-      const double matchedFlow = 0.5 * (flow[p.first] + flow[p.second]);
-      flow[p.first] = matchedFlow;
-      flow[p.second] = matchedFlow;
+      flow[u] = 0.5 * (flow[u] + flow[v]);
+      flow[v] = flow[u];
+
+      if (params.samplePotential) {
+        for (int i : *subdivGraph) {
+          int w = (*subdivisionIdx)[i];
+          if (w >= 0) {
+            flowMatrix[u][w] = 0.5 * (flowMatrix[u][w] + flowMatrix[v][w]);
+            flowMatrix[v][w] = flowMatrix[u][w];
+          }
+        }
+      }
     }
     VLOG(3) << "Found matching of size " << matching.size() << ".";
 
@@ -273,7 +288,7 @@ Result Solver::compute(Parameters params) {
     // assert(matching.size() == axLeft.size() &&
     // "Expected all source vertices to be matched.");
 
-    if (shouldMaintainMatchings)
+    if (params.resampleUnitVector)
       rounds.push_back(matching);
   }
 
@@ -283,11 +298,10 @@ Result Solver::compute(Parameters params) {
     for (auto e = subdivGraph->beginEdge(u); e != subdivGraph->endEdge(u); ++e)
       result.congestion = std::max(result.congestion, e->congestion);
 
-  if (params.samplePotential > 0) {
-    VLOG(4) << "Sampling potential function";
-    result.sampledPotentials.push_back(
-        samplePotential(rounds, params.samplePotential));
-    VLOG(4) << "Finished sampling potential function";
+  if (params.samplePotential) {
+    VLOG(4) << "Final sampling of potential function";
+    result.sampledPotentials.push_back(samplePotential());
+    VLOG(4) << "Finished final sampling of potential function";
   }
 
   if (graph->size() != 0 && graph->removedSize() != 0 &&

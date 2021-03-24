@@ -33,13 +33,6 @@ struct Parameters {
   bool resampleUnitVector;
 
   /**
-     If true, the 'm^2' sized flow matrix is maintained and returned along with
-     other results. This does not impact result but is useful when verifying the
-     algorithm.
-  */
-  bool computeFlowMatrix;
-
-  /**
      The minimum volume balance '0 <= b <= 0.5' the algorithm should reach
      before terminating with sparse cut.
   */
@@ -53,12 +46,10 @@ struct Parameters {
   int randomWalkSteps;
 
   /**
-     An integer 'i >= 0' describing the number of times per iteration the
-     potential function of the currently alive vertices should be computed. Just
-     like 'resampleUnitVector' this requires maintaining matchings during the
-     entire algorithm.
+     True if the potential function should be sampled each iteration. This
+     requires maintaining the entire 'O(m^2)' flow matrix.
   */
-  int samplePotential;
+  bool samplePotential;
 };
 
 /**
@@ -83,18 +74,10 @@ struct Result {
   long long congestion;
 
   /**
-     If 'samplePotential' is greater than zero, this a vector of expansion
-     samples for each iteration. Vector should have length 'iterations+1'
-     corresponding to one entry before every iteration plus one entry after the
-     final iteration.
+     Vector of potential function at the start of the cut-matching game and
+     after each iteration.
    */
-  std::vector<std::vector<double>> sampledPotentials;
-
-  /**
-     If 'computeFlowMatrix' is true, this matrix represents the flow at each
-     subdivision vertex.
-   */
-  std::vector<std::vector<double>> flowMatrix;
+  std::vector<double> sampledPotentials;
 };
 
 /**
@@ -122,6 +105,12 @@ private:
   std::mt19937 randomGen;
 
   /**
+     Matrix representing multi-commodity flow. Only constructed if potential is
+     sampled.
+   */
+  std::vector<std::vector<double>> flowMatrix;
+
+  /**
      Construct a random vector for the currently alive subdivision vertices with
      length 'numSplitNodes' normalized by the number of alive subdivision
      vertices.
@@ -137,10 +126,9 @@ private:
                    std::vector<double> &start);
 
   /**
-     Sample the potential function 'k' times.
+     Sample the potential function using the current state of the flow matrix.
    */
-  std::vector<double> samplePotential(const std::vector<Matching> &rounds,
-                                      int k);
+  double samplePotential() const;
 
 public:
   /**
