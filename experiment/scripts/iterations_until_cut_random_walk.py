@@ -100,7 +100,7 @@ if __name__ == '__main__':
         for graph_info in graphs:
             for phi in [0.001]:
                 for random_walk_steps in [1, 5, 10]:
-                    for it in range(1):
+                    for it in range(4):
                         jobs.append((edc_cut_path, graph_info, phi, True, random_walk_steps))
 
         result = pool.starmap(cut, jobs, chunksize=1)

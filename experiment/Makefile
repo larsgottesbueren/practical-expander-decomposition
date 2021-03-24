@@ -13,6 +13,7 @@ all: \
   out/cut_potential.pdf \
   out/cut_balance.pdf \
   out/expected_edges_cut.pdf \
+  out/certificate.pdf \
   out/time_to_edges.pdf \
   out/edge_ratio_to_edges.pdf
 

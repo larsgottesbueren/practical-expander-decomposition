@@ -14,9 +14,8 @@ def cut(edc_cut_path, graph, phi):
 
     """
     graph_string, graph_params = graph
-    numSamples = 20
     result = subprocess.run(
-        [edc_cut_path, f'-phi={phi}', f'-verify_expansion={numSamples}'],
+        [edc_cut_path, f'-phi={phi}', '-sample_potential'],
         input=graph_string,
         text=True,
         check=True,
@@ -38,13 +37,9 @@ def cut(edc_cut_path, graph, phi):
 
         assert (xlen == 0 or ylen == 0)
 
-        iterations, numSamples = list(map(int, lines[3].split()))
-        assert (len(lines) - 4 == iterations)
-
-        samples = {}
-        for i in range(4, len(lines)):
-            iteration = i - 4
-            samples[iteration] = list(map(float, lines[i].split()))
+        numSamples = int(lines[3].strip())
+        samples = list(enumerate(map(float, lines[4].strip().split())))
+        assert len(samples) == numSamples
 
         return (graph_params, phi, samples)
 
@@ -57,7 +52,7 @@ if __name__ == '__main__':
 
     graph_params = [{
         'name': 'clique',
-        'n': 100,
+        'n': 10,
         'k': 1,
         'r': 0,
     }, {
@@ -67,7 +62,7 @@ if __name__ == '__main__':
         'r': 0,
     }, {
         'name': 'clique',
-        'n': 400,
+        'n': 100,
         'k': 1,
         'r': 0,
     }, {
@@ -102,8 +97,12 @@ if __name__ == '__main__':
         graphs.append((result.stdout, ps))
 
     with mp.Pool() as pool:
-        phis = [0.001, 0.01]
-        jobs = [(edc_cut_path, g, phi) for g, phi in itertools.product(graphs, phis)]
+        jobs = []
+        for g in graphs:
+            for phi in [0.001]:
+                for _ in range(10):
+                    jobs.append((edc_cut_path, g, phi))
+
         result = pool.starmap(cut, jobs, chunksize=1)
 
     with open(output_file, 'w') as f:
@@ -117,11 +116,10 @@ if __name__ == '__main__':
         writer.writeheader()
 
         for p, phi, samples in result:
-            for iteration, potentials in samples.items():
-                for potential in potentials:
-                    writer.writerow({
-                        'graph': graphParamsToString(p),
-                        'phi': phi,
-                        'iteration': iteration,
-                        'potential': potential
-                    })
+            for iteration, potential in samples:
+                writer.writerow({
+                    'graph': graphParamsToString(p),
+                    'phi': phi,
+                    'iteration': iteration,
+                    'potential': potential
+                })
