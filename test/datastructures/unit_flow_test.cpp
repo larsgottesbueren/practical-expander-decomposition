@@ -148,7 +148,7 @@ TEST(UnitFlow, CanMatchSimple) {
   uf.addSource(0, 5);
   uf.addSink(1, 5);
   uf.compute(10);
-  auto matches = uf.matching({0});
+  auto matches = uf.matching({0}, UnitFlow::Graph::MatchingMethod::Dfs);
   EXPECT_EQ(matches, (std::vector<std::pair<int, int>>{{0, 1}}));
 }
 
@@ -157,7 +157,7 @@ TEST(UnitFlow, WontMatchBeforeFlowComputed) {
   uf.addSource(0, 5);
   uf.addSink(1, 5);
 
-  auto matches = uf.matching({0});
+  auto matches = uf.matching({0}, UnitFlow::Graph::MatchingMethod::Dfs);
   EXPECT_TRUE(matches.empty());
 }
 
@@ -178,7 +178,7 @@ TEST(UnitFlow, CanMatchMediumGraph) {
   uf.addSink(9, 1), uf.addSink(11, 1);
 
   uf.compute(10);
-  auto matches = uf.matching({0, 7});
+  auto matches = uf.matching({0, 7}, UnitFlow::Graph::MatchingMethod::Dfs);
   EXPECT_EQ(matches.size(), 2);
 
   std::set<int> left, right;
@@ -227,7 +227,7 @@ TEST(UnitFlow, CanMatchMultiple) {
   std::iota(sources.begin(), sources.end(), 0);
   std::iota(targets.begin(), targets.end(), leftN);
 
-  auto matches = uf.matching(sources);
+  auto matches = uf.matching(sources, UnitFlow::Graph::MatchingMethod::Dfs);
 
   ASSERT_EQ((int)matches.size(), leftN)
       << "Expected all vertices in left partition to be matched.";
@@ -258,7 +258,7 @@ TEST(UnitFlow, CanRouteAndMatchPathGraph) {
   auto levelCut = uf.compute(INT_MAX);
   ASSERT_TRUE(levelCut.empty());
 
-  auto matches = uf.matching({0, 1});
+  auto matches = uf.matching({0, 1}, UnitFlow::Graph::MatchingMethod::Dfs);
   ASSERT_EQ((int)matches.size(), 2);
 
   std::set<int> left, right;
@@ -287,7 +287,7 @@ TEST(UnitFlow, CanRouteAndMatchDiamondGraph) {
   auto levelCut = uf.compute(INT_MAX);
   ASSERT_TRUE(levelCut.empty());
 
-  auto matches = uf.matching({0, 3});
+  auto matches = uf.matching({0, 3}, UnitFlow::Graph::MatchingMethod::Dfs);
   ASSERT_EQ((int)matches.size(), 2);
 }
 
@@ -322,7 +322,7 @@ TEST(UnitFlow, CanRouteAndMatchKBipartite) {
   auto hasExcess = uf.compute(INT_MAX);
   ASSERT_TRUE(hasExcess.empty());
 
-  auto matches = uf.matching(sources);
+  auto matches = uf.matching(sources, UnitFlow::Graph::MatchingMethod::Dfs);
   ASSERT_EQ((int)matches.size(), layerSize);
   for (auto [u, v] : matches) {
     ASSERT_GE(u, 0);
@@ -357,7 +357,7 @@ TEST(UnitFlow, CanMatchLargeGraph) {
       uf.addSink(u, 10);
 
     uf.compute(INT_MAX);
-    uf.matching(sources);
+    uf.matching(sources, UnitFlow::Graph::MatchingMethod::Dfs);
   }
 }
 

@@ -177,6 +177,19 @@ public:
     }
   }
 
+private:
+  std::vector<std::pair<Vertex, Vertex>>
+  matchingDfs(const std::vector<Vertex> &sources);
+
+  std::vector<std::pair<Vertex, Vertex>>
+  matchingLinkCut(const std::vector<Vertex> &sources);
+
+public:
+  /**
+     Types of algorithms available when computing matching.
+   */
+  enum MatchingMethod { Dfs, LinkCut };
+
   /**
      Compute a matching between vertices using the current state of the flow
      graph. A matching between vertices (u,v) is possible iff there is a path
@@ -185,22 +198,11 @@ public:
 
      Method will mutate the flow such that it is no longer legal.
 
-     Time complexity: O(m^2)
+     Time complexity:
+     - Dfs method: O(min(m^2, sum of total flow across edges))
+     - Link-cut method: O(m \log m)
    */
   std::vector<std::pair<Vertex, Vertex>>
-  matchingSlow(const std::vector<Vertex> &sources);
-
-  /**
-     Compute a matching between vertices using the current state of the flow
-     graph. A matching between vertices (u,v) is possible iff there is a path
-     from u to v in the flow graph, where for each edge, the number of matchings
-     going across it is <= to the flow going across it.
-
-     Method will mutate the flow such that it is no longer legal.
-
-     Time complexity: O(m \log m)
-   */
-  std::vector<std::pair<Vertex, Vertex>>
-  matching(const std::vector<Vertex> &sources);
+  matching(const std::vector<Vertex> &sources, MatchingMethod method);
 };
 } // namespace UnitFlow

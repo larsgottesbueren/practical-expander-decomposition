@@ -138,7 +138,7 @@ void Graph::reset() {
 }
 
 std::vector<std::pair<Vertex, Vertex>>
-Graph::matchingSlow(const std::vector<Vertex> &sources) {
+Graph::matchingDfs(const std::vector<Vertex> &sources) {
   std::vector<std::pair<Vertex, Vertex>> matches;
 
   auto search = [&](Vertex start) {
@@ -156,7 +156,7 @@ Graph::matchingSlow(const std::vector<Vertex> &sources) {
         if (e->flow <= 0 || visited[v] == start + 1)
           continue;
 
-        path.push_back(&(*e));
+        path.push_back(&*e);
         int m = dfs(v);
         if (m != -1)
           return m;
@@ -186,7 +186,7 @@ Graph::matchingSlow(const std::vector<Vertex> &sources) {
 }
 
 std::vector<std::pair<Vertex, Vertex>>
-Graph::matching(const std::vector<Vertex> &sources) {
+Graph::matchingLinkCut(const std::vector<Vertex> &sources) {
   const int inf = 1 << 30;
 
   forest.reset(cbegin(), cend());
@@ -253,5 +253,13 @@ Graph::matching(const std::vector<Vertex> &sources) {
   }
 
   return matches;
+}
+
+std::vector<std::pair<Vertex, Vertex>>
+Graph::matching(const std::vector<Vertex> &sources, MatchingMethod method) {
+  if (method == MatchingMethod::Dfs)
+    return matchingDfs(sources);
+  else
+    return matchingLinkCut(sources);
 }
 } // namespace UnitFlow

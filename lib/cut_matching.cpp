@@ -261,7 +261,8 @@ Result Solver::compute(Parameters params) {
 
     VLOG(3) << "Computing matching with |S| = " << axLeft.size()
             << " |T| = " << axRight.size() << ".";
-    auto matching = subdivGraph->matchingSlow(axLeft);
+    auto matching =
+        subdivGraph->matching(axLeft, UnitFlow::Graph::MatchingMethod::Dfs);
     for (auto &p : matching) {
       int u = (*subdivisionIdx)[p.first];
       int v = (*subdivisionIdx)[p.second];

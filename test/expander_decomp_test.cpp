@@ -104,32 +104,3 @@ TEST(ConstructSubdivisionFlowGraph, BasicGraph) {
   EXPECT_EQ(f->size(), n + g->edgeCount());
   EXPECT_EQ(f->edgeCount(), 2 * g->edgeCount());
 }
-
-/**
-   Run expander decomposition on a basic graph. Verify that every vertex is in
-   some partition.
- */
-TEST(ExpanderDecomposition, BasicGraph) {
-  const int n = 10;
-  const std::vector<Undirected::Edge> es = {
-      {0, 1}, {0, 2}, {2, 5}, {3, 2}, {6, 1}, {6, 7}, {7, 8}, {9, 2}, {9, 8}};
-  auto g = std::make_unique<Undirected::Graph>(n, es);
-
-  const double phi = 0.1;
-  const int tConst = 100;
-  const double tFactor = 20.0;
-  CutMatching::Parameters params = {
-      .tConst = tConst,
-      .tFactor = tFactor,
-      .resampleUnitVector = false,
-      .computeFlowMatrix = false,
-      .minBalance = 0.45,
-      .randomWalkSteps = 1,
-      .samplePotential = 0,
-  };
-
-  const auto solver = ExpanderDecomposition::Solver(std::move(g), phi, params);
-  for (const auto &partition : solver.getPartition())
-    for (const auto &u : partition)
-      EXPECT_TRUE(u >= 0 && u < n);
-}
