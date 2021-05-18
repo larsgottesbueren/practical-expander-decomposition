@@ -102,7 +102,7 @@ void Solver::compute() {
               std::back_inserter(r));
 
     switch (result.type) {
-    case CutMatching::Balanced: {
+    case CutMatching::Result::Balanced: {
       assert(!a.empty() && "Cut should be balanced but A was empty.");
       assert(!r.empty() && "Cut should be balanced but R was empty.");
 
@@ -125,7 +125,7 @@ void Solver::compute() {
       subdivisionFlowGraph->restoreSubgraph();
       break;
     }
-    case CutMatching::NearExpander: {
+    case CutMatching::Result::NearExpander: {
       assert(!a.empty() && "Near expander should have non-empty A.");
       assert(!r.empty() && "Near expander should have non-empty R.");
 
@@ -151,7 +151,7 @@ void Solver::compute() {
       subdivisionFlowGraph->restoreSubgraph();
       break;
     }
-    case CutMatching::Expander: {
+    case CutMatching::Result::Expander: {
       assert(!a.empty() && "Expander should not be empty graph.");
       assert(r.empty() && "Expander should not remove vertices.");
 

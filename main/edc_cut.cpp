@@ -73,15 +73,15 @@ int main(int argc, char *argv[]) {
   graph->restoreRemoves();
 
   switch (result.type) {
-  case CutMatching::Balanced: {
+  case CutMatching::Result::Balanced: {
     cout << "balanced_cut";
     break;
   }
-  case CutMatching::NearExpander: {
+  case CutMatching::Result::NearExpander: {
     cout << "near_expander";
     break;
   }
-  case CutMatching::Expander: {
+  case CutMatching::Result::Expander: {
     cout << "expander";
     break;
   }

@@ -9,8 +9,6 @@
 
 namespace CutMatching {
 
-enum ResultType { Balanced, Expander, NearExpander };
-
 /**
    Parameters configuring how the cut-matching game should run.
  */
@@ -57,10 +55,11 @@ struct Parameters {
    or a near expander.
  */
 struct Result {
+  enum Type { Balanced, Expander, NearExpander };
   /**
      Type of cut-matching result.
    */
-  ResultType type;
+  Type type;
 
   /**
      Number of iterations the cut-matching step ran.
@@ -78,6 +77,12 @@ struct Result {
      after each iteration.
    */
   std::vector<double> sampledPotentials;
+
+  /**
+     Construct a default result. This is an expander with 0 iterations and
+     congestion 1.
+   */
+  Result();
 };
 
 /**

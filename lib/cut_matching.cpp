@@ -10,6 +10,8 @@
 
 namespace CutMatching {
 
+Result::Result() : type(Result::Type::Expander), iterations(0), congestion(1) {}
+
 Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG,
                std::mt19937 *randomGen, std::vector<int> *subdivisionIdx,
                std::vector<int> *fromSubdivisionIdx, double phi,
@@ -111,11 +113,7 @@ Result Solver::compute(Parameters params) {
   if (numSplitNodes <= 1) {
     VLOG(3) << "Cut matching exited early with " << numSplitNodes
             << " subdivision vertices.";
-    Result result;
-    result.type = Expander;
-    result.iterations = 0;
-    result.congestion = 1;
-    return result;
+    return Result{};
   }
 
   {
@@ -302,7 +300,7 @@ Result Solver::compute(Parameters params) {
   for (auto u : *subdivGraph)
     for (auto e = subdivGraph->beginEdge(u); e != subdivGraph->endEdge(u); ++e)
       result.congestion =
-          std::max(result.congestion, e->congestion * T / Tprime);
+          std::max(result.congestion, e->congestion * iterations);
 
   if (params.samplePotential) {
     VLOG(4) << "Final sampling of potential function";
@@ -315,16 +313,16 @@ Result Solver::compute(Parameters params) {
                                 subdivGraph->cendRemoved()) >
           lowerVolumeBalance)
     // We have: graph.volume(R) > m / (10 * T)
-    result.type = Balanced;
+    result.type = Result::Balanced;
   else if (graph->removedSize() == 0)
-    result.type = Expander;
+    result.type = Result::Expander;
   else if (graph->size() == 0)
-    graph->restoreRemoves(), result.type = Expander;
+    graph->restoreRemoves(), result.type = Result::Expander;
   else
-    result.type = NearExpander;
+    result.type = Result::NearExpander;
 
   switch (result.type) {
-  case Balanced: {
+  case Result::Balanced: {
     VLOG(2) << "Cut matching ran " << iterations
             << " iterations and resulted in balanced cut with size ("
             << graph->size() << ", " << graph->removedSize() << ") and volume ("
@@ -333,12 +331,12 @@ Result Solver::compute(Parameters params) {
             << ").";
     break;
   }
-  case Expander: {
+  case Result::Expander: {
     VLOG(2) << "Cut matching ran " << iterations
             << " iterations and resulted in expander.";
     break;
   }
-  case NearExpander: {
+  case Result::NearExpander: {
     VLOG(2) << "Cut matching ran " << iterations
             << " iterations and resulted in near expander of size "
             << graph->size() << ".";
