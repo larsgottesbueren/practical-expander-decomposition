@@ -91,6 +91,11 @@ private:
   UnitFlow::Graph *graph;
   UnitFlow::Graph *subdivGraph;
 
+  /**
+     Randomness generator.
+   */
+  std::mt19937 *randomGen;
+
   std::vector<int> *subdivisionIdx;
   std::vector<int> *fromSubdivisionIdx;
 
@@ -101,8 +106,6 @@ private:
      Number of subdivision vertices at beginning of computation.
    */
   const int numSplitNodes;
-
-  std::mt19937 randomGen;
 
   /**
      Matrix representing multi-commodity flow. Only constructed if potential is
@@ -140,6 +143,8 @@ public:
 
      - subdivGraph: Subdivision graph of g
 
+     - randomGen: Randomness generator.
+
      - subdivisionIdx: Vector used to associate an index with each subdivision
 
        vertex.
@@ -151,8 +156,8 @@ public:
      - params: Algorithm configuration.
    */
   Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivGraph,
-         std::vector<int> *subdivisionIdx, std::vector<int> *fromSubdivisionIdx,
-         double phi, Parameters params);
+         std::mt19937 *randomGen, std::vector<int> *subdivisionIdx,
+         std::vector<int> *fromSubdivisionIdx, double phi, Parameters params);
 
   /**
      Compute a sparse cut.

@@ -33,6 +33,11 @@ private:
   std::unique_ptr<UnitFlow::Graph> flowGraph, subdivisionFlowGraph;
 
   /**
+     Randomness engine.
+   */
+  std::mt19937 *randomGen;
+
+  /**
      Map to and from subdivision vertices.
 
      Value associated with each vertex such that 'subdivision[u] == -1' if 'u'
@@ -83,10 +88,10 @@ private:
 
 public:
   /**
-     Create a decomposition problem with n vertices.
+     Create a decomposition problem on graph 'g'.
    */
   Solver(std::unique_ptr<Undirected::Graph> g, double phi,
-         CutMatching::Parameters params);
+         std::mt19937 *randomGen, CutMatching::Parameters params);
 
   /**
      Return the computed partition as a vector of disjoint vertex vectors.

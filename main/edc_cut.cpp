@@ -16,8 +16,8 @@ using namespace std;
 DEFINE_double(
     phi, 0.01,
     "Value of \\phi such that expansion of each cluster is at least \\phi");
-DEFINE_int32(t1, 40, "Constant 't1' in 'T = t1 + t2 \\log^2 m'");
-DEFINE_double(t2, 1.0, "Constant 't2' in 'T = t1 + t2 \\log^2 m'");
+DEFINE_int32(t1, 150, "Constant 't1' in 'T = t1 + t2 \\log^2 m'");
+DEFINE_double(t2, 20.0, "Constant 't2' in 'T = t1 + t2 \\log^2 m'");
 DEFINE_bool(resample_unit_vector, false,
             "Should random unit vector in cut-matching game be resampled every "
             "iteration. Results in slower execution time.");
@@ -29,13 +29,16 @@ DEFINE_double(
     "The amount of cut balance before the cut-matching game is terminated.");
 DEFINE_bool(chaco, false,
             "Input graph is given in the Chaco graph file format");
-DEFINE_bool(sample_potential, false, "True if the potential function should be sampled.");
+DEFINE_bool(sample_potential, false,
+            "True if the potential function should be sampled.");
 
 int main(int argc, char *argv[]) {
   google::InitGoogleLogging(argv[0]);
 
   gflags::SetUsageMessage("Expander Decomposition & Clustering");
   gflags::ParseCommandLineFlags(&argc, &argv, true);
+
+  auto randomGen = configureRandomness();
 
   VLOG(1) << "Reading input.";
   auto g = readGraph(FLAGS_chaco);
@@ -59,7 +62,7 @@ int main(int argc, char *argv[]) {
   for (int u = graph->size(); u < subdivGraph->size(); ++u)
     (*subdivisionIdx)[u] = 0;
 
-  CutMatching::Solver solver(graph.get(), subdivGraph.get(),
+  CutMatching::Solver solver(graph.get(), subdivGraph.get(), randomGen.get(),
                              subdivisionIdx.get(), fromSubdivisionIdx.get(),
                              FLAGS_phi, params);
   auto result = solver.compute(params);
@@ -99,8 +102,10 @@ int main(int argc, char *argv[]) {
     cout << result.sampledPotentials.size() << endl;
     bool first = true;
     for (auto p : result.sampledPotentials) {
-      if (!first) cout << " ";
-      else first = false;
+      if (!first)
+        cout << " ";
+      else
+        first = false;
       cout << p;
     }
     cout << endl;

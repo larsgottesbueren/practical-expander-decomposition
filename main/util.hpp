@@ -7,6 +7,14 @@
 
 #include "lib/datastructures/undirected_graph.hpp"
 
+std::unique_ptr<std::mt19937> configureRandomness() {
+  srand(0);
+  std::random_device rd;
+  std::mt19937 randomGen(rd());
+
+  return std::make_unique<std::mt19937>(randomGen);
+}
+
 /**
    Read an undirected graph from standard input. If 'chaco_format' is true, read
    graph as specified in 'https://chriswalshaw.co.uk/jostle/jostle-exe.pdf'.

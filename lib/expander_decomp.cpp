@@ -34,8 +34,8 @@ constructSubdivisionFlowGraph(const std::unique_ptr<Undirected::Graph> &g) {
 }
 
 Solver::Solver(std::unique_ptr<Undirected::Graph> graph, double phi,
-               CutMatching::Parameters params)
-    : flowGraph(nullptr), subdivisionFlowGraph(nullptr),
+               std::mt19937 *randomGen, CutMatching::Parameters params)
+    : flowGraph(nullptr), subdivisionFlowGraph(nullptr), randomGen(randomGen),
       subdivisionIdx(nullptr), fromSubdivisionIdx(nullptr), phi(phi),
       cutMatchingParams(params), numPartitions(0),
       partitionOf(graph->size(), -1) {
@@ -93,8 +93,8 @@ void Solver::compute() {
     }
   } else {
     CutMatching::Solver cm(flowGraph.get(), subdivisionFlowGraph.get(),
-                           subdivisionIdx.get(), fromSubdivisionIdx.get(), phi,
-                           cutMatchingParams);
+                           randomGen, subdivisionIdx.get(),
+                           fromSubdivisionIdx.get(), phi, cutMatchingParams);
     auto result = cm.compute(cutMatchingParams);
     std::vector<int> a, r;
     std::copy(flowGraph->cbegin(), flowGraph->cend(), std::back_inserter(a));

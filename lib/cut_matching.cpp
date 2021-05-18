@@ -11,20 +11,15 @@
 namespace CutMatching {
 
 Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG,
-               std::vector<int> *subdivisionIdx,
+               std::mt19937 *randomGen, std::vector<int> *subdivisionIdx,
                std::vector<int> *fromSubdivisionIdx, double phi,
                Parameters params)
-    : graph(g), subdivGraph(subdivG), subdivisionIdx(subdivisionIdx),
-      fromSubdivisionIdx(fromSubdivisionIdx), phi(phi),
-      T(params.tConst +
-        std::ceil(params.tFactor * std::log10(graph->edgeCount()) *
-                  std::log10(graph->edgeCount()))),
+    : graph(g), subdivGraph(subdivG), randomGen(randomGen),
+      subdivisionIdx(subdivisionIdx), fromSubdivisionIdx(fromSubdivisionIdx),
+      phi(phi), T(std::max(1, int(std::ceil(std::log10(graph->edgeCount()) *
+                                            std::log10(graph->edgeCount()))))),
       numSplitNodes(subdivGraph->size() - graph->size()) {
   assert(graph->size() != 0 && "Cut-matching expected non-empty subset.");
-
-  std::random_device rd;
-  // randomGen = std::mt19937(0);
-  randomGen = std::mt19937(rd());
 
   const UnitFlow::Flow capacity = std::ceil(1.0 / phi / T);
   for (auto u : *graph)
@@ -64,13 +59,14 @@ void Solver::projectFlow(const std::vector<Matching> &rounds,
 
 std::vector<double> Solver::randomUnitVector() {
   std::vector<double> result(numSplitNodes);
+  std::uniform_int_distribution distribution(0, 1);
 
   int count = 0;
   for (auto it = subdivGraph->cbegin(); it != subdivGraph->cend(); ++it) {
     const auto u = (*subdivisionIdx)[*it];
     if (u >= 0) {
       count++;
-      result[u] = (rand() % 2 == 0 ? -1 : 1);
+      result[u] = (distribution(*randomGen) == 0 ? -1 : 1);
     }
   }
   for (auto it = subdivGraph->cbegin(); it != subdivGraph->cend(); ++it) {
@@ -150,12 +146,14 @@ Result Solver::compute(Parameters params) {
   auto startFlow = flow;
 
   int iterations = 0;
-  for (; iterations < T &&
+  // const int Tprime = 10 * T;
+  const int Tprime = T;
+  for (; iterations < Tprime &&
          subdivGraph->globalVolume(subdivGraph->cbeginRemoved(),
                                    subdivGraph->cendRemoved()) <=
              targetVolumeBalance;
        ++iterations) {
-    VLOG(3) << "Iteration " << iterations << " out of " << T << ".";
+    VLOG(3) << "Iteration " << iterations << " out of " << Tprime << ".";
 
     if (params.samplePotential) {
       VLOG(4) << "Sampling potential function";
@@ -194,7 +192,7 @@ Result Solver::compute(Parameters params) {
       swap(axRight, axLeft);
     while (axRight.size() > curSubdivisionCount() / 2)
       axLeft.push_back(axRight.back()), axRight.pop_back();
-    while (axLeft.size() > curSubdivisionCount() / 8)
+    while (axLeft.size() > axRight.size()) // curSubdivisionCount() / 8)
       axLeft.pop_back();
     assert(axLeft.size() <= axRight.size() &&
            "Cannot have more sources than sinks.");
@@ -207,7 +205,8 @@ Result Solver::compute(Parameters params) {
     for (const auto u : axRight)
       subdivGraph->addSink(u, 1);
 
-    const int h = std::max((int)round(1.0 / phi / std::log10(numSplitNodes)), 1);
+    const int h = std::max((int)round(1.0 / phi / std::log10(numSplitNodes)),
+                           int(std::ceil(std::log10(numSplitNodes))));
     VLOG(3) << "Computing flow with |S| = " << axLeft.size()
             << " |T| = " << axRight.size() << " and max height " << h << ".";
     const auto hasExcess = subdivGraph->compute(h);
@@ -264,7 +263,7 @@ Result Solver::compute(Parameters params) {
 
     VLOG(3) << "Computing matching with |S| = " << axLeft.size()
             << " |T| = " << axRight.size() << ".";
-    auto matching = subdivGraph->matching(axLeft);
+    auto matching = subdivGraph->matchingSlow(axLeft);
     for (auto &p : matching) {
       int u = (*subdivisionIdx)[p.first];
       int v = (*subdivisionIdx)[p.second];
@@ -302,7 +301,8 @@ Result Solver::compute(Parameters params) {
   result.congestion = 0;
   for (auto u : *subdivGraph)
     for (auto e = subdivGraph->beginEdge(u); e != subdivGraph->endEdge(u); ++e)
-      result.congestion = std::max(result.congestion, e->congestion);
+      result.congestion =
+          std::max(result.congestion, e->congestion * T / Tprime);
 
   if (params.samplePotential) {
     VLOG(4) << "Final sampling of potential function";

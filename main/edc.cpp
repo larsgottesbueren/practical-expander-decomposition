@@ -16,8 +16,8 @@ using namespace std;
 DEFINE_double(
     phi, 0.01,
     "Value of \\phi such that expansion of each cluster is at least \\phi");
-DEFINE_int32(t1, 40, "Constant 't1' in 'T = t1 + t2 \\log^2 m'");
-DEFINE_double(t2, 1.0, "Constant 't2' in 'T = t1 + t2 \\log^2 m'");
+DEFINE_int32(t1, 150, "Constant 't1' in 'T = t1 + t2 \\log^2 m'");
+DEFINE_double(t2, 20.0, "Constant 't2' in 'T = t1 + t2 \\log^2 m'");
 DEFINE_bool(resample_unit_vector, false,
             "Should random unit vector in cut-matching game be resampled every "
             "iteration. Results in slower execution time.");
@@ -30,13 +30,16 @@ DEFINE_double(
 DEFINE_bool(chaco, false,
             "Input graph is given in the Chaco graph file format");
 DEFINE_bool(partitions, false, "Output indices of partitions");
-DEFINE_bool(sample_potential, false, "True if the potential function should be sampled.");
+DEFINE_bool(sample_potential, false,
+            "True if the potential function should be sampled.");
 
 int main(int argc, char *argv[]) {
   google::InitGoogleLogging(argv[0]);
 
   gflags::SetUsageMessage("Expander Decomposition & Clustering");
   gflags::ParseCommandLineFlags(&argc, &argv, true);
+
+  auto randomGen = configureRandomness();
 
   VLOG(1) << "Reading input.";
   auto g = readGraph(FLAGS_chaco);
@@ -50,7 +53,8 @@ int main(int argc, char *argv[]) {
                                     .randomWalkSteps = FLAGS_random_walk_steps,
                                     .samplePotential = FLAGS_sample_potential};
 
-  ExpanderDecomposition::Solver solver(move(g), FLAGS_phi, params);
+  ExpanderDecomposition::Solver solver(move(g), FLAGS_phi, randomGen.get(),
+                                       params);
   auto partitions = solver.getPartition();
   auto conductances = solver.getConductance();
 
