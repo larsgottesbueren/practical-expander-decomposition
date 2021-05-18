@@ -96,8 +96,6 @@ std::vector<Vertex> Graph::compute(const int maxHeight) {
 }
 
 std::vector<Vertex> Graph::levelCut(const int h) {
-  const int m = edgeCount();
-
   std::vector<std::vector<Vertex>> levels(h + 1);
   for (auto u : *this)
     levels[height[u]].push_back(u);
@@ -113,9 +111,8 @@ std::vector<Vertex> Graph::levelCut(const int h) {
         if (height[u] == height[e->to] + 1)
           z++;
     }
-    if ((double)z <= 5.0 * volume * std::log(m) / (double)h)
-      if (z < bestZ)
-        bestZ = z, bestLevel = level;
+    if (z < bestZ)
+      bestZ = z, bestLevel = level;
   }
 
   std::vector<int> result;
