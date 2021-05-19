@@ -6,6 +6,7 @@
 #include "absl/container/flat_hash_map.h"
 #include "datastructures/undirected_graph.hpp"
 #include "datastructures/unit_flow.hpp"
+#include "util.hpp"
 
 namespace CutMatching {
 
@@ -137,6 +138,12 @@ private:
      Sample the potential function using the current state of the flow matrix.
    */
   double samplePotential() const;
+
+  /**
+     Create a cut according to the cut player strategy given the current flow.
+   */
+  std::pair<std::vector<int>, std::vector<int>>
+  proposeCut(const std::vector<double> &flow) const;
 
 public:
   /**

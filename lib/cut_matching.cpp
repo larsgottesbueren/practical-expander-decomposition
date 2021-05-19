@@ -18,17 +18,20 @@ Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG,
                Parameters params)
     : graph(g), subdivGraph(subdivG), randomGen(randomGen),
       subdivisionIdx(subdivisionIdx), fromSubdivisionIdx(fromSubdivisionIdx),
-      phi(phi), T(std::max(1, int(std::ceil(std::log10(graph->edgeCount()) *
-                                            std::log10(graph->edgeCount()))))),
+      phi(phi),
+      T(std::max(1, params.tConst + int(params.tFactor *square(
+                                        std::log10(graph->edgeCount()))))),
       numSplitNodes(subdivGraph->size() - graph->size()) {
   assert(graph->size() != 0 && "Cut-matching expected non-empty subset.");
 
+  // Set edge capacities in subdivision flow graph.
   const UnitFlow::Flow capacity = std::ceil(1.0 / phi / T);
   for (auto u : *graph)
     for (auto e = subdivGraph->beginEdge(u); e != subdivGraph->endEdge(u); ++e)
       e->capacity = capacity, subdivGraph->reverse(*e).capacity = capacity,
       e->congestion = 0, subdivGraph->reverse(*e).congestion = 0;
 
+  // If potential is sampled, set the flow matrix to the identity matrix.
   if (params.samplePotential) {
     flowMatrix.resize(subdivGraph->size());
     for (int u : *subdivGraph)
@@ -36,6 +39,15 @@ Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG,
 
     for (int i = 0; i < subdivGraph->size(); ++i)
       flowMatrix[i][i] = 1.0;
+  }
+
+  // Give each 'm' subdivision vertex a unique index in the range '[0,m)'.
+  int count = 0;
+  for (auto u : *subdivGraph) {
+    if ((*subdivisionIdx)[u] >= 0) {
+      (*subdivisionIdx)[u] = count++;
+      (*fromSubdivisionIdx)[(*subdivisionIdx)[u]] = u;
+    }
   }
 }
 
@@ -99,14 +111,101 @@ double Solver::samplePotential() const {
   for (auto &f : avgFlowVector)
     f /= (long double)alive.size();
 
-  for (int u : alive) {
-    for (int v : alive) {
-      long double x = flowMatrix[u][v] - avgFlowVector[v];
-      result += x * x;
-    }
-  }
+  for (int u : alive)
+    for (int v : alive)
+      result += square(flowMatrix[u][v] - avgFlowVector[v]);
 
   return (double)result;
+}
+
+std::pair<std::vector<int>, std::vector<int>>
+Solver::proposeCut(const std::vector<double> &flow) const {
+  const int curSubdivisionCount = subdivGraph->size() - graph->size();
+  double avgFlow = 0.0;
+  for (auto u : *subdivGraph) {
+    const int idx = (*subdivisionIdx)[u];
+    if (idx >= 0)
+      avgFlow += flow[idx];
+  }
+  avgFlow /= (double)curSubdivisionCount;
+
+  // Partition subdivision vertices into a left and right set.
+  std::vector<int> axLeft, axRight;
+  for (auto u : *subdivGraph) {
+    const int idx = (*subdivisionIdx)[u];
+    if (idx >= 0) {
+      if (flow[idx] < avgFlow)
+        axLeft.push_back(u);
+      else
+        axRight.push_back(u);
+    }
+  }
+  bool leftLarger = axLeft.size() > axRight.size();
+  if (leftLarger)
+    std::swap(axLeft, axRight);
+
+  // Compute potentials
+  double totalPotential = 0.0, leftPotential = 0.0;
+  for (auto u : *subdivGraph) {
+    const int idx = (*subdivisionIdx)[u];
+    if (idx >= 0)
+      totalPotential += square(flow[idx] - avgFlow);
+  }
+  for (auto u : axLeft) {
+    const int idx = (*subdivisionIdx)[u];
+    assert(idx >= 0);
+    leftPotential += square(flow[idx] - avgFlow);
+  }
+
+  // Sort by flow
+  auto cmpFlow = [&flow, &subdivisionIdx = subdivisionIdx](int u, int v) {
+    return flow[(*subdivisionIdx)[u]] < flow[(*subdivisionIdx)[v]];
+  };
+  std::sort(axLeft.begin(), axLeft.end(), cmpFlow);
+  std::sort(axRight.begin(), axRight.end(), cmpFlow);
+
+  // If left side is empty due to floating point precision, divide axRight in
+  // half. Otherwise consider the two cases from Lemma 3.3 in RST.
+  if (axLeft.empty()) {
+    while (axLeft.size() < axRight.size())
+      axLeft.push_back(axRight.back()), axRight.pop_back();
+    if (axLeft.size() > axRight.size())
+      std::swap(axLeft, axRight);
+  } else if (leftPotential > totalPotential / 20.0) {
+    // If left side was not larger, remove smallest flow values instead of
+    // largest from 'axRight'.
+    if (!leftLarger)
+      std::reverse(axRight.begin(), axRight.end());
+  } else {
+    double l = 0.0;
+    for (auto u : axLeft) {
+      const int idx = (*subdivisionIdx)[u];
+      assert(idx >= 0);
+      l += std::abs(flow[idx] - avgFlow);
+    }
+    const double mu = avgFlow + 4.0 * l / (double)curSubdivisionCount;
+
+    // Re-partition along '\mu'.
+    axLeft.clear(), axRight.clear();
+    for (auto u : *subdivGraph) {
+      const int idx = (*subdivisionIdx)[u];
+      if (idx >= 0) {
+        if (flow[idx] < mu)
+          axRight.push_back(u);
+        else if (flow[idx] >= avgFlow + 6.0 * l / (double)curSubdivisionCount)
+          axLeft.push_back(u);
+      }
+    }
+    std::reverse(axRight.begin(), axRight.end());
+  }
+
+  while (!axRight.empty() && axRight.size() > axLeft.size())
+    axRight.pop_back();
+
+  assert(!axLeft.empty() && "Left side of cut cannot be empty.");
+  assert(axLeft.size() == axRight.size() &&
+         "Proposed cut should be perfectly balanced.");
+  return std::make_pair(axLeft, axRight);
 }
 
 Result Solver::compute(Parameters params) {
@@ -116,24 +215,7 @@ Result Solver::compute(Parameters params) {
     return Result{};
   }
 
-  {
-    int count = 0;
-    for (auto u : *subdivGraph)
-      if ((*subdivisionIdx)[u] >= 0) {
-        (*subdivisionIdx)[u] = count++;
-        (*fromSubdivisionIdx)[(*subdivisionIdx)[u]] = u;
-      }
-  }
-
-  /**
-     Current number of subdivision vertices alive.
-   */
-  const auto curSubdivisionCount = [&graph = graph,
-                                    &subdivGraph = subdivGraph] {
-    return subdivGraph->size() - graph->size();
-  };
-
-  const int lowerVolumeBalance = numSplitNodes / (10 * T);
+  const int lowerVolumeBalance = numSplitNodes / 10 / T;
   const int targetVolumeBalance = std::max(
       lowerVolumeBalance, int(params.minBalance * subdivGraph->globalVolume()));
 
@@ -141,17 +223,14 @@ Result Solver::compute(Parameters params) {
   Result result;
 
   auto flow = randomUnitVector();
-  auto startFlow = flow;
 
   int iterations = 0;
-  // const int Tprime = 10 * T;
-  const int Tprime = T;
-  for (; iterations < Tprime &&
+  for (; iterations < T &&
          subdivGraph->globalVolume(subdivGraph->cbeginRemoved(),
                                    subdivGraph->cendRemoved()) <=
              targetVolumeBalance;
        ++iterations) {
-    VLOG(3) << "Iteration " << iterations << " out of " << Tprime << ".";
+    VLOG(3) << "Iteration " << iterations << " out of " << T << ".";
 
     if (params.samplePotential) {
       VLOG(4) << "Sampling potential function";
@@ -166,34 +245,8 @@ Result Solver::compute(Parameters params) {
         projectFlow(rounds, flow);
     }
 
-    double avgFlow = std::accumulate(flow.begin(), flow.end(), 0.0) /
-                     (double)curSubdivisionCount();
+    auto [axLeft, axRight] = proposeCut(flow);
 
-    std::vector<int> axLeft, axRight;
-    for (auto u : *subdivGraph) {
-      if ((*subdivisionIdx)[u] >= 0) {
-        if (flow[(*subdivisionIdx)[u]] < avgFlow)
-          axLeft.push_back(u);
-        else
-          axRight.push_back(u);
-      }
-    }
-
-    auto cmpFlow = [&flow, &subdivisionIdx = subdivisionIdx](int u, int v) {
-      return flow[(*subdivisionIdx)[u]] < flow[(*subdivisionIdx)[v]];
-    };
-    std::sort(axLeft.begin(), axLeft.end(), cmpFlow);
-    std::sort(axRight.begin(), axRight.end(), cmpFlow);
-    std::reverse(axRight.begin(), axRight.end());
-
-    if (axRight.size() < axLeft.size())
-      swap(axRight, axLeft);
-    while (axRight.size() > curSubdivisionCount() / 2)
-      axLeft.push_back(axRight.back()), axRight.pop_back();
-    while (axLeft.size() > axRight.size()) // curSubdivisionCount() / 8)
-      axLeft.pop_back();
-    assert(axLeft.size() <= axRight.size() &&
-           "Cannot have more sources than sinks.");
     VLOG(3) << "Number of sources: " << axLeft.size()
             << " sinks: " << axRight.size();
 
@@ -282,9 +335,8 @@ Result Solver::compute(Parameters params) {
     }
     VLOG(3) << "Found matching of size " << matching.size() << ".";
 
-    // TODO: Can we expect complete matching after removing level cut?
-    // assert(matching.size() == axLeft.size() &&
-    // "Expected all source vertices to be matched.");
+    assert(matching.size() == axLeft.size() &&
+           "Expected all source vertices to be matched.");
 
     if (params.resampleUnitVector) {
       for (auto &p : matching) {
