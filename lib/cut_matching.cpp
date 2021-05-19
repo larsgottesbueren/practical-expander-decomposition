@@ -90,23 +90,23 @@ double Solver::samplePotential() const {
       alive.push_back(u);
   }
 
-  double result = 0;
-  std::vector<double> avgFlowVector(numSplitNodes);
+  long double result = 0;
+  std::vector<long double> avgFlowVector(numSplitNodes);
 
   for (int u : alive)
     for (int v : alive)
       avgFlowVector[v] += flowMatrix[u][v];
   for (auto &f : avgFlowVector)
-    f /= double(alive.size());
+    f /= (long double)alive.size();
 
   for (int u : alive) {
     for (int v : alive) {
-      double x = flowMatrix[u][v] - avgFlowVector[v];
+      long double x = flowMatrix[u][v] - avgFlowVector[v];
       result += x * x;
     }
   }
 
-  return result;
+  return (double)result;
 }
 
 Result Solver::compute(Parameters params) {
