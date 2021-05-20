@@ -119,7 +119,8 @@ double Solver::samplePotential() const {
 }
 
 std::pair<std::vector<int>, std::vector<int>>
-Solver::proposeCut(const std::vector<double> &flow) const {
+Solver::proposeCut(const std::vector<double> &flow,
+                   const Parameters &params) const {
   const int curSubdivisionCount = subdivGraph->size() - graph->size();
   double avgFlow = 0.0;
   for (auto u : *subdivGraph) {
@@ -199,12 +200,23 @@ Solver::proposeCut(const std::vector<double> &flow) const {
     std::reverse(axRight.begin(), axRight.end());
   }
 
-  while (!axRight.empty() && axRight.size() > axLeft.size())
-    axRight.pop_back();
-
   assert(!axLeft.empty() && "Left side of cut cannot be empty.");
-  assert(axLeft.size() == axRight.size() &&
-         "Proposed cut should be perfectly balanced.");
+  if (params.balancedCutStrategy) {
+    while (!axRight.empty() && axRight.size() > axLeft.size())
+      axRight.pop_back();
+    assert(axLeft.size() == axRight.size() &&
+           "Proposed cut should be perfectly balanced.");
+  } else {
+    // If left side was larger, remove smallest flow values instead of largest
+    // from 'axLeft'.
+    if (leftLarger)
+      std::reverse(axLeft.begin(), axLeft.end());
+    while ((int)axLeft.size() * 8 > curSubdivisionCount)
+      axLeft.pop_back();
+    assert(!axLeft.size() <= axRight.size() &&
+           "Left side of cut can't be larger.");
+  }
+
   return std::make_pair(axLeft, axRight);
 }
 
@@ -245,7 +257,7 @@ Result Solver::compute(Parameters params) {
         projectFlow(rounds, flow);
     }
 
-    auto [axLeft, axRight] = proposeCut(flow);
+    auto [axLeft, axRight] = proposeCut(flow, params);
 
     VLOG(3) << "Number of sources: " << axLeft.size()
             << " sinks: " << axRight.size();
@@ -349,7 +361,7 @@ Result Solver::compute(Parameters params) {
   }
 
   result.iterations = iterations;
-  result.congestion = 0;
+  result.congestion = 1;
   for (auto u : *subdivGraph)
     for (auto e = subdivGraph->beginEdge(u); e != subdivGraph->endEdge(u); ++e)
       result.congestion =

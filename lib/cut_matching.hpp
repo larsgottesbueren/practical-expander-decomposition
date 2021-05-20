@@ -49,6 +49,12 @@ struct Parameters {
      requires maintaining the entire 'O(m^2)' flow matrix.
   */
   bool samplePotential;
+
+  /**
+     If true, use a cut strategy which proposes perfectly balanced cuts.
+     Otherwise use the original cut strategy from Lemma 3.3 in RST.
+   */
+  bool balancedCutStrategy;
 };
 
 /**
@@ -143,7 +149,7 @@ private:
      Create a cut according to the cut player strategy given the current flow.
    */
   std::pair<std::vector<int>, std::vector<int>>
-  proposeCut(const std::vector<double> &flow) const;
+  proposeCut(const std::vector<double> &flow, const Parameters &params) const;
 
 public:
   /**

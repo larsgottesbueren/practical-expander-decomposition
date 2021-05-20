@@ -32,6 +32,9 @@ DEFINE_bool(chaco, false,
 DEFINE_bool(partitions, false, "Output indices of partitions");
 DEFINE_bool(sample_potential, false,
             "True if the potential function should be sampled.");
+DEFINE_bool(balanced_cut_strategy, true,
+            "Propose perfectly balanced cuts in the cut-matching game. This "
+            "results in faster convergance of the potential function.");
 
 int main(int argc, char *argv[]) {
   google::InitGoogleLogging(argv[0]);
@@ -45,13 +48,14 @@ int main(int argc, char *argv[]) {
   auto g = readGraph(FLAGS_chaco);
   VLOG(1) << "Finished reading input.";
 
-  CutMatching::Parameters params = {.tConst = FLAGS_t1,
-                                    .tFactor = FLAGS_t2,
-                                    .resampleUnitVector =
-                                        FLAGS_resample_unit_vector,
-                                    .minBalance = FLAGS_min_balance,
-                                    .randomWalkSteps = FLAGS_random_walk_steps,
-                                    .samplePotential = FLAGS_sample_potential};
+  CutMatching::Parameters params = {
+      .tConst = FLAGS_t1,
+      .tFactor = FLAGS_t2,
+      .resampleUnitVector = FLAGS_resample_unit_vector,
+      .minBalance = FLAGS_min_balance,
+      .randomWalkSteps = FLAGS_random_walk_steps,
+      .samplePotential = FLAGS_sample_potential,
+      .balancedCutStrategy = FLAGS_balanced_cut_strategy};
 
   ExpanderDecomposition::Solver solver(move(g), FLAGS_phi, randomGen.get(),
                                        params);
