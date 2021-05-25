@@ -101,7 +101,6 @@ double Solver::samplePotential() const {
       alive.push_back(u);
   }
 
-  long double result = 0;
   std::vector<long double> avgFlowVector(numSplitNodes);
 
   for (int u : alive)
@@ -110,25 +109,37 @@ double Solver::samplePotential() const {
   for (auto &f : avgFlowVector)
     f /= (long double)alive.size();
 
-  for (int u : alive)
-    for (int v : alive)
-      result += square(flowMatrix[u][v] - avgFlowVector[v]);
+  long double sum = 0, kahanError = 0;
+  for (int u : alive) {
+    for (int v : alive) {
+      const long double sq = square(flowMatrix[u][v] - avgFlowVector[v]);
+      const long double y = sq - kahanError;
+      const long double t = sum + y;
+      kahanError = t - sum - y;
+      sum = t;
+    }
+  }
 
-  return (double)result;
+  return (double)sum;
 }
 
 std::pair<std::vector<int>, std::vector<int>>
 Solver::proposeCut(const std::vector<double> &flow,
                    const Parameters &params) const {
   const int curSubdivisionCount = subdivGraph->size() - graph->size();
-  double avgFlow = 0.0;
-  for (auto u : *subdivGraph) {
-    const int idx = (*subdivisionIdx)[u];
-    if (idx >= 0)
-      avgFlow += flow[idx];
+  double avgFlow;
+  { double sum = 0, kahanError = 0;
+    for (auto u : *subdivGraph) {
+      const int idx = (*subdivisionIdx)[u];
+      if (idx >= 0) {
+        const double y = flow[idx] - kahanError;
+        const double t = sum + y;
+        kahanError = t - sum - y;
+        sum = t;
+      }
+    }
+    avgFlow = sum / (double)curSubdivisionCount;
   }
-  avgFlow /= (double)curSubdivisionCount;
-
   // Partition subdivision vertices into a left and right set.
   std::vector<int> axLeft, axRight;
   for (auto u : *subdivGraph) {
