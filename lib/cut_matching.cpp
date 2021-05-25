@@ -19,8 +19,7 @@ Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG,
     : graph(g), subdivGraph(subdivG), randomGen(randomGen),
       subdivisionIdx(subdivisionIdx), fromSubdivisionIdx(fromSubdivisionIdx),
       phi(phi),
-      T(std::max(1, params.tConst + int(params.tFactor *square(
-                                        std::log10(graph->edgeCount()))))),
+      T(std::max(1, int(ceil(square(std::log10(graph->edgeCount())))))),
       numSplitNodes(subdivGraph->size() - graph->size()) {
   assert(graph->size() != 0 && "Cut-matching expected non-empty subset.");
 
@@ -141,9 +140,23 @@ Solver::proposeCut(const std::vector<double> &flow,
         axRight.push_back(u);
     }
   }
-  bool leftLarger = axLeft.size() > axRight.size();
-  if (leftLarger)
+
+  // Sort by flow
+  auto cmpFlow = [&flow, &subdivisionIdx = subdivisionIdx](int u, int v) {
+    return flow[(*subdivisionIdx)[u]] < flow[(*subdivisionIdx)[v]];
+  };
+  std::sort(axLeft.begin(), axLeft.end(), cmpFlow);
+  std::sort(axRight.begin(), axRight.end(), cmpFlow);
+
+  // When removing vertices from either side, we want to do it from values
+  // closer to the average. If left and right are swapped, then left should be
+  // reversed instead of right.
+  if (axLeft.size() > axRight.size()) {
     std::swap(axLeft, axRight);
+    std::reverse(axLeft.begin(), axLeft.end());
+  } else {
+    std::reverse(axRight.begin(), axRight.end());
+  }
 
   // Compute potentials
   double totalPotential = 0.0, leftPotential = 0.0;
@@ -158,26 +171,7 @@ Solver::proposeCut(const std::vector<double> &flow,
     leftPotential += square(flow[idx] - avgFlow);
   }
 
-  // Sort by flow
-  auto cmpFlow = [&flow, &subdivisionIdx = subdivisionIdx](int u, int v) {
-    return flow[(*subdivisionIdx)[u]] < flow[(*subdivisionIdx)[v]];
-  };
-  std::sort(axLeft.begin(), axLeft.end(), cmpFlow);
-  std::sort(axRight.begin(), axRight.end(), cmpFlow);
-
-  // If left side is empty due to floating point precision, divide axRight in
-  // half. Otherwise consider the two cases from Lemma 3.3 in RST.
-  if (axLeft.empty()) {
-    while (axLeft.size() < axRight.size())
-      axLeft.push_back(axRight.back()), axRight.pop_back();
-    if (axLeft.size() > axRight.size())
-      std::swap(axLeft, axRight);
-  } else if (leftPotential > totalPotential / 20.0) {
-    // If left side was not larger, remove smallest flow values instead of
-    // largest from 'axRight'.
-    if (!leftLarger)
-      std::reverse(axRight.begin(), axRight.end());
-  } else {
+  if (leftPotential <= totalPotential / 20.0) {
     double l = 0.0;
     for (auto u : axLeft) {
       const int idx = (*subdivisionIdx)[u];
@@ -191,7 +185,7 @@ Solver::proposeCut(const std::vector<double> &flow,
     for (auto u : *subdivGraph) {
       const int idx = (*subdivisionIdx)[u];
       if (idx >= 0) {
-        if (flow[idx] < mu)
+        if (flow[idx] <= mu)
           axRight.push_back(u);
         else if (flow[idx] >= avgFlow + 6.0 * l / (double)curSubdivisionCount)
           axLeft.push_back(u);
@@ -200,21 +194,33 @@ Solver::proposeCut(const std::vector<double> &flow,
     std::reverse(axRight.begin(), axRight.end());
   }
 
-  assert(!axLeft.empty() && "Left side of cut cannot be empty.");
   if (params.balancedCutStrategy) {
-    while (!axRight.empty() && axRight.size() > axLeft.size())
+    while (axRight.size() > axLeft.size())
       axRight.pop_back();
-    assert(axLeft.size() == axRight.size() &&
-           "Proposed cut should be perfectly balanced.");
   } else {
-    // If left side was larger, remove smallest flow values instead of largest
-    // from 'axLeft'.
-    if (leftLarger)
-      std::reverse(axLeft.begin(), axLeft.end());
     while ((int)axLeft.size() * 8 > curSubdivisionCount)
       axLeft.pop_back();
-    assert(!axLeft.size() <= axRight.size() &&
-           "Left side of cut can't be larger.");
+  }
+  while (axLeft.size() > axRight.size())
+    axLeft.pop_back();
+
+  // Floating point precision can cause both sides to be empty. In this case,
+  // make a simple partition.
+  if (axLeft.empty()) {
+    std::vector<int> ax;
+    for (auto u : *subdivGraph) {
+      const int idx = (*subdivisionIdx)[u];
+      if (idx >= 0)
+        ax.push_back(u);
+    }
+    std::sort(ax.begin(), ax.end());
+
+    axLeft.clear(), axRight.clear();
+    int i = 0;
+    for (; i < int(ax.size())/2; ++i)
+      axLeft.push_back(ax[i]);
+    for (; i < int(ax.size()); ++i)
+      axRight.push_back(ax[i]);
   }
 
   return std::make_pair(axLeft, axRight);
@@ -236,13 +242,14 @@ Result Solver::compute(Parameters params) {
 
   auto flow = randomUnitVector();
 
+  const int Tprime = params.tConst + int(ceil(params.tFactor * T));
   int iterations = 0;
-  for (; iterations < T &&
+  for (; iterations < Tprime &&
          subdivGraph->globalVolume(subdivGraph->cbeginRemoved(),
                                    subdivGraph->cendRemoved()) <=
              targetVolumeBalance;
        ++iterations) {
-    VLOG(3) << "Iteration " << iterations << " out of " << T << ".";
+    VLOG(3) << "Iteration " << iterations << " out of " << Tprime << ".";
 
     if (params.samplePotential) {
       VLOG(4) << "Sampling potential function";
@@ -365,7 +372,7 @@ Result Solver::compute(Parameters params) {
   for (auto u : *subdivGraph)
     for (auto e = subdivGraph->beginEdge(u); e != subdivGraph->endEdge(u); ++e)
       result.congestion =
-          std::max(result.congestion, e->congestion * iterations);
+          std::max(result.congestion, e->congestion);
 
   if (params.samplePotential) {
     VLOG(4) << "Final sampling of potential function";
