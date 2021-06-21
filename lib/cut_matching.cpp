@@ -10,7 +10,9 @@
 
 namespace CutMatching {
 
-Result::Result() : type(Result::Type::Expander), iterations(0), congestion(1) {}
+Result::Result()
+    : type(Result::Type::Expander), iterations(0),
+      iterationsUntilValidExpansion(INT_MAX), congestion(1) {}
 
 Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG,
                std::mt19937 *randomGen, std::vector<int> *subdivisionIdx,
@@ -19,7 +21,7 @@ Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG,
     : graph(g), subdivGraph(subdivG), randomGen(randomGen),
       subdivisionIdx(subdivisionIdx), fromSubdivisionIdx(fromSubdivisionIdx),
       phi(phi),
-      T(std::max(1, int(ceil(square(std::log10(graph->edgeCount())))))),
+      T(std::max(1, params.tConst + int(ceil(params.tFactor * square(std::log10(graph->edgeCount())))))),
       numSplitNodes(subdivGraph->size() - graph->size()) {
   assert(graph->size() != 0 && "Cut-matching expected non-empty subset.");
 
@@ -50,44 +52,21 @@ Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG,
   }
 }
 
-/**
-   Given a number of matchings 'M_i' and a start state, compute the flow
-   projection in place.
-
-   Assumes no pairs of vertices in single round overlap.
-
-   Time complexity: O(|rounds| * |start|)
- */
-void Solver::projectFlow(const std::vector<Matching> &rounds,
-                         std::vector<double> &start) {
-  for (auto it = rounds.begin(); it != rounds.end(); ++it) {
-    for (auto [i, j] : *it) {
-      assert(i >= 0 && "Given vertex is not a subdivision vertex.");
-      assert(j >= 0 && "Given vertex is not a subdivision vertex.");
-      start[i] = 0.5 * (start[i] + start[j]);
-      start[j] = start[i];
-    }
-  }
-}
-
 std::vector<double> Solver::randomUnitVector() {
-  std::vector<double> result(numSplitNodes);
-  std::uniform_int_distribution distribution(0, 1);
+  std::uniform_real_distribution<> distr(0, 1);
 
-  int count = 0;
-  for (auto it = subdivGraph->cbegin(); it != subdivGraph->cend(); ++it) {
-    const auto u = (*subdivisionIdx)[*it];
-    if (u >= 0) {
-      count++;
-      result[u] = (distribution(*randomGen) == 0 ? -1 : 1);
-    }
-  }
-  for (auto it = subdivGraph->cbegin(); it != subdivGraph->cend(); ++it) {
-    const auto u = (*subdivisionIdx)[*it];
-    if (u >= 0) {
-      result[u] /= double(count);
-    }
-  }
+  std::vector<double> result(numSplitNodes);
+  for (auto &r : result)
+    r = distr(*randomGen);
+
+  double offset = std::accumulate(result.begin(), result.end(), 0.0) / double(numSplitNodes);
+  double sumSq = 0;
+  for (auto &r : result)
+    r -= offset, sumSq += r * r;
+
+  const double normalize = sqrt(sumSq);
+  for (auto &r : result)
+    r /= normalize;
 
   return result;
 }
@@ -128,7 +107,8 @@ Solver::proposeCut(const std::vector<double> &flow,
                    const Parameters &params) const {
   const int curSubdivisionCount = subdivGraph->size() - graph->size();
   double avgFlow;
-  { double sum = 0, kahanError = 0;
+  {
+    double sum = 0, kahanError = 0;
     for (auto u : *subdivGraph) {
       const int idx = (*subdivisionIdx)[u];
       if (idx >= 0) {
@@ -215,25 +195,6 @@ Solver::proposeCut(const std::vector<double> &flow,
   while (axLeft.size() > axRight.size())
     axLeft.pop_back();
 
-  // Floating point precision can cause both sides to be empty. In this case,
-  // make a simple partition.
-  if (axLeft.empty()) {
-    std::vector<int> ax;
-    for (auto u : *subdivGraph) {
-      const int idx = (*subdivisionIdx)[u];
-      if (idx >= 0)
-        ax.push_back(u);
-    }
-    std::sort(ax.begin(), ax.end());
-
-    axLeft.clear(), axRight.clear();
-    int i = 0;
-    for (; i < int(ax.size())/2; ++i)
-      axLeft.push_back(ax[i]);
-    for (; i < int(ax.size()); ++i)
-      axRight.push_back(ax[i]);
-  }
-
   return std::make_pair(axLeft, axRight);
 }
 
@@ -248,31 +209,26 @@ Result Solver::compute(Parameters params) {
   const int targetVolumeBalance = std::max(
       lowerVolumeBalance, int(params.minBalance * subdivGraph->globalVolume()));
 
-  std::vector<Matching> rounds;
   Result result;
-
   auto flow = randomUnitVector();
 
-  const int Tprime = params.tConst + int(ceil(params.tFactor * T));
   int iterations = 0;
-  for (; iterations < Tprime &&
+  const int iterationsToRun = std::max(params.minIterations, T);
+  for (; iterations < iterationsToRun &&
          subdivGraph->globalVolume(subdivGraph->cbeginRemoved(),
                                    subdivGraph->cendRemoved()) <=
              targetVolumeBalance;
        ++iterations) {
-    VLOG(3) << "Iteration " << iterations << " out of " << Tprime << ".";
+    VLOG(3) << "Iteration " << iterations << " out of " << iterationsToRun << ".";
 
     if (params.samplePotential) {
       VLOG(4) << "Sampling potential function";
-      result.sampledPotentials.push_back(samplePotential());
+      double p = samplePotential();
+      result.sampledPotentials.push_back(p);
+      if (p < 1.0 / (16.0 * square(numSplitNodes)))
+        result.iterationsUntilValidExpansion =
+            std::min(result.iterationsUntilValidExpansion, iterations);
       VLOG(4) << "Finished sampling potential function";
-    }
-
-    if (params.resampleUnitVector) {
-      flow = randomUnitVector();
-
-      for (int i = 0; i < params.randomWalkSteps; ++i)
-        projectFlow(rounds, flow);
     }
 
     auto [axLeft, axRight] = proposeCut(flow, params);
@@ -286,8 +242,7 @@ Result Solver::compute(Parameters params) {
     for (const auto u : axRight)
       subdivGraph->addSink(u, 1);
 
-    const int h = std::max((int)round(1.0 / phi / std::log10(numSplitNodes)),
-                           int(std::ceil(std::log10(numSplitNodes))));
+    const int h = (int)round(1.0 / phi / std::log10(numSplitNodes));
     VLOG(3) << "Computing flow with |S| = " << axLeft.size()
             << " |T| = " << axRight.size() << " and max height " << h << ".";
     const auto hasExcess = subdivGraph->compute(h);
@@ -330,18 +285,6 @@ Result Solver::compute(Parameters params) {
       subdivGraph->remove(u);
     }
 
-    if (params.resampleUnitVector) {
-      auto removeCond = [&isRemoved, &fromSubdivisionIdx = fromSubdivisionIdx](
-                            std::pair<int, int> p) {
-        return isRemoved((*fromSubdivisionIdx)[p.first]) ||
-               isRemoved((*fromSubdivisionIdx)[p.second]);
-      };
-      for (auto &matchings : rounds)
-        matchings.erase(
-            std::remove_if(matchings.begin(), matchings.end(), removeCond),
-            matchings.end());
-    }
-
     VLOG(3) << "Computing matching with |S| = " << axLeft.size()
             << " |T| = " << axRight.size() << ".";
     auto matching =
@@ -367,23 +310,13 @@ Result Solver::compute(Parameters params) {
 
     assert(matching.size() == axLeft.size() &&
            "Expected all source vertices to be matched.");
-
-    if (params.resampleUnitVector) {
-      for (auto &p : matching) {
-        p.first = (*subdivisionIdx)[p.first];
-        p.second = (*subdivisionIdx)[p.second];
-      }
-
-      rounds.push_back(matching);
-    }
   }
 
   result.iterations = iterations;
   result.congestion = 1;
   for (auto u : *subdivGraph)
     for (auto e = subdivGraph->beginEdge(u); e != subdivGraph->endEdge(u); ++e)
-      result.congestion =
-          std::max(result.congestion, e->congestion);
+      result.congestion = std::max(result.congestion, e->congestion);
 
   if (params.samplePotential) {
     VLOG(4) << "Final sampling of potential function";

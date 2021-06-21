@@ -25,24 +25,18 @@ struct Parameters {
   double tFactor;
 
   /**
-     If true, a new random unit vector is chosen every iteration. This results
-     in 'O(m log^4 m)' time complexity since matchings have to be maintained
-     during entire game.
+     Minimum iterations algorithm should run. Actual iterations is
+     'min(minIterations, T)'. Forcing more than 'T' iterations is useful for
+     testing but will reduce conductance certificate since the congestion bound
+     becomes larger.
    */
-  bool resampleUnitVector;
+  int minIterations;
 
   /**
      The minimum volume balance '0 <= b <= 0.5' the algorithm should reach
      before terminating with sparse cut.
   */
   double minBalance;
-
-  /**
-     An integer 'k > 0' in the flow projection 'F^k r'. Normal behavior is 'k =
-     1'. Since 'F' is a transition matrix 'F^k' is transition matrix after 'k'
-     steps. Does nothing if 'resampleUnitVector' is false.
-   */
-  int randomWalkSteps;
 
   /**
      True if the potential function should be sampled each iteration. This
@@ -72,6 +66,13 @@ struct Result {
      Number of iterations the cut-matching step ran.
    */
   int iterations;
+
+  /**
+     If potentials are sampled, the number of iterations until the potential
+     threshold '1/(16m^2)' is reached. If potentials are not sampled or the
+     threshold isn't reached value defaults to INT_MAX.
+   */
+  int iterationsUntilValidExpansion;
 
   /**
      Congestion of the embedding. If result is an expander, then conductance of
@@ -126,19 +127,11 @@ private:
   std::vector<std::vector<double>> flowMatrix;
 
   /**
-     Construct a random vector for the currently alive subdivision vertices with
-     length 'numSplitNodes' normalized by the number of alive subdivision
+     Construct a semi-random vector for the currently alive subdivision vertices
+     with length 'numSplitNodes' normalized by the number of alive subdivision
      vertices.
-
-     Based on normal distribution sampling: https://stackoverflow.com/a/8453514
    */
   std::vector<double> randomUnitVector();
-
-  /**
-     Project flow across the sparse matrices represented by the round matchings.
-   */
-  void projectFlow(const std::vector<Matching> &rounds,
-                   std::vector<double> &start);
 
   /**
      Sample the potential function using the current state of the flow matrix.
