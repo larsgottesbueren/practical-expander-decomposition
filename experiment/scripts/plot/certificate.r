@@ -16,8 +16,8 @@ plot <-
     geom_point() +
     labs(x=expression(phi),
          y=expression("Certificate" ~ phi[c])) +
-    facet_wrap(~ graph, label="label_parsed") +
-    theme(panel.spacing = unit(2, "lines")) +
-    scale_y_continuous(expand = c(0, 0), limits = c(0, NA))
+    facet_wrap(~ graph, label="label_parsed", scales="free_y") +
+    scale_x_continuous(breaks=c(0.0001, 0.0025, 0.005, 0.0075, 0.01), limits = c(0.0001, NA)) +
+    theme(panel.spacing = unit(2, "lines"))
 
 ggsave(output_file, plot)

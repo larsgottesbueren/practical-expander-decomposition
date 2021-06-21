@@ -16,6 +16,7 @@ plot <-
     geom_point() +
     labs(y="Cut balance",
          x="Edge count",
-         col="Minimum balance")
+         col="Minimum balance") +
+    facet_grid(default_strategy ~ .)
 
 ggsave(output_file, plot)

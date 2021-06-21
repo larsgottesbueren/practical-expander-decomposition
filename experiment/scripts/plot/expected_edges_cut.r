@@ -12,9 +12,10 @@ output_file <- args[2]
 df <- read.csv(input_file)
 
 plot <-
-    ggplot(df, aes(x=edges_expected, y=edges_cut)) +
-    geom_point() +
+    ggplot(df, aes(x=edges_expected, y=edges_cut, color=factor(phi))) +
+    geom_line() +
     labs(y="Edges cut",
-         x="Expected edges cut")
+         x="Expected edges cut",
+         col="Conductance")
 
 ggsave(output_file, plot)

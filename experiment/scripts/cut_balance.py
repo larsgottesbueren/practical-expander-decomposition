@@ -9,13 +9,13 @@ import csv
 import numpy
 
 
-def cut(edc_cut_path, graph_info, phi, min_balance):
+def cut(edc_cut_path, graph_info, phi, default_strategy, min_balance):
     """Run 'edc-cut', assert balanced cut is returned, and return the graph
     parameters and the balance.
 
     """
     graph_string, graph_params, graph_edges = graph_info
-    result = subprocess.run([edc_cut_path, f'-phi={phi}', f'-min_balance={min_balance}'],
+    result = subprocess.run([edc_cut_path, f'-phi={phi}', f'-balanced_cut_strategy={not(default_strategy)}', f'-min_balance={min_balance}'],
                             input=graph_string,
                             text=True,
                             check=True,
@@ -39,7 +39,7 @@ def cut(edc_cut_path, graph_info, phi, min_balance):
         assert ylen == len(ys)
 
         balance = min(volA, volB) / (volA + volB)
-        return (graph_params, graph_edges, min_balance, balance)
+        return (graph_params, graph_edges, default_strategy, min_balance, balance)
 
 
 if __name__ == '__main__':
@@ -50,9 +50,9 @@ if __name__ == '__main__':
 
     graph_params = [{
         'name': 'clique-path',
-        'n': 10,
+        'n': 20,
         'k': k,
-    } for k in [2,5,10,50] + [i*100 for i in range(1,10)]]
+    } for k in [i*50 for i in range(1,20)]]
 
     def graphParamsToString(p):
         ps = [p['name'], str(p['n']), str(p['k'])]
@@ -83,12 +83,13 @@ if __name__ == '__main__':
         graphs.append((result.stdout, ps, m))
 
     with mp.Pool() as pool:
-        phis = [0.01]
-        balances = [0, 0.25, 0.45]
-        numIterations = 8
-        jobs = [(edc_cut_path, graph_info, phi, balance)
-                for graph_info, phi, balance, _ in itertools.product(
-                        graphs, phis, balances, range(numIterations))]
+        jobs = []
+        for g in graphs:
+            for phi in [0.001]:
+                for balance in [0, 0.25, 0.45]:
+                    for _ in range(8):
+                        jobs.append((edc_cut_path, g, phi, True, balance))
+                        jobs.append((edc_cut_path, g, phi, False, balance))
         result = pool.starmap(cut, jobs, chunksize=1)
 
     with open(output_file, 'w') as f:
@@ -96,15 +97,17 @@ if __name__ == '__main__':
                                 fieldnames=[
                                     'graph',
                                     'edges',
+                                    'default_strategy',
                                     'min_balance',
                                     'balance',
                                 ])
         writer.writeheader()
 
-        for p, edges, min_balance, balance in result:
+        for p, edges, default_strategy, min_balance, balance in result:
             writer.writerow({
                 'graph': graphParamsToString(p),
                 'edges': edges,
+                'default_strategy': 'Default' if default_strategy else 'Balanced',
                 'min_balance': min_balance,
                 'balance': balance,
             })

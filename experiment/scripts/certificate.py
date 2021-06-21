@@ -45,15 +45,15 @@ if __name__ == '__main__':
         'k': 1,
     }, {
         'name': 'clique',
-        'n': 100,
+        'n': 50,
         'k': 1,
     }, {
         'name': 'margulis',
-        'n': 10,
+        'n': 11,
         'k': 1,
     }, {
         'name': 'margulis',
-        'n': 100,
+        'n': 43,
         'k': 1,
     }]
 
@@ -87,7 +87,7 @@ if __name__ == '__main__':
         jobs = []
         for graph_info in graphs:
             for phi in numpy.linspace(0.0001,0.01,100):
-                for i in range(1):
+                for i in range(8):
                     jobs.append((edc_path, graph_info, phi))
 
         result = pool.starmap(partition, jobs, chunksize=1)
@@ -98,6 +98,7 @@ if __name__ == '__main__':
                                     'graph',
                                     'phi',
                                     'certificate',
+                                    'certificate_ratio'
                                 ])
         writer.writeheader()
 
@@ -108,4 +109,5 @@ if __name__ == '__main__':
                     'graph': graphParamsToString(p),
                     'phi': phi,
                     'certificate': certificate,
+                    'certificate_ratio': certificate/phi
                 })

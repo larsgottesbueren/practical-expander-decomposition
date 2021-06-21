@@ -23,8 +23,9 @@ plot <-
     geom_point() +
     geom_smooth(method="lm", formula=f, fullrange=TRUE) +
     stat_poly_eq(aes(label = ..eq.label..), formula=f, parse=TRUE) +
-    expand_limits(x=0, y=0) +
+#    expand_limits(x=0, y=0) +
     labs(y="Iterations",
-         x=expression("log"^2 ~ "m"))
+         x=expression("log"^2 ~ "m")) +
+    facet_grid(default_strategy ~ .)
 
 ggsave(output_file, plot)

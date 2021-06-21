@@ -9,14 +9,20 @@ import csv
 import numpy
 
 
-def cut(edc_cut_path, graph_info, phi):
+def cut(edc_cut_path, graph_info, phi, default_strategy):
     """Run 'edc-cut', assert balanced cut is returned, and return the graph
     parameters, phi, and the number of iterations run.
 
     """
     graph_string, graph_params, graph_edges = graph_info
+
+    t1 = 200 if default_strategy else 30
+    t2 = 23 if default_strategy else 6
+
     result = subprocess.run([
-        edc_cut_path, f'-phi={phi}', '-t1=40', '-t2=2'
+        edc_cut_path, f'-phi={phi}',
+        f'-t1={t1}', f'-t2={t2}', '-min_iterations=500',
+        f'-balanced_cut_strategy={not(default_strategy)}'
     ],
                             input=graph_string,
                             text=True,
@@ -43,7 +49,7 @@ def cut(edc_cut_path, graph_info, phi):
         assert xlen == ylen
         assert (max(xs) < min(ys) or max(ys) < min(xs))
 
-        return (graph_params, phi, graph_edges, iterations)
+        return (graph_params, phi, default_strategy, graph_edges, iterations)
 
 
 if __name__ == '__main__':
@@ -53,16 +59,11 @@ if __name__ == '__main__':
     _, _, edc_cut_path, seed, gen_graph, output_file = sys.argv
 
     graph_params = [{
-        'name': 'margulis',
-        'n': i * 5 + 10,
-        'k': 2,
-        'r': 1,
-    } for i in range(30)] + [{
         'name': 'clique',
-        'n': i * 10 + 30,
+        'n': i * 10,
         'k': 2,
         'r': 1,
-    } for i in range(30)]
+    } for i in range(10,30)]
 
     def graphParamsToString(p):
         ps = [p['name'], str(p['n']), str(p['k']), str(p['r'])]
@@ -96,7 +97,8 @@ if __name__ == '__main__':
         for graph_info in graphs:
             for phi in [0.001]:
                 for it in range(8):
-                    jobs.append((edc_cut_path, graph_info, phi))
+                    jobs.append((edc_cut_path, graph_info, phi, True))
+                    jobs.append((edc_cut_path, graph_info, phi, False))
 
         result = pool.starmap(cut, jobs, chunksize=1)
 
@@ -105,15 +107,17 @@ if __name__ == '__main__':
                                 fieldnames=[
                                     'graph',
                                     'phi',
+                                    'default_strategy',
                                     'log10_squared_edges',
                                     'iterations',
                                 ])
         writer.writeheader()
 
-        for p, phi, edges, iterations in result:
+        for p, phi, default_strategy, edges, iterations in result:
             writer.writerow({
                 'graph': graphParamsToString(p),
                 'phi': phi,
+                'default_strategy': 'Default' if default_strategy else 'Balanced',
                 'log10_squared_edges': log10(edges) * log10(edges),
                 'iterations': iterations,
             })

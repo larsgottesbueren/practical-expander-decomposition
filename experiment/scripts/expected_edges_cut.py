@@ -29,7 +29,7 @@ def partition(edc_path, graph_info, phi):
         lines = result.stdout.split('\n')
         edges_cut = int(lines[0].split()[0])
 
-        return (graph_params, edges_expected, edges_cut)
+        return (graph_params, phi, edges_expected, edges_cut)
 
 
 if __name__ == '__main__':
@@ -39,11 +39,11 @@ if __name__ == '__main__':
     _, edc_path, _, seed, gen_graph, output_file = sys.argv
 
     graph_params = [{
-        'name': 'clique',
-        'n': 20,
+        'name': 'margulis',
+        'n': 11,
         'k': k,
         'r': 5*k
-    } for k in [2,5,10] + [i*50 for i in range(1,20)]]
+    } for k in [i for i in range(2,50)]]
 
     def graphParamsToString(p):
         ps = [p['name'], str(p['n']), str(p['k'])]
@@ -75,9 +75,8 @@ if __name__ == '__main__':
     with mp.Pool() as pool:
         jobs = []
         for graph_info in graphs:
-            for phi in [0.01]:
-                for i in range(4):
-                    jobs.append((edc_path, graph_info, phi))
+            for phi in [0.01, 0.005, 0.0025, 0.00125]:
+                jobs.append((edc_path, graph_info, phi))
 
         result = pool.starmap(partition, jobs, chunksize=1)
 
@@ -85,14 +84,16 @@ if __name__ == '__main__':
         writer = csv.DictWriter(f,
                                 fieldnames=[
                                     'graph',
+                                    'phi',
                                     'edges_expected',
                                     'edges_cut',
                                 ])
         writer.writeheader()
 
-        for p, edges_expected, edges_cut in result:
+        for p, phi, edges_expected, edges_cut in result:
             writer.writerow({
                 'graph': graphParamsToString(p),
+                'phi': phi,
                 'edges_expected': edges_expected,
                 'edges_cut': edges_cut,
             })

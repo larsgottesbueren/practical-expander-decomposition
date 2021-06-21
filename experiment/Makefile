@@ -7,8 +7,7 @@ SEED = 0
 
 all: \
   out/iterations_until_cut.pdf \
-  out/iterations_until_cut_final.pdf \
-  out/iterations_until_cut_random_walk.pdf \
+  out/iterations_until_expander.pdf \
   out/expander_potential.pdf \
   out/cut_potential.pdf \
   out/cut_balance.pdf \

@@ -9,17 +9,27 @@ import csv
 import numpy
 
 
-def cut(edc_cut_path, graph_info, phi, resample_unit_vector,
-        random_walk_steps):
-    """Run 'edc-cut', assert balanced cut is returned, and return the graph
-    parameters, phi, and the number of iterations run.
+def cut(edc_cut_path, graph_info, phi, default_strategy, configured):
+    """Run 'edc-cut', assert expander is returned, and return the graph parameters,
+    phi, and the number of iterations run until correct expansion reached.
 
     """
     graph_string, graph_params, graph_edges = graph_info
+
+    t1 = 0
+    t2 = 1
+    if configured:
+        if default_strategy:
+            t1 = 200
+            t2 = 23
+        else:
+            t1 = 30
+            t2 = 6
+
     result = subprocess.run([
-        edc_cut_path, f'-phi={phi}',
-        f'-resample_unit_vector={resample_unit_vector}',
-        f'-random_walk_steps={random_walk_steps}', '-t1=60', '-t2=2'
+        edc_cut_path, f'-phi={phi}', '-sample_potential',
+        f'-t1={t1}', f'-t2={t2}', '-min_iterations=500',
+        f'-balanced_cut_strategy={not(default_strategy)}'
     ],
                             input=graph_string,
                             text=True,
@@ -32,22 +42,15 @@ def cut(edc_cut_path, graph_info, phi, resample_unit_vector,
     else:
         lines = result.stdout.split('\n')
         resultType = lines[0].split()[0]
-        iterations = int(lines[0].split()[1])
-        if resultType != 'balanced_cut':
+        iterationsUntil = int(lines[0].split()[1])
+        if resultType != 'expander':
             print(
-                f'Failed to find cut: {resultType} with params {graph_params}'
+                f'Failed to find expander. Found {resultType} with params {graph_params}'
             )
             exit(1)
-        xlen, *xs = list(map(int, lines[1].split()))
-        assert xlen == len(xs)
-        ylen, *ys = list(map(int, lines[2].split()))
-        assert ylen == len(ys)
 
-        assert xlen == ylen
-        assert (max(xs) < min(ys) or max(ys) < min(xs))
-
-        return (graph_params, phi, resample_unit_vector, random_walk_steps,
-                graph_edges, iterations)
+        return (graph_params, phi, default_strategy, configured, graph_edges,
+                iterationsUntil)
 
 
 if __name__ == '__main__':
@@ -58,15 +61,15 @@ if __name__ == '__main__':
 
     graph_params = [{
         'name': 'margulis',
-        'n': i * 5 + 10,
-        'k': 2,
-        'r': 1,
-    } for i in range(30)] + [{
+        'n': i,
+        'k': 1,
+        'r': 0,
+    } for i in range(3, 20)] + [{
         'name': 'clique',
-        'n': i * 10 + 30,
-        'k': 2,
-        'r': 1,
-    } for i in range(30)]
+        'n': i,
+        'k': 1,
+        'r': 0,
+    } for i in range(10, 60)]
 
     def graphParamsToString(p):
         ps = [p['name'], str(p['n']), str(p['k']), str(p['r'])]
@@ -99,9 +102,11 @@ if __name__ == '__main__':
         jobs = []
         for graph_info in graphs:
             for phi in [0.001]:
-                for random_walk_steps in [1, 5, 10]:
-                    for it in range(4):
-                        jobs.append((edc_cut_path, graph_info, phi, True, random_walk_steps))
+                for _ in range(8):
+                    jobs.append((edc_cut_path, graph_info, phi, True, True))
+                    jobs.append((edc_cut_path, graph_info, phi, True, False))
+                    jobs.append((edc_cut_path, graph_info, phi, False, True))
+                    jobs.append((edc_cut_path, graph_info, phi, False, False))
 
         result = pool.starmap(cut, jobs, chunksize=1)
 
@@ -109,20 +114,22 @@ if __name__ == '__main__':
         writer = csv.DictWriter(f,
                                 fieldnames=[
                                     'graph',
+                                    'graph_type',
                                     'phi',
-                                    'resample_unit_vector',
-                                    'random_walk_steps',
+                                    'strategy',
+                                    'configured',
                                     'log10_squared_edges',
-                                    'iterations',
+                                    'iterationsUntilValid',
                                 ])
         writer.writeheader()
 
-        for p, phi, resample_unit_vector, random_walk_steps, edges, iterations in result:
+        for p, phi, default_strategy, configured, edges, iterations in result:
             writer.writerow({
                 'graph': graphParamsToString(p),
+                'graph_type': p['name'],
                 'phi': phi,
-                'resample_unit_vector': resample_unit_vector,
-                'random_walk_steps': random_walk_steps,
+                'strategy': 'Default' if default_strategy else 'Balanced',
+                'configured': 'After' if configured else 'Before',
                 'log10_squared_edges': log10(edges) * log10(edges),
-                'iterations': iterations,
+                'iterationsUntilValid': iterations,
             })

@@ -8,19 +8,26 @@ import csv
 import numpy
 
 
-def cut(edc_cut_path, graph, phi):
+def cut(edc_cut_path, graph, phi, default_strategy):
     """Run 'edc-cut', assert expander is returned, and return the graph parameters,
     phi, and conductivity sampling.
 
     """
     graph_string, graph_params = graph
-    result = subprocess.run(
-        [edc_cut_path, f'-phi={phi}', '-sample_potential'],
-        input=graph_string,
-        text=True,
-        check=True,
-        timeout=480,
-        stdout=subprocess.PIPE)
+
+    t1 = 200 if default_strategy else 30
+    t2 = 23 if default_strategy else 6
+
+    result = subprocess.run([
+        edc_cut_path, f'-phi={phi}', '-sample_potential',
+        f'-t1={t1}', f'-t2={t2}', '-min_iterations=500',
+        f'-balanced_cut_strategy={not(default_strategy)}'
+    ],
+                            input=graph_string,
+                            text=True,
+                            check=True,
+                            timeout=480,
+                            stdout=subprocess.PIPE)
     if result.returncode != 0:
         print(f'Failed cut: {result.stdout}')
         exit(1)
@@ -41,7 +48,7 @@ def cut(edc_cut_path, graph, phi):
         samples = list(enumerate(map(float, lines[4].strip().split())))
         assert len(samples) == numSamples
 
-        return (graph_params, phi, samples)
+        return (graph_params, phi, default_strategy, samples)
 
 
 if __name__ == '__main__':
@@ -52,7 +59,7 @@ if __name__ == '__main__':
 
     graph_params = [{
         'name': 'clique',
-        'n': 10,
+        'n': 20,
         'k': 1,
         'r': 0,
     }, {
@@ -62,7 +69,7 @@ if __name__ == '__main__':
         'r': 0,
     }, {
         'name': 'clique',
-        'n': 100,
+        'n': 50,
         'k': 1,
         'r': 0,
     }, {
@@ -101,7 +108,8 @@ if __name__ == '__main__':
         for g in graphs:
             for phi in [0.001]:
                 for _ in range(10):
-                    jobs.append((edc_cut_path, g, phi))
+                    jobs.append((edc_cut_path, g, phi, True))
+                    jobs.append((edc_cut_path, g, phi, False))
 
         result = pool.starmap(cut, jobs, chunksize=1)
 
@@ -110,16 +118,18 @@ if __name__ == '__main__':
                                 fieldnames=[
                                     'graph',
                                     'phi',
+                                    'strategy_type',
                                     'iteration',
                                     'potential',
                                 ])
         writer.writeheader()
 
-        for p, phi, samples in result:
+        for p, phi, default_strategy, samples in result:
             for iteration, potential in samples:
                 writer.writerow({
                     'graph': graphParamsToString(p),
                     'phi': phi,
+                    'strategy_type': 'Default' if default_strategy else 'Balanced',
                     'iteration': iteration,
                     'potential': potential
                 })
