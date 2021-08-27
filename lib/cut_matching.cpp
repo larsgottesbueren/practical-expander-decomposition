@@ -21,7 +21,8 @@ Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG,
     : graph(g), subdivGraph(subdivG), randomGen(randomGen),
       subdivisionIdx(subdivisionIdx), fromSubdivisionIdx(fromSubdivisionIdx),
       phi(phi),
-      T(std::max(1, params.tConst + int(ceil(params.tFactor * square(std::log10(graph->edgeCount())))))),
+      T(std::max(1, params.tConst + int(ceil(params.tFactor *square(
+                                        std::log10(graph->edgeCount())))))),
       numSplitNodes(subdivGraph->size() - graph->size()) {
   assert(graph->size() != 0 && "Cut-matching expected non-empty subset.");
 
@@ -53,13 +54,14 @@ Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG,
 }
 
 std::vector<double> Solver::randomUnitVector() {
-  std::uniform_real_distribution<> distr(0, 1);
+  std::normal_distribution<> distr(0, 1);
 
   std::vector<double> result(numSplitNodes);
   for (auto &r : result)
     r = distr(*randomGen);
 
-  double offset = std::accumulate(result.begin(), result.end(), 0.0) / double(numSplitNodes);
+  double offset = std::accumulate(result.begin(), result.end(), 0.0) /
+                  double(numSplitNodes);
   double sumSq = 0;
   for (auto &r : result)
     r -= offset, sumSq += r * r;
@@ -205,9 +207,10 @@ Result Solver::compute(Parameters params) {
     return Result{};
   }
 
-  const int lowerVolumeBalance = numSplitNodes / 10 / T;
-  const int targetVolumeBalance = std::max(
-      lowerVolumeBalance, int(params.minBalance * subdivGraph->globalVolume()));
+  const int totalVolume = subdivGraph->globalVolume();
+  const int lowerVolumeBalance = totalVolume / 2 / 10 / T;
+  const int targetVolumeBalance =
+      std::max(lowerVolumeBalance, int(params.minBalance * totalVolume));
 
   Result result;
   auto flow = randomUnitVector();
@@ -219,7 +222,8 @@ Result Solver::compute(Parameters params) {
                                    subdivGraph->cendRemoved()) <=
              targetVolumeBalance;
        ++iterations) {
-    VLOG(3) << "Iteration " << iterations << " out of " << iterationsToRun << ".";
+    VLOG(3) << "Iteration " << iterations << " out of " << iterationsToRun
+            << ".";
 
     if (params.samplePotential) {
       VLOG(4) << "Sampling potential function";
@@ -242,7 +246,7 @@ Result Solver::compute(Parameters params) {
     for (const auto u : axRight)
       subdivGraph->addSink(u, 1);
 
-    const int h = (int)round(1.0 / phi / std::log10(numSplitNodes));
+    const int h = (int)ceil(1.0 / phi / std::log10(numSplitNodes));
     VLOG(3) << "Computing flow with |S| = " << axLeft.size()
             << " |T| = " << axRight.size() << " and max height " << h << ".";
     const auto hasExcess = subdivGraph->compute(h);
@@ -253,10 +257,18 @@ Result Solver::compute(Parameters params) {
     } else {
       VLOG(3) << "\tHas " << hasExcess.size()
               << " vertices with excess. Computing level cut.";
-      const auto levelCut = subdivGraph->levelCut(h);
-      VLOG(3) << "\tHas level cut with " << levelCut.size() << " vertices.";
-      for (auto u : levelCut)
-        removed.insert(u);
+      const auto [cutLeft, cutRight] = subdivGraph->levelCut(h);
+      VLOG(3) << "\tHas level cut with (" << cutLeft.size() << ", "
+              << cutRight.size() << ") vertices.";
+
+      if (subdivGraph->globalVolume(cutLeft.begin(), cutLeft.end()) <
+          subdivGraph->globalVolume(cutRight.begin(), cutRight.end())) {
+        for (auto u : cutLeft)
+          removed.insert(u);
+      } else {
+        for (auto u : cutRight)
+          removed.insert(u);
+      }
     }
 
     VLOG(3) << "\tRemoving " << removed.size() << " vertices.";

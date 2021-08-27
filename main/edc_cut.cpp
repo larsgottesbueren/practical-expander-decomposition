@@ -1,3 +1,4 @@
+#include <chrono>
 #include <cmath>
 #include <gflags/gflags.h>
 #include <glog/logging.h>
@@ -18,7 +19,10 @@ DEFINE_double(
     "Value of \\phi such that expansion of each cluster is at least \\phi");
 DEFINE_int32(t1, 30, "Constant 't1' in 'T = t1 + t2 \\log^2 m'");
 DEFINE_double(t2, 6.0, "Constant 't2' in 'T = t1 + t2 \\log^2 m'");
-DEFINE_int32(min_iterations, 0, "Minimum iterations to run cut-matching game. If this is larger than 'T' then certificate of expansion can be effected due to extra congestion.");
+DEFINE_int32(
+    min_iterations, 0,
+    "Minimum iterations to run cut-matching game. If this is larger than 'T' "
+    "then certificate of expansion can be effected due to extra congestion.");
 DEFINE_double(
     min_balance, 0.25,
     "The amount of cut balance before the cut-matching game is terminated.");
@@ -29,6 +33,9 @@ DEFINE_bool(sample_potential, false,
 DEFINE_bool(balanced_cut_strategy, true,
             "Propose perfectly balanced cuts in the cut-matching game. This "
             "results in faster convergance of the potential function.");
+DEFINE_bool(record_cut_matching_time, false,
+            "Record time taken for cut-matching game to run excluding setup "
+            "and post-processing of results.");
 
 int main(int argc, char *argv[]) {
   google::InitGoogleLogging(argv[0]);
@@ -63,9 +70,16 @@ int main(int argc, char *argv[]) {
   CutMatching::Solver solver(graph.get(), subdivGraph.get(), randomGen.get(),
                              subdivisionIdx.get(), fromSubdivisionIdx.get(),
                              FLAGS_phi, params);
+
+  auto timeBefore = std::chrono::high_resolution_clock::now();
   auto result = solver.compute(params);
+  auto timeAfter = std::chrono::high_resolution_clock::now();
+
   std::vector<int> a, r;
   std::copy(graph->cbegin(), graph->cend(), std::back_inserter(a));
+  int edgesCut = 0;
+  for (auto u : *graph)
+    edgesCut += graph->globalDegree(u) - graph->degree(u);
   std::copy(graph->cbeginRemoved(), graph->cendRemoved(),
             std::back_inserter(r));
   graph->restoreRemoves();
@@ -88,7 +102,7 @@ int main(int argc, char *argv[]) {
   }
   }
   cout << " " << graph->volume(a.begin(), a.end()) << " "
-       << graph->volume(r.begin(), r.end()) << endl;
+       << graph->volume(r.begin(), r.end()) << " " << edgesCut << endl;
 
   cout << a.size();
   for (auto u : a)
@@ -110,5 +124,11 @@ int main(int argc, char *argv[]) {
       cout << p;
     }
     cout << endl;
+  }
+
+  if (FLAGS_record_cut_matching_time) {
+    using chrono::duration_cast;
+    using chrono::milliseconds;
+    cout << duration_cast<milliseconds>(timeAfter - timeBefore).count() << endl;
   }
 }

@@ -18,9 +18,12 @@ DEFINE_double(
     "Value of \\phi such that expansion of each cluster is at least \\phi");
 DEFINE_int32(t1, 30, "Constant 't1' in 'T = t1 + t2 \\log^2 m'");
 DEFINE_double(t2, 6.0, "Constant 't2' in 'T = t1 + t2 \\log^2 m'");
-DEFINE_int32(min_iterations, 0, "Minimum iterations to run cut-matching game. If this is larger than 'T' then certificate of expansion can be effected due to extra congestion.");
+DEFINE_int32(
+    min_iterations, 0,
+    "Minimum iterations to run cut-matching game. If this is larger than 'T' "
+    "then certificate of expansion can be effected due to extra congestion.");
 DEFINE_double(
-    min_balance, 0.25,
+    min_balance, 0.45,
     "The amount of cut balance before the cut-matching game is terminated.");
 DEFINE_bool(chaco, false,
             "Input graph is given in the Chaco graph file format");

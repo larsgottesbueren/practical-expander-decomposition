@@ -156,7 +156,8 @@ public:
 
      Precondition: A flow has been computed.
    */
-  std::vector<Vertex> levelCut(const int maxHeight);
+  std::pair<std::vector<Vertex>, std::vector<Vertex>>
+  levelCut(const int maxHeight);
 
   /**
      Set all flow, sinks and source capacities to 0.

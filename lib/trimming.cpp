@@ -32,7 +32,7 @@ void Solver::compute() {
     if (hasExcess.empty())
       break;
 
-    const auto levelCut = graph->levelCut(h);
+    const auto [levelCut, _] = graph->levelCut(h);
     VLOG(3) << "Found level cut of size: " << levelCut.size();
     if (levelCut.empty())
       break;

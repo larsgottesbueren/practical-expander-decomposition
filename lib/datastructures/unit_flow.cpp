@@ -95,13 +95,15 @@ std::vector<Vertex> Graph::compute(const int maxHeight) {
   return hasExcess;
 }
 
-std::vector<Vertex> Graph::levelCut(const int h) {
+std::pair<std::vector<Vertex>, std::vector<Vertex>>
+Graph::levelCut(const int h) {
   std::vector<std::vector<Vertex>> levels(h + 1);
   for (auto u : *this)
     levels[height[u]].push_back(u);
 
   int volume = 0;
-  int bestZ = INT_MAX;
+  // int bestZ = INT_MAX;
+  double bestConductance = 1.0;
   int bestLevel = h;
   for (int level = h; level > 0; --level) {
     int z = 0;
@@ -111,16 +113,21 @@ std::vector<Vertex> Graph::levelCut(const int h) {
         if (height[u] == height[e->to] + 1)
           z++;
     }
-    if (z < bestZ)
-      bestZ = z, bestLevel = level;
+    double conductance =
+        double(z) / double(std::min(volume, this->volume() - volume));
+    if (conductance < bestConductance)
+      bestConductance = conductance, bestLevel = level;
   }
 
-  std::vector<int> result;
+  std::vector<int> left, right;
   for (int level = h; level >= bestLevel; --level)
     for (auto u : levels[level])
-      result.push_back(u);
+      left.push_back(u);
+  for (int level = 0; level < bestLevel; ++level)
+    for (auto u : levels[level])
+      right.push_back(u);
 
-  return result;
+  return std::make_pair(left, right);
 }
 
 void Graph::reset() {
