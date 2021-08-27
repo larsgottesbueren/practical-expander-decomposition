@@ -8,19 +8,15 @@ import csv
 import numpy
 
 
-def cut(edc_cut_path, graph, phi, default_strategy):
+def cut(edc_cut_path, graph, seed, phi, default_strategy):
     """Run 'edc-cut', assert balanced cut is returned, and return the graph
     parameters, phi, and potential sampling.
 
     """
     graph_string, graph_params = graph
 
-    t1 = 200 if default_strategy else 30
-    t2 = 23 if default_strategy else 6
-
     result = subprocess.run([
-        edc_cut_path, f'-phi={phi}', '-sample_potential',
-        f'-t1={t1}', f'-t2={t2}', '-min_iterations=500',
+        edc_cut_path, f'-seed={seed}', f'-phi={phi}', '-sample_potential',
         f'-balanced_cut_strategy={not(default_strategy)}'
     ],
                             input=graph_string,
@@ -56,6 +52,7 @@ if __name__ == '__main__':
         print('Expected five arguments')
         exit(1)
     _, _, edc_cut_path, seed, gen_graph, output_file = sys.argv
+    seed = int(seed)
 
     graph_params = [{
         'name': 'clique',
@@ -107,9 +104,9 @@ if __name__ == '__main__':
         jobs = []
         for g in graphs:
             for phi in [0.001]:
-                for _ in range(10):
-                    jobs.append((edc_cut_path, g, phi, True))
-                    jobs.append((edc_cut_path, g, phi, False))
+                for i in range(10):
+                    jobs.append((edc_cut_path, g, seed+i, phi, True))
+                    jobs.append((edc_cut_path, g, seed+i, phi, False))
 
         result = pool.starmap(cut, jobs, chunksize=1)
 

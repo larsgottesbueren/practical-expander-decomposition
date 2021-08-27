@@ -12,10 +12,11 @@ output_file <- args[2]
 df <- read.csv(input_file)
 
 plot <-
-    ggplot(df, aes(x=t1, y=t2)) +
-    geom_point(alpha=0.5) +
-    labs(x=expression(t[1]),
-         y=expression(t[2]),
-         title=expression(paste("Parameters ", t[1], " and ", t[2], " which find correct cut")))
+    ggplot(df, aes(x=factor(type), y=balance, fill=strategy)) +
+    geom_bar(stat="summary", fun="mean", position="dodge") +
+    labs(y="Balance",
+         x="Graph name") +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+    facet_grid(targetbalance ~ .)
 
 ggsave(output_file, plot)

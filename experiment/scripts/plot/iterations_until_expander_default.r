@@ -10,21 +10,19 @@ if (length(args) != 2)
 input_file <- args[1]
 output_file <- args[2]
 
-df <- read.csv(input_file)
-
-# lm.fit <- lm(iterations ~ log10_squared_edges, data=df)
-# summary(lm.fit)
+df <- read.csv(input_file) %>% filter(strategy == "Default")
 
 f <- y ~ x
 
 plot <-
     ggplot(df, aes(x=log10_squared_edges,
-                   y=iterations)) +
+                   y=iterations,
+                   col=graph_type)) +
     geom_point() +
     geom_smooth(method="lm", formula=f, fullrange=TRUE) +
     stat_poly_eq(aes(label = ..eq.label..), formula=f, parse=TRUE) +
-    expand_limits(x=0, y=0) +
     labs(y="Iterations",
-         x=expression("log"^2 ~ "m"))
+         x=expression("log"^2 ~ "m"),
+         col='Graph type')
 
 ggsave(output_file, plot)

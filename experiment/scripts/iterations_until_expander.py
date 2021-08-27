@@ -9,26 +9,15 @@ import csv
 import numpy
 
 
-def cut(edc_cut_path, graph_info, phi, default_strategy, configured):
-    """Run 'edc-cut', assert expander is returned, and return the graph parameters,
-    phi, and the number of iterations run until correct expansion reached.
+def is_expander(edc_cut_path, graph_info, seed, phi, default_strategy, t):
+    """Run 'edc-cut' and return true if an expander was certified.
 
     """
     graph_string, graph_params, graph_edges = graph_info
 
-    t1 = 0
-    t2 = 1
-    if configured:
-        if default_strategy:
-            t1 = 200
-            t2 = 23
-        else:
-            t1 = 30
-            t2 = 6
-
     result = subprocess.run([
-        edc_cut_path, f'-phi={phi}', '-sample_potential',
-        f'-t1={t1}', f'-t2={t2}', '-min_iterations=500',
+        edc_cut_path, f'-seed={seed}', f'-phi={phi}', '-sample_potential',
+        f'-t1={t}', f'-t2=0',
         f'-balanced_cut_strategy={not(default_strategy)}'
     ],
                             input=graph_string,
@@ -43,33 +32,53 @@ def cut(edc_cut_path, graph_info, phi, default_strategy, configured):
         lines = result.stdout.split('\n')
         resultType = lines[0].split()[0]
         iterationsUntil = int(lines[0].split()[1])
-        if resultType != 'expander':
-            print(
-                f'Failed to find expander. Found {resultType} with params {graph_params}'
-            )
-            exit(1)
 
-        return (graph_params, phi, default_strategy, configured, graph_edges,
-                iterationsUntil)
+        return resultType == 'expander' and iterationsUntil <= t
 
+def test_all_ts(edc_cut_path, graph_info, start_seed, phi, default_strategy):
+    """Binary search for the smallest number of iterations required for the
+    cut-matching game to reach the required potential threshold of an expander.
+
+    Since the cut-matching game is randomized we evaluate the same point
+    multiple times before being satisfied.
+
+    """
+
+    def test(t,seed):
+        return is_expander(edc_cut_path, graph_info, seed, phi, default_strategy, t)
+
+    t = 0
+    while True:
+        t += 1
+        fail = False
+        for i in range(10):
+            if not test(t,start_seed+i):
+                fail = True
+                break
+        if not fail:
+            break
+
+    _, graph_params, graph_edges = graph_info
+    return (graph_params, phi, default_strategy, graph_edges, t)
 
 if __name__ == '__main__':
     if len(sys.argv) != 6:
         print('Expected five arguments')
         exit(1)
     _, _, edc_cut_path, seed, gen_graph, output_file = sys.argv
+    seed = int(seed)
 
     graph_params = [{
         'name': 'margulis',
         'n': i,
         'k': 1,
         'r': 0,
-    } for i in range(3, 20)] + [{
+    } for i in range(3, 15)] + [{
         'name': 'clique',
         'n': i,
         'k': 1,
         'r': 0,
-    } for i in range(10, 60)]
+    } for i in numpy.linspace(10,45,20,dtype=int)]
 
     def graphParamsToString(p):
         ps = [p['name'], str(p['n']), str(p['k']), str(p['r'])]
@@ -102,13 +111,10 @@ if __name__ == '__main__':
         jobs = []
         for graph_info in graphs:
             for phi in [0.001]:
-                for _ in range(8):
-                    jobs.append((edc_cut_path, graph_info, phi, True, True))
-                    jobs.append((edc_cut_path, graph_info, phi, True, False))
-                    jobs.append((edc_cut_path, graph_info, phi, False, True))
-                    jobs.append((edc_cut_path, graph_info, phi, False, False))
+                jobs.append((edc_cut_path, graph_info, seed, phi, True))
+                jobs.append((edc_cut_path, graph_info, seed, phi, False))
 
-        result = pool.starmap(cut, jobs, chunksize=1)
+        result = pool.starmap(test_all_ts, jobs, chunksize=1)
 
     with open(output_file, 'w') as f:
         writer = csv.DictWriter(f,
@@ -117,19 +123,17 @@ if __name__ == '__main__':
                                     'graph_type',
                                     'phi',
                                     'strategy',
-                                    'configured',
                                     'log10_squared_edges',
-                                    'iterationsUntilValid',
+                                    'iterations',
                                 ])
         writer.writeheader()
 
-        for p, phi, default_strategy, configured, edges, iterations in result:
+        for p, phi, default_strategy, edges, t in result:
             writer.writerow({
                 'graph': graphParamsToString(p),
                 'graph_type': p['name'],
                 'phi': phi,
                 'strategy': 'Default' if default_strategy else 'Balanced',
-                'configured': 'After' if configured else 'Before',
                 'log10_squared_edges': log10(edges) * log10(edges),
-                'iterationsUntilValid': iterations,
+                'iterations': t,
             })

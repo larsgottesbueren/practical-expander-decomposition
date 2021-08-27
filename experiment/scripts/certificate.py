@@ -9,12 +9,14 @@ import csv
 import numpy
 
 
-def partition(edc_path, graph_info, phi):
+def partition(edc_path, graph_info, phi, default_strategy):
     """Run 'edc' and count edges cut.
 
     """
     graph_string, graph_params = graph_info
-    result = subprocess.run([edc_path, f'-phi={phi}'],
+    result = subprocess.run([edc_path,
+                             f'-phi={phi}',
+                             f'-balanced_cut_strategy={not(default_strategy)}'],
                             input=graph_string,
                             text=True,
                             check=True,
@@ -30,7 +32,7 @@ def partition(edc_path, graph_info, phi):
             return None
         certificate = float(lines[1].strip().split()[1])
 
-        return (graph_params, phi, certificate)
+        return (graph_params, phi, default_strategy, certificate)
 
 
 if __name__ == '__main__':
@@ -41,7 +43,7 @@ if __name__ == '__main__':
 
     graph_params = [{
         'name': 'clique',
-        'n': 10,
+        'n': 20,
         'k': 1,
     }, {
         'name': 'clique',
@@ -88,7 +90,8 @@ if __name__ == '__main__':
         for graph_info in graphs:
             for phi in numpy.linspace(0.0001,0.01,100):
                 for i in range(8):
-                    jobs.append((edc_path, graph_info, phi))
+                    jobs.append((edc_path, graph_info, phi, True))
+                    jobs.append((edc_path, graph_info, phi, False))
 
         result = pool.starmap(partition, jobs, chunksize=1)
 
@@ -97,6 +100,7 @@ if __name__ == '__main__':
                                 fieldnames=[
                                     'graph',
                                     'phi',
+                                    'strategy_type',
                                     'certificate',
                                     'certificate_ratio'
                                 ])
@@ -104,10 +108,11 @@ if __name__ == '__main__':
 
         for r in result:
             if r is not None:
-                p, phi, certificate = r
+                p, phi, default_strategy, certificate = r
                 writer.writerow({
                     'graph': graphParamsToString(p),
                     'phi': phi,
+                    'strategy_type': 'Default' if default_strategy else 'Balanced',
                     'certificate': certificate,
                     'certificate_ratio': certificate/phi
                 })

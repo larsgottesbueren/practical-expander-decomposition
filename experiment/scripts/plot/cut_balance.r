@@ -9,14 +9,13 @@ if (length(args) != 2)
 input_file <- args[1]
 output_file <- args[2]
 
-df <- read.csv(input_file)
+df <- read.csv(input_file) %>% filter(near(targetbalance, 0.0))
 
 plot <-
-    ggplot(df, aes(x=edges, y=balance, color=factor(min_balance))) +
-    geom_point() +
-    labs(y="Cut balance",
-         x="Edge count",
-         col="Minimum balance") +
-    facet_grid(default_strategy ~ .)
+    ggplot(df, aes(x=factor(type), y=balance, fill=strategy)) +
+    geom_bar(stat="summary", fun="mean", position="dodge") +
+    labs(y="Balance",
+         x="Graph name") +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
 ggsave(output_file, plot)
