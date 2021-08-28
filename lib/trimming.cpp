@@ -1,7 +1,6 @@
 #include <glog/logging.h>
 #include <glog/stl_logging.h>
 
-#include "absl/container/flat_hash_set.h"
 #include "trimming.hpp"
 
 namespace Trimming {

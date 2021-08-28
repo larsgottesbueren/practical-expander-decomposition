@@ -7,10 +7,12 @@
 
 #include "lib/datastructures/undirected_graph.hpp"
 
-std::unique_ptr<std::mt19937> configureRandomness() {
-  srand(0);
+std::unique_ptr<std::mt19937> configureRandomness(unsigned int seed) {
   std::random_device rd;
-  std::mt19937 randomGen(rd());
+  const unsigned int s = seed == 0 ? int(rd()) : seed;
+
+  std::srand(s);
+  std::mt19937 randomGen(s);
 
   return std::make_unique<std::mt19937>(randomGen);
 }

@@ -4,8 +4,8 @@
 #include <glog/stl_logging.h>
 #include <numeric>
 #include <random>
+#include <unordered_set>
 
-#include "absl/container/flat_hash_set.h"
 #include "cut_matching.hpp"
 
 namespace CutMatching {
@@ -251,7 +251,7 @@ Result Solver::compute(Parameters params) {
             << " |T| = " << axRight.size() << " and max height " << h << ".";
     const auto hasExcess = subdivGraph->compute(h);
 
-    absl::flat_hash_set<int> removed;
+    std::unordered_set<int> removed;
     if (hasExcess.empty()) {
       VLOG(3) << "\tAll flow routed.";
     } else {

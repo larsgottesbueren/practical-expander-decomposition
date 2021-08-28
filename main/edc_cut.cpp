@@ -14,11 +14,12 @@
 
 using namespace std;
 
+DEFINE_uint32(seed, 0, "Seed randomness with any positive integer. Default value '0' means a random seed will be chosen based on system time.");
 DEFINE_double(
     phi, 0.01,
     "Value of \\phi such that expansion of each cluster is at least \\phi");
-DEFINE_int32(t1, 30, "Constant 't1' in 'T = t1 + t2 \\log^2 m'");
-DEFINE_double(t2, 6.0, "Constant 't2' in 'T = t1 + t2 \\log^2 m'");
+DEFINE_int32(t1, -1, "Constant 't1' in 'T = t1 + t2 \\log^2 m'. Will be chosen by strategy if not chosen manually.");
+DEFINE_double(t2, -1.0, "Constant 't2' in 'T = t1 + t2 \\log^2 m'. Will be chosen by strategy if not chosen manually.");
 DEFINE_int32(
     min_iterations, 0,
     "Minimum iterations to run cut-matching game. If this is larger than 'T' "
@@ -43,14 +44,17 @@ int main(int argc, char *argv[]) {
   gflags::SetUsageMessage("Expander Decomposition & Clustering");
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-  auto randomGen = configureRandomness();
+  auto randomGen = configureRandomness(FLAGS_seed);
 
   VLOG(1) << "Reading input.";
   auto g = readGraph(FLAGS_chaco);
   VLOG(1) << "Finished reading input.";
 
-  CutMatching::Parameters params = {.tConst = FLAGS_t1,
-                                    .tFactor = FLAGS_t2,
+  const int default_t1 = FLAGS_balanced_cut_strategy ? 22 : 124;
+  const double default_t2 = FLAGS_balanced_cut_strategy ? 5.07 : 19.1;
+
+  CutMatching::Parameters params = {.tConst = FLAGS_t1 < -0.5 ? default_t1 : FLAGS_t1,
+                                    .tFactor = FLAGS_t2 < -0.5 ? default_t2 : FLAGS_t2,
                                     .minIterations = FLAGS_min_iterations,
                                     .minBalance = FLAGS_min_balance,
                                     .samplePotential = FLAGS_sample_potential,
