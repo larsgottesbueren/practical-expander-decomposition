@@ -63,7 +63,10 @@ function run_with_graph {
     done
 }
 
-phi='0.005'
+phis=(
+    '0.01'
+    '0.005'
+)
 
 target_balances=(
     '0.0'
@@ -74,8 +77,10 @@ target_balances=(
 for file in graphs/real/*.graph ; do
     name=$(basename $file | sed "s/\..*//")
 
-    for target_balance in "${target_balances[@]}" ; do
-        run_with_graph "$file" "real" "$name" "$phi" "balanced" "$target_balance"
-        run_with_graph "$file" "real" "$name" "$phi" "default" "$target_balance"
+    for phi in "${phis[@]}" ; do
+        for target_balance in "${target_balances[@]}" ; do
+            run_with_graph "$file" "real" "$name" "$phi" "balanced" "$target_balance"
+            run_with_graph "$file" "real" "$name" "$phi" "default" "$target_balance"
+        done
     done
 done

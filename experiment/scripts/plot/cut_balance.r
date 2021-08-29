@@ -9,7 +9,7 @@ if (length(args) != 2)
 input_file <- args[1]
 output_file <- args[2]
 
-df <- read.csv(input_file) %>% filter(near(targetbalance, 0.0))
+df <- read.csv(input_file) %>% filter(near(targetbalance, 0.0), near(phi, 0.005))
 
 plot <-
     ggplot(df, aes(x=factor(type), y=balance, fill=strategy)) +

@@ -14,6 +14,7 @@ all: \
   out/cut_balance_with_heuristic.pdf \
   out/real_cut_balance.pdf \
   out/real_cut_conductance.pdf \
+  out/real_cut_conductance_large_phi.pdf \
   out/real_cut_iterations.pdf \
   out/real_cut_time.pdf \
   out/expected_edges_cut.pdf \
@@ -74,6 +75,9 @@ out/edge_ratio_to_edges.pdf: scripts/plot/edge_ratio_to_edges.r gen/edc.csv
 	Rscript $^ $@
 
 out/real_cut_conductance.pdf: scripts/plot/real_cut_conductance.r gen/cut.csv
+	Rscript $^ $@
+
+out/real_cut_conductance_large_phi.pdf: scripts/plot/real_cut_conductance_large_phi.r gen/cut.csv
 	Rscript $^ $@
 
 out/real_cut_balance.pdf: scripts/plot/real_cut_balance.r gen/cut.csv

@@ -11,7 +11,7 @@ input_file <- args[1]
 output_file <- args[2]
 
 df <- read.csv(input_file) %>%
-    group_by(graph,type,targetbalance) %>%
+    group_by(graph,type,targetbalance,phi) %>%
     summarize(conductanceratio=sum(conductance[strategy=="default"])/sum(conductance[strategy=="balanced"]))
 
 plotWithData <- function(data) {
@@ -24,15 +24,15 @@ plotWithData <- function(data) {
              x="",
              fill="Which is better?") +
         theme(axis.text.x = element_text(size = 6, angle = 90, vjust = 0.5, hjust = 1)) +
-        scale_color_manual(values = c('Default' = "blue", 'Balanced' = "red"))
+        scale_fill_manual(values = c('Default' = "blue", 'Balanced' = "red"))
 }
 
-p1 <- plotWithData(filter(df, targetbalance == 0.0))
-p2 <- plotWithData(filter(df, targetbalance == 0.25))
-p3 <- plotWithData(filter(df, targetbalance == 0.45))
+p1 <- plotWithData(filter(df, near(targetbalance, 0.0), near(phi, 0.005)))
+p2 <- plotWithData(filter(df, near(targetbalance, 0.25), near(phi, 0.005)))
+p3 <- plotWithData(filter(df, near(targetbalance, 0.45), near(phi, 0.005)))
 
 # See https://github.com/wilkelab/cowplot/blob/master/vignettes/shared_legends.Rmd
-legend <- get_legend(p1 + theme(legend.justification = "top"))
+legend <- get_legend(p3 + theme(legend.justification = "top"))
 
 plot <- plot_grid(
     p1 + theme(legend.position="none"),

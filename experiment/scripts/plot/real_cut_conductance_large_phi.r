@@ -12,12 +12,12 @@ output_file <- args[2]
 
 df <- read.csv(input_file) %>%
     group_by(graph,type,targetbalance,phi) %>%
-    summarize(timeratio=sum(time[strategy=="default"])/sum(time[strategy=="balanced"]))
+    summarize(conductanceratio=sum(conductance[strategy=="default"])/sum(conductance[strategy=="balanced"]))
 
 plotWithData <- function(data) {
-    ggplot(data, aes(x=reorder(factor(type), timeratio),
-                     y=timeratio,
-                     fill=ifelse(timeratio < 1, 'Default', 'Balanced'))) +
+    ggplot(data, aes(x=reorder(factor(type), conductanceratio),
+                     y=conductanceratio,
+                     fill=ifelse(conductanceratio < 1, "Default", "Balanced"))) +
         geom_bar(stat="identity") +
         geom_hline(yintercept=1) +
         labs(y="Ratio",
@@ -27,9 +27,9 @@ plotWithData <- function(data) {
         scale_fill_manual(values = c('Default' = "blue", 'Balanced' = "red"))
 }
 
-p1 <- plotWithData(filter(df, near(targetbalance, 0.0), near(phi, 0.005)))
-p2 <- plotWithData(filter(df, near(targetbalance, 0.25), near(phi, 0.005)))
-p3 <- plotWithData(filter(df, near(targetbalance, 0.45), near(phi, 0.005)))
+p1 <- plotWithData(filter(df, near(targetbalance, 0.0), near(phi, 0.01)))
+p2 <- plotWithData(filter(df, near(targetbalance, 0.25), near(phi, 0.01)))
+p3 <- plotWithData(filter(df, near(targetbalance, 0.45), near(phi, 0.01)))
 
 # See https://github.com/wilkelab/cowplot/blob/master/vignettes/shared_legends.Rmd
 legend <- get_legend(p3 + theme(legend.justification = "top"))
