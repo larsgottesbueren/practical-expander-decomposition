@@ -17,14 +17,14 @@ df <- read.csv(input_file) %>%
 plotWithData <- function(data) {
     ggplot(data, aes(x=reorder(factor(type), conductanceratio),
                      y=conductanceratio,
-                     fill=ifelse(conductanceratio < 1, "Default", "Balanced"))) +
+                     fill=ifelse(conductanceratio < 1, "Original", "Balanced"))) +
         geom_bar(stat="identity") +
         geom_hline(yintercept=1) +
         labs(y="Ratio",
              x="",
              fill="Which is better?") +
         theme(axis.text.x = element_text(size = 6, angle = 90, vjust = 0.5, hjust = 1)) +
-        scale_fill_manual(values = c('Default' = "blue", 'Balanced' = "red"))
+        scale_fill_manual(values = c('Original' = "blue", 'Balanced' = "red"))
 }
 
 p1 <- plotWithData(filter(df, near(targetbalance, 0.0), near(phi, 0.01)))

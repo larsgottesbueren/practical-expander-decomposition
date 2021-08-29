@@ -11,6 +11,8 @@ output_file <- args[2]
 
 df <- read.csv(input_file)
 
+df$default_strategy <- gsub("Default", "Original", df$default_strategy)
+
 plot <-
     ggplot(df, aes(x=iteration, y=potential, color=graph)) +
     scale_y_log10(

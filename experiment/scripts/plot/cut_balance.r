@@ -11,11 +11,15 @@ output_file <- args[2]
 
 df <- read.csv(input_file) %>% filter(near(targetbalance, 0.0), near(phi, 0.005))
 
+df$strategy <- gsub("default", "Original", df$strategy)
+df$strategy <- gsub("balanced", "Balanced", df$strategy)
+
 plot <-
     ggplot(df, aes(x=factor(type), y=balance, fill=strategy)) +
     geom_bar(stat="summary", fun="mean", position="dodge") +
     labs(y="Balance",
-         x="Graph name") +
+         x="Graph name",
+         fill="Strategy") +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
 ggsave(output_file, plot)

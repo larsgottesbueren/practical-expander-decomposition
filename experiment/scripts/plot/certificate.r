@@ -11,6 +11,8 @@ output_file <- args[2]
 
 df <- read.csv(input_file)
 
+df$strategy_type <- gsub("Default", "Original", df$strategy_type)
+
 plot <-
     ggplot(df, aes(x=phi, y=certificate, col=ifelse(certificate >= phi, 'Correct', 'Incorrect'))) +
     geom_point() +

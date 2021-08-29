@@ -16,6 +16,6 @@ plot <-
     geom_point() +
     labs(y="Edges cut",
          x="Expected edges cut",
-         col="Conductance")
+         shape="Conductance")
 
 ggsave(output_file, plot)

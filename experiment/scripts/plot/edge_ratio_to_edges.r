@@ -12,7 +12,7 @@ output_file <- args[2]
 df <- read.csv(input_file)
 
 plot <-
-    ggplot(df, aes(x=edges, y=edgeratio, color=factor(phi), shape=factor(type))) +
+    ggplot(df, aes(x=edges, y=edgeratio, color=factor(phi))) +
     geom_point() +
     labs(y="Edges cut / edge count",
          x="Edge count",
