@@ -1,0 +1,34 @@
+#! /bin/bash
+
+echo "### Downloading graphs ###"
+
+#./download_graphs.py
+
+from="real.mtx"
+dest="real"
+stats="real.stats.csv"
+
+mkdir "$dest"
+mkdir "$from"
+
+echo "name,vertices,edges" > "$stats"
+
+echo "### Parsing graphs ###"
+
+for d in "$from"/* ; do
+    name=$(basename "$d")
+    path="$from/$name/$name.mtx"
+    if [ ! -f "$path" ] ; then
+        echo "Could not find file $path"
+        exit 1
+    fi
+
+    ./parse_mtx_graph.py < "$path" > "$dest/$name.graph"
+
+    vertices=$(head -n 1 $dest/$name.graph | awk '{print $1}')
+    edges=$(head -n 1 $dest/$name.graph | awk '{print $2}')
+
+    echo "$name,$vertices,$edges" >> "$stats"
+done
+
+echo "### Done ###"
