@@ -109,7 +109,6 @@ private:
   std::mt19937 *randomGen;
 
   std::vector<int> *subdivisionIdx;
-  std::vector<int> *fromSubdivisionIdx;
 
   const double phi;
   const int T;
@@ -159,15 +158,13 @@ public:
 
        vertex.
 
-     - fromSubdivisionIdx: Vector used as inverse to 'subdivisionIdx'.
-
      - phi: Conductance value.
 
      - params: Algorithm configuration.
    */
   Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivGraph,
-         std::mt19937 *randomGen, std::vector<int> *subdivisionIdx,
-         std::vector<int> *fromSubdivisionIdx, double phi, Parameters params);
+         std::mt19937 *randomGen, std::vector<int> *subdivisionIdx, double phi,
+         Parameters params);
 
   /**
      Compute a sparse cut.

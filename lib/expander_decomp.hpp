@@ -38,13 +38,13 @@ private:
   std::mt19937 *randomGen;
 
   /**
-     Map to and from subdivision vertices.
+     Map to subdivision vertices.
 
-     Value associated with each vertex such that 'subdivision[u] == -1' if 'u'
-     is not a subdivision vertex and 'subdivision[u] >= 0' if 'u' is a
+     Value associated with each vertex such that 'subdivisionIdx[u] == -1' if
+     'u' is not a subdivision vertex and 'subdivisionIdx[u] >= 0' if 'u' is a
      subdivision vertex.
    */
-  std::unique_ptr<std::vector<int>> subdivisionIdx, fromSubdivisionIdx;
+  std::unique_ptr<std::vector<int>> subdivisionIdx;
 
   const double phi;
 

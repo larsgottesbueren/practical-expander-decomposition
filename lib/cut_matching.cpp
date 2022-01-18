@@ -16,11 +16,9 @@ Result::Result()
 
 Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG,
                std::mt19937 *randomGen, std::vector<int> *subdivisionIdx,
-               std::vector<int> *fromSubdivisionIdx, double phi,
-               Parameters params)
+               double phi, Parameters params)
     : graph(g), subdivGraph(subdivG), randomGen(randomGen),
-      subdivisionIdx(subdivisionIdx), fromSubdivisionIdx(fromSubdivisionIdx),
-      phi(phi),
+      subdivisionIdx(subdivisionIdx), phi(phi),
       T(std::max(1, params.tConst + int(ceil(params.tFactor *square(
                                         std::log10(graph->edgeCount())))))),
       numSplitNodes(subdivGraph->size() - graph->size()) {
@@ -48,7 +46,6 @@ Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG,
   for (auto u : *subdivGraph) {
     if ((*subdivisionIdx)[u] >= 0) {
       (*subdivisionIdx)[u] = count++;
-      (*fromSubdivisionIdx)[(*subdivisionIdx)[u]] = u;
     }
   }
 }
