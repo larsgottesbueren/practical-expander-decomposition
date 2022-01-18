@@ -319,9 +319,6 @@ Result Solver::compute(Parameters params) {
       }
     }
     VLOG(3) << "Found matching of size " << matching.size() << ".";
-
-    assert(matching.size() == axLeft.size() &&
-           "Expected all source vertices to be matched.");
   }
 
   result.iterations = iterations;
