@@ -22,7 +22,7 @@ plot <-
     geom_smooth(method="lm", formula=f, fullrange=TRUE) +
     stat_poly_eq(aes(label = ..eq.label..), formula=f, parse=TRUE) +
     labs(y="Iterations",
-         x=expression("log"^2 ~ "m"),
+         x=expression("log"[10]^2 ~ "m"),
          col='Graph type')
 
 ggsave(output_file, plot)

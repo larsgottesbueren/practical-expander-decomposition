@@ -20,7 +20,7 @@ plot <-
     labs(y="Balance",
          x="Graph name",
          fill="Strategy") +
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+    theme(axis.text.x = element_text(size = 6, angle = 90, vjust = 0.5, hjust=1)) +
     facet_grid(targetbalance ~ .)
 
 ggsave(output_file, plot)

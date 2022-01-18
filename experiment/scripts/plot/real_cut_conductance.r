@@ -23,7 +23,7 @@ plotWithData <- function(data) {
         labs(y="Ratio",
              x="",
              fill="Which is better?") +
-        theme(axis.text.x = element_text(size = 6, angle = 90, vjust = 0.5, hjust = 1)) +
+        theme(axis.text.x = element_text(size = 4, angle = 90, vjust = 0.5, hjust = 1)) +
         scale_fill_manual(values = c('Original' = "blue", 'Balanced' = "red"))
 }
 
