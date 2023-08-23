@@ -1,5 +1,3 @@
-#include <glog/logging.h>
-#include <glog/stl_logging.h>
 #include <memory>
 #include <numeric>
 

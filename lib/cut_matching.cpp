@@ -1,7 +1,5 @@
 #include <algorithm>
 #include <cmath>
-#include <glog/logging.h>
-#include <glog/stl_logging.h>
 #include <numeric>
 #include <random>
 #include <unordered_set>
@@ -12,7 +10,7 @@ namespace CutMatching {
 
 Result::Result()
     : type(Result::Type::Expander), iterations(0),
-      iterationsUntilValidExpansion(INT_MAX), congestion(1) {}
+      iterationsUntilValidExpansion(std::numeric_limits<int>::max()), congestion(1) {}
 
 Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG,
                std::mt19937 *randomGen, std::vector<int> *subdivisionIdx,

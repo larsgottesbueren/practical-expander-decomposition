@@ -6,6 +6,7 @@
 #include <queue>
 #include <stack>
 #include <vector>
+#include <cassert>
 
 namespace SubsetGraph {
 

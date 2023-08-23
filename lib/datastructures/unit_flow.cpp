@@ -1,6 +1,6 @@
 #include "unit_flow.hpp"
-#include <glog/logging.h>
-#include <glog/stl_logging.h>
+#include <functional>
+#include <util.hpp>
 
 namespace UnitFlow {
 

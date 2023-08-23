@@ -1,7 +1,7 @@
-#include <glog/logging.h>
-#include <glog/stl_logging.h>
-
 #include "trimming.hpp"
+#include <util.hpp>
+
+#include <cmath>
 
 namespace Trimming {
 
@@ -16,7 +16,7 @@ void Solver::compute() {
     const int removedEdges = graph->globalDegree(u) - graph->degree(u);
     graph->addSource(u, (UnitFlow::Flow)std::ceil(removedEdges * 2.0 / phi));
     for (auto e = graph->beginEdge(u); e != graph->endEdge(u); ++e)
-      e->capacity = (UnitFlow::Flow)ceil(2.0 / phi);
+      e->capacity = (UnitFlow::Flow)std::ceil(2.0 / phi);
 
     UnitFlow::Flow d = (UnitFlow::Flow)graph->globalDegree(u);
     graph->addSink(u, d);
@@ -41,7 +41,7 @@ void Solver::compute() {
 
     for (auto u : levelCut)
       for (auto e = graph->beginEdge(u); e != graph->endEdge(u); ++e)
-        graph->addSource(e->to, (UnitFlow::Flow)ceil(2.0 / phi));
+        graph->addSource(e->to, (UnitFlow::Flow)std::ceil(2.0 / phi));
   }
 
   VLOG(2) << "After trimming partition has " << graph->size() << " vertices.";

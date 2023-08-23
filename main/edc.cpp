@@ -1,80 +1,79 @@
 #include <cmath>
-#include <gflags/gflags.h>
-#include <glog/logging.h>
-#include <glog/stl_logging.h>
+#include <cstring>
 #include <iostream>
 #include <numeric>
 #include <vector>
+#include <memory>
+#include <set>
+#include <string>
+#include <sstream>
 
-#include "lib/cut_matching.hpp"
-#include "lib/datastructures/undirected_graph.hpp"
-#include "lib/expander_decomp.hpp"
-#include "util.hpp"
+#include <util.hpp>
+#include <cut_matching.hpp>
+#include <datastructures/undirected_graph.hpp>
+#include <expander_decomp.hpp>
 
-using namespace std;
+std::unique_ptr<std::mt19937> configureRandomness(unsigned int seed) {
+    std::mt19937 randomGen(seed);
+    return std::make_unique<std::mt19937>(randomGen);
+}
 
-DEFINE_uint32(seed, 0,
-              "Seed randomness with any positive integer. Default value '0' "
-              "means a random seed will be chosen based on system time.");
-DEFINE_double(
-    phi, 0.01,
-    "Value of \\phi such that expansion of each cluster is at least \\phi");
-DEFINE_int32(t1, -1,
-             "Constant 't1' in 'T = t1 + t2 \\log^2 m'. Will be chosen by "
-             "strategy if not chosen manually.");
-DEFINE_double(t2, -1.0,
-              "Constant 't2' in 'T = t1 + t2 \\log^2 m'. Will be chosen by "
-              "strategy if not chosen manually.");
-DEFINE_int32(
-    min_iterations, 0,
-    "Minimum iterations to run cut-matching game. If this is larger than 'T' "
-    "then certificate of expansion can be effected due to extra congestion.");
-DEFINE_double(
-    min_balance, 0.45,
-    "The amount of cut balance before the cut-matching game is terminated.");
-DEFINE_bool(chaco, false,
-            "Input graph is given in the Chaco graph file format");
-DEFINE_bool(partitions, false, "Output indices of partitions");
-DEFINE_bool(sample_potential, false,
-            "True if the potential function should be sampled.");
-DEFINE_bool(balanced_cut_strategy, true,
-            "Propose perfectly balanced cuts in the cut-matching game. This "
-            "results in faster convergance of the potential function.");
+std::unique_ptr<Undirected::Graph> readGraph(bool chaco_format) {
+    int n, m;
+    std::cin >> n >> m;
+
+    std::vector<Undirected::Edge> es;
+    if (chaco_format) {
+        std::cin.ignore();
+        for (int u = 0; u < n; ++u) {
+            std::string line;
+            std::getline(std::cin, line);
+            std::stringstream ss(line);
+
+            int v;
+            while (ss >> v)
+                if (u < --v)
+                    es.emplace_back(u, v);
+        }
+    } else {
+        std::set<std::pair<int, int>> seen;
+        for (int i = 0; i < m; ++i) {
+            int u, v;
+            std::cin >> u >> v;
+            if (u > v)
+                std::swap(u, v);
+            if (seen.find({u, v}) == seen.end()) {
+                seen.insert({u, v});
+                es.emplace_back(u, v);
+            }
+        }
+    }
+
+    return std::make_unique<Undirected::Graph>(n, es);
+}
+
+
 
 int main(int argc, char *argv[]) {
-  google::InitGoogleLogging(argv[0]);
 
-  gflags::SetUsageMessage("Expander Decomposition & Clustering");
-  gflags::ParseCommandLineFlags(&argc, &argv, true);
-
-  auto randomGen = configureRandomness(FLAGS_seed);
+  auto randomGen = configureRandomness(555);
 
   VLOG(1) << "Reading input.";
-  auto g = readGraph(FLAGS_chaco);
+  auto g = readGraph(false);
   VLOG(1) << "Finished reading input.";
 
-  const int default_t1 = FLAGS_balanced_cut_strategy ? 22 : 142;
-  const double default_t2 = FLAGS_balanced_cut_strategy ? 5.0 : 17.2;
+  CutMatching::Parameters params = { .tConst = 22, .tFactor = 5.0, .minIterations = 0, .minBalance = 0.45, .samplePotential = false, .balancedCutStrategy = true };
+  double phi = 0.01;
 
-  CutMatching::Parameters params = {
-      .tConst = FLAGS_t1 < -0.5 ? default_t1 : FLAGS_t1,
-      .tFactor = FLAGS_t2 < -0.5 ? default_t2 : FLAGS_t2,
-      .minIterations = FLAGS_min_iterations,
-      .minBalance = FLAGS_min_balance,
-      .samplePotential = FLAGS_sample_potential,
-      .balancedCutStrategy = FLAGS_balanced_cut_strategy};
-
-  ExpanderDecomposition::Solver solver(move(g), FLAGS_phi, randomGen.get(),
-                                       params);
+  ExpanderDecomposition::Solver solver(std::move(g), phi, randomGen.get(), params);
   auto partitions = solver.getPartition();
   auto conductances = solver.getConductance();
 
-  cout << solver.getEdgesCut() << " " << partitions.size() << endl;
+  std::cout << solver.getEdgesCut() << " " << partitions.size() << std::endl;
   for (int i = 0; i < int(partitions.size()); ++i) {
-    cout << partitions[i].size() << " " << conductances[i];
-    if (FLAGS_partitions)
+      std::cout << partitions[i].size() << " " << conductances[i];
       for (auto p : partitions[i])
-        cout << " " << p;
-    cout << endl;
+          std::cout << " " << p;
+      std::cout << std::endl;
   }
 }
