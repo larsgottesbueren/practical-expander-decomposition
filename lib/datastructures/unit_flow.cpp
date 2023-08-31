@@ -1,6 +1,7 @@
 #include "unit_flow.hpp"
 #include <functional>
 #include <util.hpp>
+#include <chrono>
 
 namespace UnitFlow {
 
@@ -16,7 +17,7 @@ Edge::Edge(Vertex from, Vertex to, Flow capacity)
 
 Graph::Graph(int n, const std::vector<Edge> &es)
     : SubsetGraph::Graph<int, Edge>(n, es), absorbed(n), sink(n), height(n),
-      nextEdgeIdx(n), forest(n) {}
+      nextEdgeIdx(n) {}
 
 std::vector<Vertex> Graph::compute(const int maxHeight) {
   const int maxH = std::min(maxHeight, size() * 2 + 1);
@@ -28,6 +29,7 @@ std::vector<Vertex> Graph::compute(const int maxHeight) {
       q[0].push(u);
 
   int level = 0;
+
   while (level <= maxH) {
     if (q[level].empty()) {
       level++;
@@ -66,14 +68,18 @@ std::vector<Vertex> Graph::compute(const int maxHeight) {
 
       if (height[e.to] < maxH && excess(e.to) > 0) {
         q[height[e.to]].push(e.to);
-        level = std::min(level, height[e.to]);
+        level = std::min(level, height[e.to]);       // You go to the level of the node you just pushed to next????? Why???
         nextEdgeIdx[e.to] = 0;
       }
     } else if (nextEdgeIdx[e.from] == degree(e.from) - 1) {
       // all edges have been tried, relabel
       q[level].pop();
-      height[e.from]++;
-      nextEdgeIdx[e.from] = 0;
+      height[e.from]++;// ???? What the fuck is this? TODO relabel properly
+        // TODO the current-arc data structure is almost useless since the same node is pushed repeatedly until it has to be relabeled or its excess is gone
+        // The same could be achieved more efficiently with a proper discharge implementation
+        //
+
+        nextEdgeIdx[e.from] = 0;
 
       if (height[e.from] < maxH)
         q[height[e.from]].push(e.from);
@@ -189,81 +195,9 @@ Graph::matchingDfs(const std::vector<Vertex> &sources) {
   return matches;
 }
 
-std::vector<std::pair<Vertex, Vertex>>
-Graph::matchingLinkCut(const std::vector<Vertex> &sources) {
-  const int inf = 1 << 30;
-
-  forest.reset(cbegin(), cend());
-  for (auto it = cbegin(); it != cend(); ++it)
-    nextEdgeIdx[*it] = 0;
-
-  std::vector<std::pair<Vertex, Vertex>> matches;
-
-  auto search = [&](Vertex start) {
-    while (true) {
-      auto u = forest.findRoot(start);
-      assert(forest.get(u) == inf);
-
-      if (absorbed[u] > 0 && sink[u] > 0)
-        return absorbed[u]--, sink[u]--, u;
-
-      while (nextEdgeIdx[u] < degree(u)) {
-        auto e = getEdge(u, nextEdgeIdx[u]++);
-        if (e.flow <= 0 || forest.findRoot(e.to) == u)
-          continue;
-        forest.set(u, 0);
-        forest.link(u, e.to, e.flow);
-        e.flow = 0;
-
-        u = forest.findRoot(start);
-        if (absorbed[u] > 0 && sink[u] > 0)
-          return absorbed[u]--, sink[u]--, u;
-      }
-      if (forest.findRoot(start) != start) {
-        auto rc = forest.findRootEdge(start);
-        forest.cut(rc);
-        forest.set(rc, inf);
-      } else {
-        break;
-      }
-    }
-
-    return -1;
-  };
-
-  for (auto it = cbegin(); it != cend(); ++it)
-    forest.set(*it, inf);
-
-  for (const auto u : sources) {
-    const auto v = search(u);
-    if (v != -1) {
-      assert(forest.findRoot(u) == v &&
-             "Matched vertex should be forest root.");
-      matches.push_back({u, v});
-
-      forest.updatePath(u, -1);
-      forest.set(v, inf);
-      while (forest.findRoot(u) != u) {
-        auto [value, w] = forest.findPathMin(u);
-        assert(forest.get(w) == value);
-        if (value == 0)
-          forest.cut(w), forest.set(w, inf);
-        else
-          break;
-      }
-    } else {
-      VLOG(4) << "Could not match vertex " << u << ".";
-    }
-  }
-
-  return matches;
-}
 
 std::vector<std::pair<Vertex, Vertex>>
-Graph::matching(const std::vector<Vertex> &sources, MatchingMethod method) {
-  if (method == MatchingMethod::Dfs)
+Graph::matching(const std::vector<Vertex> &sources) {
     return matchingDfs(sources);
-  else
-    return matchingLinkCut(sources);
 }
 } // namespace UnitFlow

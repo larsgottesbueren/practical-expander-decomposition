@@ -8,6 +8,7 @@
 
 template <typename T> T square(const T t) { return t * t; }
 
+
 class Logger {
 public:
     explicit Logger(int log_level, const bool newline=true) :
@@ -48,11 +49,13 @@ public:
         }
     }
 
+    static int LOG_LEVEL;
+
 private:
     int _log_level;
     bool _newline;
     std::ostringstream _oss;
-    static constexpr int LOG_LEVEL = -1;
 };
+
 
 #define VLOG(X) Logger(X, true)

@@ -13,6 +13,8 @@
 #include <datastructures/undirected_graph.hpp>
 #include <expander_decomp.hpp>
 
+int Logger::LOG_LEVEL = 3;
+
 std::unique_ptr<std::mt19937> configureRandomness(unsigned int seed) {
     std::mt19937 randomGen(seed);
     return std::make_unique<std::mt19937>(randomGen);
@@ -58,9 +60,12 @@ int main(int argc, char *argv[]) {
 
   auto randomGen = configureRandomness(555);
 
-  VLOG(1) << "Reading input.";
+  if(const char* env_log_level = std::getenv("LOG_LEVEL")) {
+      int log_level = std::stoi(env_log_level);
+      Logger::LOG_LEVEL = log_level;
+  }
+
   auto g = readGraph(false);
-  VLOG(1) << "Finished reading input.";
 
   CutMatching::Parameters params = { .tConst = 22, .tFactor = 5.0, .minIterations = 0, .minBalance = 0.45, .samplePotential = false, .balancedCutStrategy = true };
   double phi = 0.01;
@@ -68,6 +73,8 @@ int main(int argc, char *argv[]) {
   ExpanderDecomposition::Solver solver(std::move(g), phi, randomGen.get(), params);
   auto partitions = solver.getPartition();
   auto conductances = solver.getConductance();
+
+  return 0;
 
   std::cout << solver.getEdgesCut() << " " << partitions.size() << std::endl;
   for (int i = 0; i < int(partitions.size()); ++i) {

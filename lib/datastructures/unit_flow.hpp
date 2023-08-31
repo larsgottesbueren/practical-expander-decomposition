@@ -5,7 +5,6 @@
 #include <queue>
 #include <vector>
 
-#include "linkcut.hpp"
 #include "subset_graph.hpp"
 
 namespace UnitFlow {
@@ -81,10 +80,7 @@ private:
    */
   Flow residual(const Edge &e) const { return e.capacity - e.flow; }
 
-  /**
-     A link-cut forest used for computing matchings.
-   */
-  LinkCut::Forest forest;
+
 
 public:
   /**
@@ -181,28 +177,9 @@ private:
   std::vector<std::pair<Vertex, Vertex>>
   matchingDfs(const std::vector<Vertex> &sources);
 
-  std::vector<std::pair<Vertex, Vertex>>
-  matchingLinkCut(const std::vector<Vertex> &sources);
 
 public:
-  /**
-     Types of algorithms available when computing matching.
-   */
-  enum MatchingMethod { Dfs, LinkCut };
-
-  /**
-     Compute a matching between vertices using the current state of the flow
-     graph. A matching between vertices (u,v) is possible iff there is a path
-     from u to v in the flow graph, where for each edge, the number of matchings
-     going across it is <= to the flow going across it.
-
-     Method will mutate the flow such that it is no longer legal.
-
-     Time complexity:
-     - Dfs method: O(min(m^2, sum of total flow across edges))
-     - Link-cut method: O(m \log m)
-   */
   std::vector<std::pair<Vertex, Vertex>>
-  matching(const std::vector<Vertex> &sources, MatchingMethod method);
+  matching(const std::vector<Vertex> &sources);
 };
 } // namespace UnitFlow
