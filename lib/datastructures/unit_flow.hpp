@@ -75,12 +75,6 @@ private:
    */
   std::vector<int> nextEdgeIdx;
 
-  /**
-     Residual capacity of an edge.
-   */
-  Flow residual(const Edge &e) const { return e.capacity - e.flow; }
-
-
 
 public:
   /**
@@ -88,19 +82,6 @@ public:
    */
   Graph(int n, const std::vector<Edge> &es);
 
-  const std::vector<Flow> &getAbsorbed() const { return absorbed; }
-  const std::vector<Flow> &getSink() const { return sink; }
-  const std::vector<Vertex> &getHeight() const { return height; }
-  const std::vector<int> &getNextEdgeIdx() const { return nextEdgeIdx; }
-
-  /**
-     Add an undirected edge '{u,v}' with a certain capacity. If 'u = v' do
-     nothing. If vertices are in separate partitions, edge is not added but
-     global degree of 'u' is incremented.
-
-     Return true if an edge was added or false otherwise.
-   */
-  bool addEdge(Vertex u, Vertex v, Flow capacity);
 
   /**
      Increase the amount of flow a vertex is currently absorbing.
@@ -111,26 +92,6 @@ public:
      Increase the amount of flow a vertex is able to absorb on its own.
    */
   void addSink(Vertex u, Flow amount) { sink[u] += amount; }
-
-  /**
-      The amount of flow absorbed by a vertex.
-  */
-  Flow flowIn(Vertex u) const { return absorbed[u]; }
-
-  /**
-     The amount of flow leaving vertex.
-
-     Time complexity: O(m)
-
-     TODO: make this function O(1)
-   */
-  Flow flowOut(Vertex u) const {
-    Flow f = 0;
-    for (auto e = cbeginEdge(u); e != cendEdge(u); ++e)
-      if (e->flow > 0)
-        f += e->flow;
-    return f;
-  }
 
   /**
      Return the excess of a node, i.e. the flow it cannot absorb.
@@ -158,20 +119,6 @@ public:
      Set all flow, sinks and source capacities to 0.
    */
   void reset();
-
-  /**
-     Set all flow, sinks and source capacities of a subset of vertices to 0.
-   */
-  template <typename It> void reset(const It begin, const It end) {
-    for (auto u : *this) {
-      for (auto e = beginEdge(u); e != endEdge(u); ++e)
-        e->flow = 0;
-      absorbed[u] = 0;
-      sink[u] = 0;
-      height[u] = 0;
-      nextEdgeIdx[u] = 0;
-    }
-  }
 
 private:
   std::vector<std::pair<Vertex, Vertex>>

@@ -92,12 +92,6 @@ struct Result {
   Result();
 };
 
-/**
-   A matching is a vector of pairs '(a,b)'. The cut-matching game guarantees
-   that no vertex occurs in more than one pair.
- */
-using Matching = std::vector<std::pair<int, int>>;
-
 class Solver {
 private:
   UnitFlow::Graph *graph;
@@ -141,6 +135,8 @@ private:
    */
   std::pair<std::vector<int>, std::vector<int>>
   proposeCut(const std::vector<double> &flow, const Parameters &params) const;
+
+
 
 public:
   /**

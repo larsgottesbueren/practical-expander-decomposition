@@ -68,6 +68,7 @@ std::vector<Vertex> Graph::compute(const int maxHeight) {
 
       if (height[e.to] < maxH && excess(e.to) > 0) {
         q[height[e.to]].push(e.to);
+        // Why would you use lowest label policy? In standard max flow it's highest label or FIFO
         level = std::min(level, height[e.to]);       // You go to the level of the node you just pushed to next????? Why???
         nextEdgeIdx[e.to] = 0;
       }
@@ -75,11 +76,7 @@ std::vector<Vertex> Graph::compute(const int maxHeight) {
       // all edges have been tried, relabel
       q[level].pop();
       height[e.from]++;// ???? What the fuck is this? TODO relabel properly
-        // TODO the current-arc data structure is almost useless since the same node is pushed repeatedly until it has to be relabeled or its excess is gone
-        // The same could be achieved more efficiently with a proper discharge implementation
-        //
-
-        nextEdgeIdx[e.from] = 0;
+      nextEdgeIdx[e.from] = 0;
 
       if (height[e.from] < maxH)
         q[height[e.from]].push(e.from);
