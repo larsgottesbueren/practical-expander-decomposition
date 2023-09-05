@@ -75,6 +75,13 @@ private:
    */
   std::vector<int> nextEdgeIdx;
 
+  void DischargeLoopFIFO(int maxHeight);
+
+  void SinglePushLowestLabel(int maxHeight);
+
+  void GlobalRelabling() { }
+
+
 
 public:
   /**

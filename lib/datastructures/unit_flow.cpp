@@ -19,83 +19,157 @@ Graph::Graph(int n, const std::vector<Edge> &es)
     : SubsetGraph::Graph<int, Edge>(n, es), absorbed(n), sink(n), height(n),
       nextEdgeIdx(n) {}
 
+
+void Graph::DischargeLoopFIFO(int maxHeight) {
+    const int maxH = std::min(maxHeight, size() * 2 + 1);
+
+    std::queue<Vertex> q;
+
+    for (auto u : *this) {
+        if (excess(u) > 0) {
+            q.push(u);
+        }
+    }
+
+    int min_level = 0;
+
+    while (min_level <= maxH && !q.empty()) {
+        const Vertex u = q.front(); q.pop();
+        const int deg = degree(u);
+        if (deg == 0) continue;
+
+        int my_level = height[u];
+        int my_next_level = std::numeric_limits<int>::max();
+
+        while (excess(u) > 0 && my_level < maxH) {
+            auto &e = getEdge(u, nextEdgeIdx[u]);
+            assert(e.flow + reverse(e).flow == 0 &&
+                   "Flow across edge and its reverse should cancel.");
+
+            if (e.residual() > 0) {
+                // TODO also skip if excess[e.to] is too high
+                // TODO this is an assertion in unit flow thanks to lowest label selection
+                // probably needed for correctness
+                if (my_level == height[e.to] + 1) {
+                    if (height[e.to] < maxH && excess(e.to) == 0) {
+                        q.push(e.to);
+                        nextEdgeIdx[e.to] = 0;
+                    }
+
+                    // Push flow across 'e'
+                    UnitFlow::Flow delta = std::min(
+                            {excess(u), e.residual(), (UnitFlow::Flow) degree(e.to)});
+
+                    e.flow += delta;
+                    reverse(e).flow -= delta;
+
+                    absorbed[u] -= delta;
+                    absorbed[e.to] += delta;
+                } else {
+                    my_next_level = std::min(my_next_level, height[e.to]);
+                }
+            }
+
+            if (++nextEdgeIdx[u] == deg) {
+                nextEdgeIdx[u] = 0;
+                my_level = my_next_level + 1;
+                my_next_level = std::numeric_limits<int>::max();
+            }
+        }
+        height[u] = my_level;
+    }
+}
+
+void Graph::SinglePushLowestLabel(int maxHeight) {
+    const int maxH = std::min(maxHeight, size() * 2 + 1);
+
+    std::vector<std::queue<Vertex>> q(maxH + 1);
+
+    for (auto u : *this)
+        if (excess(u) > 0)
+            q[0].push(u);
+
+    int level = 0;
+
+    while (level <= maxH) {
+        if (q[level].empty()) {
+            level++;
+            continue;
+        }
+
+        const int u = q[level].front();
+        if (degree(u) == 0) {
+            q[level].pop();
+            continue;
+        }
+
+        assert(excess(u) > 0 &&
+               "Vertex popped from queue should have excess flow.");
+
+        auto &e = getEdge(u, nextEdgeIdx[u]);
+
+        assert(e.flow + reverse(e).flow == 0 &&
+               "Flow across edge and its reverse should cancel.");
+
+        if (e.residual() > 0 && height[u] == height[e.to] + 1) {
+            // Push flow across 'e'
+            assert(excess(e.to) == 0 && "Pushing to vertex with non-zero excess");
+            UnitFlow::Flow delta = std::min(
+                    {excess(u), e.residual(), (UnitFlow::Flow)degree(e.to)});
+
+            e.flow += delta;
+            reverse(e).flow -= delta;
+
+            absorbed[u] -= delta;
+            absorbed[e.to] += delta;
+
+            assert(excess(u) >= 0 && "Excess after pushing cannot be negative");
+            if (height[u] >= maxH || excess(u) == 0)
+                q[level].pop();
+
+            if (height[e.to] < maxH && excess(e.to) > 0) {
+                q[height[e.to]].push(e.to);
+                // Why would you use lowest label policy? In standard max flow it's highest label or FIFO
+                level = std::min(level, height[e.to]);       // You go to the level of the node you just pushed to next????? Why???
+                nextEdgeIdx[e.to] = 0;
+            }
+        } else if (nextEdgeIdx[u] == degree(u) - 1) {
+            // all edges have been tried, relabel
+            q[level].pop();
+            height[u]++;// ???? What the fuck is this? TODO relabel properly
+            nextEdgeIdx[u] = 0;
+
+            if (height[u] < maxH)
+                q[height[u]].push(u);
+        } else {
+            nextEdgeIdx[u]++;
+        }
+    }
+}
+
+
 std::vector<Vertex> Graph::compute(const int maxHeight) {
-  const int maxH = std::min(maxHeight, size() * 2 + 1);
+#if true
+    SinglePushLowestLabel(maxHeight);
+#else
+    DischargeLoopFIFO(maxHeight);
+#endif
 
-  std::vector<std::queue<Vertex>> q(maxH + 1);
-
-  for (auto u : *this)
-    if (excess(u) > 0)
-      q[0].push(u);
-
-  int level = 0;
-
-  while (level <= maxH) {
-    if (q[level].empty()) {
-      level++;
-      continue;
+    for (auto u : *this) {
+        for (auto e = beginEdge(u); e != endEdge(u); ++e) {
+            if (e->flow > 0) {
+                e->congestion += e->flow;
+            }
+        }
     }
 
-    const int u = q[level].front();
-    if (degree(u) == 0) {
-      q[level].pop();
-      continue;
+    std::vector<UnitFlow::Vertex> hasExcess;
+    for (auto u : *this) {
+        if (excess(u) > 0) {
+            hasExcess.push_back(u);
+        }
     }
-
-    assert(excess(u) > 0 &&
-           "Vertex popped from queue should have excess flow.");
-
-    auto &e = getEdge(u, nextEdgeIdx[u]);
-
-    assert(e.flow + reverse(e).flow == 0 &&
-           "Flow across edge and its reverse should cancel.");
-
-    if (e.residual() > 0 && height[u] == height[e.to] + 1) {
-      // Push flow across 'e'
-      assert(excess(e.to) == 0 && "Pushing to vertex with non-zero excess");
-      UnitFlow::Flow delta = std::min(
-          {excess(e.from), e.residual(), (UnitFlow::Flow)degree(e.to)});
-
-      e.flow += delta;
-      reverse(e).flow -= delta;
-
-      absorbed[e.from] -= delta;
-      absorbed[e.to] += delta;
-
-      assert(excess(e.from) >= 0 && "Excess after pushing cannot be negative");
-      if (height[e.from] >= maxH || excess(e.from) == 0)
-        q[level].pop();
-
-      if (height[e.to] < maxH && excess(e.to) > 0) {
-        q[height[e.to]].push(e.to);
-        // Why would you use lowest label policy? In standard max flow it's highest label or FIFO
-        level = std::min(level, height[e.to]);       // You go to the level of the node you just pushed to next????? Why???
-        nextEdgeIdx[e.to] = 0;
-      }
-    } else if (nextEdgeIdx[e.from] == degree(e.from) - 1) {
-      // all edges have been tried, relabel
-      q[level].pop();
-      height[e.from]++;// ???? What the fuck is this? TODO relabel properly
-      nextEdgeIdx[e.from] = 0;
-
-      if (height[e.from] < maxH)
-        q[height[e.from]].push(e.from);
-    } else {
-      nextEdgeIdx[e.from]++;
-    }
-  }
-
-  for (auto u : *this)
-    for (auto e = beginEdge(u); e != endEdge(u); ++e)
-      if (e->flow > 0)
-        e->congestion += e->flow;
-
-  std::vector<UnitFlow::Vertex> hasExcess;
-  for (auto u : *this)
-    if (excess(u) > 0)
-      hasExcess.push_back(u);
-
-  return hasExcess;
+    return hasExcess;
 }
 
 std::pair<std::vector<Vertex>, std::vector<Vertex>>
@@ -135,8 +209,9 @@ Graph::levelCut(const int h) {
 
 void Graph::reset() {
   for (auto u : *this) {
-    for (auto e = beginEdge(u); e != endEdge(u); ++e)
-      e->flow = 0;
+      for (auto e = beginEdge(u); e != endEdge(u); ++e) {
+          e->flow = 0;
+      }
     absorbed[u] = 0;
     sink[u] = 0;
     height[u] = 0;
