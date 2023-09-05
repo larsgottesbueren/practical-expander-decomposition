@@ -70,11 +70,15 @@ int main(int argc, char *argv[]) {
   CutMatching::Parameters params = { .tConst = 22, .tFactor = 5.0, .minIterations = 0, .minBalance = 0.45, .samplePotential = false, .balancedCutStrategy = true };
   double phi = 0.01;
 
+  Timer timer; timer.Start();
   ExpanderDecomposition::Solver solver(std::move(g), phi, randomGen.get(), params);
+  auto total_time = timer.Stop();
+
   auto partitions = solver.getPartition();
   auto conductances = solver.getConductance();
 
   Timings::GlobalTimings().Print();
+  std::cout << "--- Total time " << total_time << " --- " << std::endl;
 
   return 0;
 

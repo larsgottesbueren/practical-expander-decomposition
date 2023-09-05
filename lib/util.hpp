@@ -85,6 +85,7 @@ struct Timer {
         Duration duration = finish - start;
         total_duration += duration;
         running = false;
+        return duration;
     }
 
     Duration Restart() {
@@ -134,5 +135,6 @@ struct Timings {
         for (int i = 0; i < LAST_TIMING; ++i) {
             std::cout << TimingNames[i] << "\t\t" << std::setprecision(3) << durations[i] << "\t\t" << 100.0 * durations[i] / total  << "%" << std::endl;
         }
+        std::cout << "--- Total measured time " << total << " ---" << std::endl;
     }
 };

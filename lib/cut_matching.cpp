@@ -3,7 +3,6 @@
 #include <numeric>
 #include <random>
 #include <unordered_set>
-#include <chrono>
 
 #include "cut_matching.hpp"
 
@@ -203,8 +202,6 @@ Result Solver::compute(Parameters params) {
     return Result{};
   }
 
-  auto t1 = std::chrono::high_resolution_clock::now();
-
   const int totalVolume = subdivGraph->globalVolume();
   const int lowerVolumeBalance = totalVolume / 2 / 10 / T;
   const int targetVolumeBalance =
@@ -233,11 +230,9 @@ Result Solver::compute(Parameters params) {
       VLOG(4) << "Finished sampling potential function";
     }
 
-    auto ta = std::chrono::high_resolution_clock::now();
-
+    Timer timer; timer.Start();
     auto [axLeft, axRight] = proposeCut(flow, params);
-
-    auto tb = std::chrono::high_resolution_clock::now();
+    Timings::GlobalTimings().AddTiming(Timing::ProposeCut, timer.Restart());
 
     VLOG(3) << "Number of sources: " << axLeft.size()
             << " sinks: " << axRight.size();
@@ -253,7 +248,7 @@ Result Solver::compute(Parameters params) {
             << " |T| = " << axRight.size() << " and max height " << h << ".";
     const auto hasExcess = subdivGraph->compute(h);
 
-    auto tc = std::chrono::high_resolution_clock::now();
+    Timings::GlobalTimings().AddTiming(Timing::FlowMatch, timer.Stop());
 
     std::unordered_set<int> removed;
     if (hasExcess.empty()) {
@@ -301,8 +296,6 @@ Result Solver::compute(Parameters params) {
       subdivGraph->remove(u);
     }
 
-    auto td = std::chrono::high_resolution_clock::now();
-
     VLOG(3) << "Computing matching with |S| = " << axLeft.size()
             << " |T| = " << axRight.size() << ".";
     auto matching =
@@ -324,14 +317,7 @@ Result Solver::compute(Parameters params) {
         }
       }
     }
-    auto te = std::chrono::high_resolution_clock::now();
     VLOG(3) << "Found matching of size " << matching.size() << ".";
-
-
-    const std::chrono::duration<double> diff1 = tb-ta;
-    const std::chrono::duration<double> diff2 = tc-tb;
-    const std::chrono::duration<double> diff3 = te-td;
-    VLOG(3) << "Propose cut took " << diff1 << ". Route flow took " << diff2 << ". Matching took " << diff3 << ".";
   }
 
   result.iterations = iterations;
@@ -358,10 +344,6 @@ Result Solver::compute(Parameters params) {
     graph->restoreRemoves(), result.type = Result::Expander;
   else
     result.type = Result::NearExpander;
-
-  auto t2 = std::chrono::high_resolution_clock::now();
-  const std::chrono::duration<double> diff = t2-t1;
-  VLOG(2) << "Cut matching took " << diff;
 
   switch (result.type) {
   case Result::Balanced: {

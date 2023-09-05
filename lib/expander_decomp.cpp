@@ -69,7 +69,9 @@ void Solver::compute() {
     return;
   }
 
+  Timer timer; timer.Start();
   const auto &components = flowGraph->connectedComponents();
+  Timings::GlobalTimings().AddTiming(Timing::ConnectedComponents, timer.Stop());
 
   if (components.size() > 1) {
     VLOG(1) << "Found " << components.size() << " connected components.";
@@ -124,8 +126,10 @@ void Solver::compute() {
       assert(!a.empty() && "Near expander should have non-empty A.");
       assert(!r.empty() && "Near expander should have non-empty R.");
 
+      timer.Start();
       Trimming::Solver trimming(flowGraph.get(), phi);
       trimming.compute();
+      Timings::GlobalTimings().AddTiming(Timing::FlowTrim, timer.Stop());
 
       assert(flowGraph->size() > 0 &&
              "Should not trim all vertices from graph.");
