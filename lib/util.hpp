@@ -102,13 +102,14 @@ struct Timer {
 enum Timing {
     ProposeCut,
     FlowMatch,
+    Match,
     FlowTrim,
     ConnectedComponents,
     LAST_TIMING
 };
 
 static std::vector<std::string> TimingNames = {
-        "ProposeCut", "FlowMatch", "FlowTrim", "Components"
+        "ProposeCut", "FlowMatch", "MatchDFS + X", "FlowTrim", "Components"
 };
 
 struct Timings {

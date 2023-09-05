@@ -237,6 +237,7 @@ Result Solver::compute(Parameters params) {
     VLOG(3) << "Number of sources: " << axLeft.size()
             << " sinks: " << axRight.size();
 
+
     subdivGraph->reset();
     for (const auto u : axLeft)
       subdivGraph->addSource(u, 1);
@@ -248,7 +249,7 @@ Result Solver::compute(Parameters params) {
             << " |T| = " << axRight.size() << " and max height " << h << ".";
     const auto hasExcess = subdivGraph->compute(h);
 
-    Timings::GlobalTimings().AddTiming(Timing::FlowMatch, timer.Stop());
+    Timings::GlobalTimings().AddTiming(Timing::FlowMatch, timer.Restart());
 
     std::unordered_set<int> removed;
     if (hasExcess.empty()) {
@@ -317,6 +318,9 @@ Result Solver::compute(Parameters params) {
         }
       }
     }
+
+    Timings::GlobalTimings().AddTiming(Timing::Match, timer.Stop());
+
     VLOG(3) << "Found matching of size " << matching.size() << ".";
   }
 
