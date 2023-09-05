@@ -125,7 +125,6 @@ struct Timings {
     void AddTiming(Timing timing, Duration duration) {
         int index = timing;
         durations[index] += duration;
-        std::cout << durations[index] << std::endl;
     }
 
     void Print() {
