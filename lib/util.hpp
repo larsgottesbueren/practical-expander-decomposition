@@ -4,7 +4,7 @@
 #include <iomanip>
 #include <sstream>
 #include <string>
-
+#include <chrono>
 
 template <typename T> T square(const T t) { return t * t; }
 
@@ -57,5 +57,83 @@ private:
     std::ostringstream _oss;
 };
 
-
 #define VLOG(X) Logger(X, true)
+
+
+using Duration = std::chrono::duration<double>;
+using Timepoint = decltype(std::chrono::high_resolution_clock::now());
+
+struct Timer {
+    static Timer& GlobalTimer() {
+        static Timer GLOBAL_TIMER;
+        return GLOBAL_TIMER;
+    }
+    bool running = false;
+    Timepoint start;
+    Duration total_duration;
+
+    Timepoint Start() {
+        if (running) throw std::runtime_error("Called Start() but timer is already running");
+        start = std::chrono::high_resolution_clock::now();
+        running = true;
+        return start;
+    }
+
+    Duration Stop() {
+        if (!running) throw std::runtime_error("Timer not running but called Stop()");
+        auto finish = std::chrono::high_resolution_clock::now();
+        Duration duration = finish - start;
+        total_duration += duration;
+        running = false;
+    }
+
+    Duration Restart() {
+        if (!running) throw std::runtime_error("Timer not running but called Restart()");
+        auto finish = std::chrono::high_resolution_clock::now();
+        Duration duration = finish - start;
+        total_duration += duration;
+        start = finish;
+        return duration;
+    }
+
+};
+
+enum Timing {
+    ProposeCut,
+    FlowMatch,
+    FlowTrim,
+    ConnectedComponents,
+    LAST_TIMING
+};
+
+static std::vector<std::string> TimingNames = {
+        "ProposeCut", "FlowMatch", "FlowTrim", "Components"
+};
+
+struct Timings {
+    static Timings& GlobalTimings() {
+        static Timings GLOBAL_TIMINGS;
+        return GLOBAL_TIMINGS;
+    }
+
+    Timings() {
+        size_t num_entries = LAST_TIMING;
+        durations.resize(num_entries, Duration(0.0));
+    }
+    std::vector<Duration> durations;
+
+    void AddTiming(Timing timing, Duration duration) {
+        int index = timing;
+        durations[index] += duration;
+        std::cout << durations[index] << std::endl;
+    }
+
+    void Print() {
+        Duration total = Duration(0.0);
+        for (const auto& dur : durations) total += dur;
+        std::cout << "Category\t\ttime[s]\t\tpercentage of total runtime" << std::endl;
+        for (int i = 0; i < LAST_TIMING; ++i) {
+            std::cout << TimingNames[i] << "\t\t" << std::setprecision(3) << durations[i] << "\t\t" << 100.0 * durations[i] / total  << "%" << std::endl;
+        }
+    }
+};

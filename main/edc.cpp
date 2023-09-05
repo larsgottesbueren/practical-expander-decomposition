@@ -74,6 +74,8 @@ int main(int argc, char *argv[]) {
   auto partitions = solver.getPartition();
   auto conductances = solver.getConductance();
 
+  Timings::GlobalTimings().Print();
+
   return 0;
 
   std::cout << solver.getEdgesCut() << " " << partitions.size() << std::endl;

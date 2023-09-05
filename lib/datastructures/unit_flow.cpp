@@ -136,11 +136,11 @@ void Graph::SinglePushLowestLabel(int maxHeight) {
         } else if (nextEdgeIdx[u] == degree(u) - 1) {
             // all edges have been tried, relabel
             q[level].pop();
-            height[u]++;// ???? What the fuck is this? TODO relabel properly
+            height[u]++;
             nextEdgeIdx[u] = 0;
-
-            if (height[u] < maxH)
+            if (height[u] < maxH) {
                 q[height[u]].push(u);
+            }
         } else {
             nextEdgeIdx[u]++;
         }
