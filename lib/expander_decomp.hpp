@@ -108,5 +108,7 @@ public:
      endpoints are in separate partitions.
    */
   int getEdgesCut() const;
+
+  Duration time_balanced_cut = Duration(0.0), time_expander = Duration(0.0);
 };
 } // namespace ExpanderDecomposition

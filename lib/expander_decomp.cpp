@@ -89,10 +89,13 @@ void Solver::compute() {
       subdivisionFlowGraph->restoreSubgraph();
     }
   } else {
+
+    Timer cm_timer; cm_timer.Start();
     CutMatching::Solver cm(flowGraph.get(), subdivisionFlowGraph.get(),
                            randomGen, subdivisionIdx.get(), phi,
                            cutMatchingParams);
     auto result = cm.compute(cutMatchingParams);
+    auto cm_dur = cm_timer.Stop();
     std::vector<int> a, r;
     std::copy(flowGraph->cbegin(), flowGraph->cend(), std::back_inserter(a));
     std::copy(flowGraph->cbeginRemoved(), flowGraph->cendRemoved(),
@@ -120,6 +123,7 @@ void Solver::compute() {
       compute();
       flowGraph->restoreSubgraph();
       subdivisionFlowGraph->restoreSubgraph();
+      time_balanced_cut += cm_dur;
       break;
     }
     case CutMatching::Result::NearExpander: {
@@ -161,6 +165,7 @@ void Solver::compute() {
               << numPartitions << "."
               << " Conductance: " << 1.0 / double(result.congestion) << ".";
       finalizePartition(a.begin(), a.end(), result.congestion);
+      time_expander += cm_dur;
       break;
     }
     }

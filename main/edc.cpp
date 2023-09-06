@@ -79,6 +79,7 @@ int main(int argc, char *argv[]) {
 
   Timings::GlobalTimings().Print();
   std::cout << "--- Total time " << total_time << " --- " << std::endl;
+  std::cout << "--- Time for balanced cuts " << solver.time_balanced_cut << " time for expanders " << solver.time_expander << " ---" << std::endl;
 
   return 0;
 

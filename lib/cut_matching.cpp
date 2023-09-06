@@ -297,6 +297,8 @@ Result Solver::compute(Parameters params) {
       subdivGraph->remove(u);
     }
 
+    Timings::GlobalTimings().AddTiming(Timing::Misc, timer.Restart());
+
     VLOG(3) << "Computing matching with |S| = " << axLeft.size()
             << " |T| = " << axRight.size() << ".";
     auto matching =
