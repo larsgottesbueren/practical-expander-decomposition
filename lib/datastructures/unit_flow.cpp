@@ -129,8 +129,7 @@ void Graph::SinglePushLowestLabel(int maxHeight) {
 
             if (height[e.to] < maxH && excess(e.to) > 0) {
                 q[height[e.to]].push(e.to);
-                // Why would you use lowest label policy? In standard max flow it's highest label or FIFO
-                level = std::min(level, height[e.to]);       // You go to the level of the node you just pushed to next????? Why???
+                level = std::min(level, height[e.to]);
                 nextEdgeIdx[e.to] = 0;
             }
         } else if (nextEdgeIdx[u] == degree(u) - 1) {
