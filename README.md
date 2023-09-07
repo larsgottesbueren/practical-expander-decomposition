@@ -24,3 +24,14 @@ Then run the program on the generated graph.
 ``` shell
 ./release/EDC < graph.txt
 ```
+
+Use the LOG_LEVEL environment variable (0-4) to set the output verbosity
+``` shell
+export LOG_LEVEL=1
+```
+
+or 
+
+``` shell
+LOG_LEVEL=1 ./release/EDC < graph.txt
+```
