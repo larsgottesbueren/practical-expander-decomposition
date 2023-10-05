@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "subset_graph.hpp"
+#include "../util.hpp"
 
 namespace UnitFlow {
 
@@ -75,11 +76,13 @@ private:
    */
   std::vector<int> nextEdgeIdx;
 
+  size_t flow_pushed_since = 0;
+
   void DischargeLoopFIFO(int maxHeight);
 
   void SinglePushLowestLabel(int maxHeight);
 
-  void GlobalRelabling() { }
+  void GlobalRelabeling(int max_height, std::vector<std::queue<Vertex>>& level_queues);
 
 
 
@@ -126,6 +129,11 @@ public:
      Set all flow, sinks and source capacities to 0.
    */
   void reset();
+
+  double excess_fraction = 0.0;
+  bool past_excess_fraction_time_measure_started = false;
+  Duration pre_excess = Duration(0.0);
+  Duration post_excess = Duration(0.0);
 
 private:
   std::vector<std::pair<Vertex, Vertex>>

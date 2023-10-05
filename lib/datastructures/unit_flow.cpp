@@ -1,5 +1,7 @@
 #include "unit_flow.hpp"
+
 #include <functional>
+#include <cstdint>
 
 namespace UnitFlow {
 
@@ -79,7 +81,16 @@ void Graph::DischargeLoopFIFO(int maxHeight) {
 }
 
 void Graph::SinglePushLowestLabel(int maxHeight) {
+    past_excess_fraction_time_measure_started = false;
+    Timer timer;
+    timer.Start();
+
     const int maxH = std::min(maxHeight, size() * 2 + 1);
+    const uint64_t work_bound_global_relabel = 10 * (edgeCount() + 5 * size());
+    uint64_t work_performed = 0;
+
+    size_t flow_routed = 0;
+
 
     std::vector<std::queue<Vertex>> q(maxH + 1);
 
@@ -92,6 +103,18 @@ void Graph::SinglePushLowestLabel(int maxHeight) {
     while (level <= maxH) {
         if (q[level].empty()) {
             level++;
+            continue;
+        }
+
+        if (false && work_performed >= work_bound_global_relabel) {
+            std::cout << "work performed " << work_performed << " / " << work_bound_global_relabel << std::endl;
+            work_performed = 0;
+            for (auto& lq : q) {
+                while (!lq.empty()) lq.pop();
+            }
+            GlobalRelabeling(maxH, q);
+            flow_pushed_since = 0;
+            level = 0;
             continue;
         }
 
@@ -109,17 +132,32 @@ void Graph::SinglePushLowestLabel(int maxHeight) {
         assert(e.flow + reverse(e).flow == 0 &&
                "Flow across edge and its reverse should cancel.");
 
+        ++work_performed;
+
         if (e.residual() > 0 && height[u] == height[e.to] + 1) {
             // Push flow across 'e'
             assert(excess(e.to) == 0 && "Pushing to vertex with non-zero excess");
             UnitFlow::Flow delta = std::min(
                     {excess(u), e.residual(), (UnitFlow::Flow)degree(e.to)});
 
+            assert(delta > 0);
+            flow_pushed_since += delta;
+
             e.flow += delta;
             reverse(e).flow -= delta;
 
             absorbed[u] -= delta;
             absorbed[e.to] += delta;
+
+            if (sink[e.to] > 0) {
+                flow_routed += delta;
+                if (flow_routed >= excess_fraction) {
+                    if (!past_excess_fraction_time_measure_started) {
+                        pre_excess += timer.Restart();
+                        past_excess_fraction_time_measure_started = true;
+                    }
+                }
+            }
 
             assert(excess(u) >= 0 && "Excess after pushing cannot be negative");
             if (height[u] >= maxH || excess(u) == 0)
@@ -142,8 +180,53 @@ void Graph::SinglePushLowestLabel(int maxHeight) {
             nextEdgeIdx[u]++;
         }
     }
+
+    if (past_excess_fraction_time_measure_started) {
+        post_excess += timer.Stop();
+    } else {
+        pre_excess += timer.Stop();
+    }
 }
 
+void Graph::GlobalRelabeling(int max_height, std::vector<std::queue<Vertex>>& level_queues) {
+    std::cout << "Start global relabeling. flow pushed since " << flow_pushed_since << std::endl;
+    std::vector<Vertex> queue, next;
+    size_t num_sinks = 0;
+    size_t num_excesses = 0;
+    auto old_height = height;
+    for (Vertex u : *this) {
+        height[u] = max_height;
+        if (sink[u] > 0) {
+            height[u] = 0;
+            queue.push_back(u);
+            num_sinks++;
+            if (excess(u) > 0) {
+                level_queues[0].push(u);
+            }
+        }
+        if (excess(u) > 0) {
+            num_excesses++;
+        }
+    }
+    int dist = 1;
+    while (!queue.empty() && dist <= level_queues.size()) {
+        for (Vertex u : queue) {
+            for (auto e = cbeginEdge(u); e != cendEdge(u); ++e) {
+                if (reverse(*e).residual() > 0 && height[e->to] == max_height) {
+                    height[e->to] = dist;
+                    assert(dist >= old_height[e->to]);
+                    next.push_back(e->to);
+                    if (excess(e->to) > 0) {
+                        level_queues[dist].push(e->to);
+                    }
+                }
+            }
+        }
+        queue.clear();
+        std::swap(queue, next);
+        dist++;
+    }
+}
 
 std::vector<Vertex> Graph::compute(const int maxHeight) {
 #if true

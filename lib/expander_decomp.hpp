@@ -25,7 +25,7 @@ constructSubdivisionFlowGraph(const std::unique_ptr<Undirected::Graph> &g);
    Constructs and solves a expander decomposition problem.
  */
 class Solver {
-private:
+public:
   /**
      Two flow graphs are maintained. Let 'graph = (V,E)'. Then '{e.id + |V| | e
      \in E}' is the vertex ids of the split vertices in 'subdivisionFlowGraph'.

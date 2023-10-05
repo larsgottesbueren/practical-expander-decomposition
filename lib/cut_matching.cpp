@@ -244,6 +244,22 @@ Result Solver::compute(Parameters params) {
       subdivGraph->addSink(u, 1);
 
     const int h = (int)ceil(1.0 / phi / std::log10(numSplitNodes));
+
+    const size_t max_flow = std::min(axLeft.size(), axRight.size());
+
+    double excess_fraction = [&]() -> double {
+        double f = std::log10(numSplitNodes);
+        if (f < 1.0) {
+            return max_flow;     // we have to finish routing all of the flow
+        }
+        double fraction = 1.0 - (1. / (f*f));
+        std::cout << "fraction = " <<  fraction << " num split nodes = " << numSplitNodes << " max flow = " << max_flow << std::endl;
+        return fraction * max_flow;
+    }();
+    subdivGraph->excess_fraction = excess_fraction;
+
+    // TODO how do we adapt the level cut procedure if we have unfinished distance labels?
+
     VLOG(3) << "Computing flow with |S| = " << axLeft.size()
             << " |T| = " << axRight.size() << " and max height " << h << ".";
     const auto hasExcess = subdivGraph->compute(h);
