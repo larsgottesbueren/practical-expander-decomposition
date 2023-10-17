@@ -245,9 +245,8 @@ Result Solver::compute(Parameters params) {
 
     const int h = (int)ceil(1.0 / phi / std::log10(numSplitNodes));
 
-    const size_t max_flow = std::min(axLeft.size(), axRight.size());
-
     double excess_fraction = [&]() -> double {
+        const size_t max_flow = std::min(axLeft.size(), axRight.size());
         double f = std::log10(numSplitNodes);
         if (f < 1.0) {
             return max_flow;     // we have to finish routing all of the flow
