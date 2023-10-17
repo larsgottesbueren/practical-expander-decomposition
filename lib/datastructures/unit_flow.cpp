@@ -86,9 +86,6 @@ void Graph::SinglePushLowestLabel(int maxHeight) {
     timer.Start();
 
     const int maxH = std::min(maxHeight, size() * 2 + 1);
-    const uint64_t work_bound_global_relabel = 10 * (edgeCount() + 5 * size());
-    uint64_t work_performed = 0;
-
     size_t flow_routed = 0;
 
 
@@ -106,18 +103,6 @@ void Graph::SinglePushLowestLabel(int maxHeight) {
             continue;
         }
 
-        if (false && work_performed >= work_bound_global_relabel) {
-            std::cout << "work performed " << work_performed << " / " << work_bound_global_relabel << std::endl;
-            work_performed = 0;
-            for (auto& lq : q) {
-                while (!lq.empty()) lq.pop();
-            }
-            GlobalRelabeling(maxH, q);
-            flow_pushed_since = 0;
-            level = 0;
-            continue;
-        }
-
         const int u = q[level].front();
         if (degree(u) == 0) {
             q[level].pop();
@@ -131,8 +116,6 @@ void Graph::SinglePushLowestLabel(int maxHeight) {
 
         assert(e.flow + reverse(e).flow == 0 &&
                "Flow across edge and its reverse should cancel.");
-
-        ++work_performed;
 
         if (e.residual() > 0 && height[u] == height[e.to] + 1) {
             // Push flow across 'e'

@@ -252,7 +252,8 @@ Result Solver::compute(Parameters params) {
         if (f < 1.0) {
             return max_flow;     // we have to finish routing all of the flow
         }
-        double fraction = 1.0 - (1. / (f*f));
+        double fraction = 1.0 - (1. / iterationsToRun);
+        // double fraction = 1.0 - (1. / (f*f));
         std::cout << "fraction = " <<  fraction << " num split nodes = " << numSplitNodes << " max flow = " << max_flow << std::endl;
         return fraction * max_flow;
     }();
