@@ -33,7 +33,7 @@ void PersonalizedPageRank::Compute(Vertex seed) {
   }
 }
 
-std::vector<PageRankAndNode> PersonalizedPageRank::ExtractSparsePageRankValues() {
+std::vector<PersonalizedPageRank::PageRankAndNode> PersonalizedPageRank::ExtractSparsePageRankValues() {
   std::vector<PageRankAndNode> result;
   for (Vertex u : queue) {
     result.emplace_back(page_rank[u], u);
@@ -46,7 +46,7 @@ std::vector<PageRankAndNode> PersonalizedPageRank::ExtractSparsePageRankValues()
 
 void PersonalizedPageRank::SetGraph(UnitFlow::Graph& graph_) {
   graph = &graph_;
-  if (page_rank.size() < graph->size()) {
+  if (page_rank.size() < size_t(graph->size())) {
     page_rank.resize(graph->size());
     residual.resize(graph->size());
   }
@@ -55,13 +55,13 @@ void PersonalizedPageRank::SetGraph(UnitFlow::Graph& graph_) {
 void Nibble::SetGraph(UnitFlow::Graph& graph_) {
   graph = &graph_;
   ppr.SetGraph(graph_);
-  if (in_cut.size() < graph->size()) {
+  if (in_cut.size() < size_t(graph->size())) {
     in_cut.resize(graph->size());
   }
   total_vol = graph->volume();
 }
 
-std::optional<std::vector<Vertex>> Nibble::ComputeCut(Vertex seed) {
+std::optional<std::vector<Nibble::Vertex>> Nibble::ComputeCut(Vertex seed) {
   ppr.Compute(seed);
   auto ppr_distr = ppr.ExtractSparsePageRankValues();
   for (auto& pru : ppr_distr) {
@@ -74,7 +74,7 @@ std::optional<std::vector<Vertex>> Nibble::ComputeCut(Vertex seed) {
   double best_conductance = std::numeric_limits<double>::max();
   int best_cut_index = -1;
 
-  for (int i = 0; i < ppr_distr.size(); ++i) {
+  for (int i = 0; i < int(ppr_distr.size()); ++i) {
     const Vertex u = ppr_distr[i].u;
     vol += graph->degree(u);
 

@@ -7,8 +7,6 @@
 #include "datastructures/unit_flow.hpp"
 #include "util.hpp"
 
-// TODO move some code into the cpp file
-
 class PersonalizedPageRank {
 public:
   using Vertex = UnitFlow::Vertex;

@@ -16,4 +16,5 @@ target_sources(EDC PRIVATE
 		lib/cut_matching.cpp
 		lib/trimming.cpp
 		lib/expander_decomp.cpp
+		lib/sparse_cut_heuristics.cpp
 		)
