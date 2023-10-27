@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
   auto g = readGraph(false);
 
   CutMatching::Parameters params = { .tConst = 22, .tFactor = 5.0, .minIterations = 0, .minBalance = 0.45, .samplePotential = false, .balancedCutStrategy = true };
-  double phi = 0.01;
+  double phi = 0.001;
 
   Timer timer; timer.Start();
   ExpanderDecomposition::Solver solver(std::move(g), phi, randomGen.get(), params);

@@ -90,6 +90,10 @@ void Solver::compute() {
     }
   } else {
 
+    // TODO call sparse cut heuristics here
+
+
+
     Timer cm_timer; cm_timer.Start();
     CutMatching::Solver cm(flowGraph.get(), subdivisionFlowGraph.get(),
                            randomGen, subdivisionIdx.get(), phi,

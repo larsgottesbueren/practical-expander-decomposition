@@ -23,7 +23,7 @@ Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG,
   assert(graph->size() != 0 && "Cut-matching expected non-empty subset.");
 
   // Set edge capacities in subdivision flow graph.
-  const UnitFlow::Flow capacity = std::ceil(1.0 / phi / T);
+  const UnitFlow::Flow capacity = std::ceil(1.0 / phi / T); // TODO is it T or just log^2(m)?
   for (auto u : *graph)
     for (auto e = subdivGraph->beginEdge(u); e != subdivGraph->endEdge(u); ++e)
       e->capacity = capacity, subdivGraph->reverse(*e).capacity = capacity,
@@ -179,9 +179,13 @@ Solver::proposeCut(const std::vector<double> &flow,
           axLeft.push_back(u);
       }
     }
+    // TODO sort again??
     std::reverse(axRight.begin(), axRight.end());
   }
 
+  // what is the benefit of making the X_l, X_r parts equal-sized...
+
+  // TODO this part looks odd. and error-prone
   if (params.balancedCutStrategy) {
     while (axRight.size() > axLeft.size())
       axRight.pop_back();
@@ -204,6 +208,9 @@ Result Solver::compute(Parameters params) {
 
   const int totalVolume = subdivGraph->globalVolume();
   const int lowerVolumeBalance = totalVolume / 2 / 10 / T;
+
+  // TODO minBalance is much too high?? Should revisit. This should be somewhere around the desired recursion imbalance right?
+  // TODO this isn't even for the balancedCut strategy I think. What is this used for?
   const int targetVolumeBalance =
       std::max(lowerVolumeBalance, int(params.minBalance * totalVolume));
 
@@ -253,7 +260,6 @@ Result Solver::compute(Parameters params) {
         }
         double fraction = 1.0 - (1. / iterationsToRun);
         // double fraction = 1.0 - (1. / (f*f));
-        std::cout << "fraction = " <<  fraction << " num split nodes = " << numSplitNodes << " max flow = " << max_flow << std::endl;
         return fraction * max_flow;
     }();
     subdivGraph->excess_fraction = excess_fraction;
@@ -275,6 +281,8 @@ Result Solver::compute(Parameters params) {
       const auto [cutLeft, cutRight] = subdivGraph->levelCut(h);
       VLOG(3) << "\tHas level cut with (" << cutLeft.size() << ", "
               << cutRight.size() << ") vertices.";
+
+      // TODO if any of the level cuts give sufficient conductance --> can we not stop?
 
       if (subdivGraph->globalVolume(cutLeft.begin(), cutLeft.end()) <
           subdivGraph->globalVolume(cutRight.begin(), cutRight.end())) {
@@ -322,8 +330,9 @@ Result Solver::compute(Parameters params) {
       int u = (*subdivisionIdx)[p.first];
       int v = (*subdivisionIdx)[p.second];
 
-      flow[u] = 0.5 * (flow[u] + flow[v]);
-      flow[v] = flow[u];
+      const double avg = 0.5 * (flow[u] + flow[v]);
+      flow[u] = avg;
+      flow[v] = avg;
 
       if (params.samplePotential) {
         for (int i : *subdivGraph) {
