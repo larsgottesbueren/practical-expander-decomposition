@@ -6,6 +6,7 @@
 #include "datastructures/undirected_graph.hpp"
 #include "datastructures/unit_flow.hpp"
 #include "util.hpp"
+#include "datastructures/priority_queue.hpp"
 
 class PersonalizedPageRank {
 public:
@@ -44,7 +45,10 @@ private:
 };
 
 class LocalSearch {
-
+public:
+  using Vertex = UnitFlow::Vertex;
+private:
+  mt_kahypar::ds::MinHeap<Vertex, double> pq;
 };
 
 class SparseCutHeuristics {
