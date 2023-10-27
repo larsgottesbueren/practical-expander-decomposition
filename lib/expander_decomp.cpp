@@ -4,6 +4,7 @@
 #include "cut_matching.hpp"
 #include "expander_decomp.hpp"
 #include "trimming.hpp"
+#include "sparse_cut_heuristics.hpp"
 
 namespace ExpanderDecomposition {
 
