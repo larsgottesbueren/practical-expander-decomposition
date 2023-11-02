@@ -105,7 +105,12 @@ Nibble::Cut Nibble::ComputeCut(Vertex seed) {
     }
   }
 
-  std::vector<Vertex> cutset;
+  for (const auto& x : ppr_distr) {
+    in_cut[x.u] = false;
+  }
+
+  Nibble::Cut result;
+  result.conductance = best_conductance;
   for (int i = 0; i <= best_cut_index; ++i) {
     Vertex u = ppr_distr[i].u;
     result.cut_side.push_back(u);
@@ -270,5 +275,5 @@ std::pair<std::vector<int>, std::vector<int>> SparseCutHeuristics::ExtractCutSid
       r.push_back(x);
     }
   }
-  return std::make_pair(best_conductance, std::move(cutset));
+  return std::make_pair(std::move(a), std::move(r));
 }
