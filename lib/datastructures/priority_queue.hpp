@@ -67,8 +67,8 @@ public:
   }
 
   void insert(const IdT e, const KeyT k) {
-    ASSERT(!contains(e));
-    ASSERT(size() < positions_size);
+    assert(!contains(e));
+    assert(size() < positions_size);
     const PosT pos = size();
     positions[e] = pos;
     heap.push_back({k, e});
