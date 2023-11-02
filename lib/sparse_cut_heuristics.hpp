@@ -35,8 +35,14 @@ private:
 class Nibble {
 public:
   using Vertex = UnitFlow::Vertex;
+  struct Cut {
+    double cut = 0.0;
+    double volume = 0.0;
+    double conductance = 0.0;
+    std::vector<Vertex> cut_side;
+  };
   void SetGraph(UnitFlow::Graph& graph_);
-  std::pair<double, std::vector<Vertex>> ComputeCut(Vertex seed);
+  Cut ComputeCut(Vertex seed);
   void SetParams(PersonalizedPageRank::Parameters params) { ppr.params = params; }
 private:
   UnitFlow::Graph *graph;
