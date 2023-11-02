@@ -16,19 +16,19 @@ void PersonalizedPageRank::Compute(Vertex seed) {
   for (size_t i = 0; i < queue.size(); i++) {
     const Vertex u = queue[i];
     const double res_u = residual[u];
-    const double mass_preserved = (1.0-alpha)*res_u/2;
+    const double mass_preserved = (1.0-params.alpha)*res_u/2;
     const double mass_pushed_to_neighbors = mass_preserved / graph->degree(u);  // TODO beware. do we need the volume in the surrounding graph?
 
     for (auto e = graph->beginEdge(u); e != graph->endEdge(u); ++e) {
       const Vertex v = e->to;
-      const double insert_threshold = epsilon * graph->degree(v);
+      const double insert_threshold = params.epsilon * graph->degree(v);
       if (residual[v] < insert_threshold && residual[v] + mass_pushed_to_neighbors >= insert_threshold) {
         queue.push_back(v);
       }
       residual[v] += mass_pushed_to_neighbors;
     }
 
-    page_rank[u] += alpha * res_u;
+    page_rank[u] += params.alpha * res_u;
     residual[u] = mass_preserved;
   }
 }

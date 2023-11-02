@@ -11,8 +11,6 @@
 class PersonalizedPageRank {
 public:
   using Vertex = UnitFlow::Vertex;
-  double alpha = 0.15;
-  double epsilon = 1e-12;
   void SetGraph(UnitFlow::Graph& graph_);
   void Compute(Vertex seed);
   struct PageRankAndNode {
@@ -21,6 +19,12 @@ public:
     Vertex u;
   };
   std::vector<PageRankAndNode> ExtractSparsePageRankValues();
+
+  struct Parameters {
+    double alpha = 0.15;
+    double epsilon = 1e-12;
+  };
+  Parameters params;
 private:
   UnitFlow::Graph *graph;
   std::vector<double> page_rank;
@@ -31,10 +35,9 @@ private:
 class Nibble {
 public:
   using Vertex = UnitFlow::Vertex;
-  double alpha = 0.15;
-  double epsilon = 1e-12;
   void SetGraph(UnitFlow::Graph& graph_);
   std::pair<double, std::vector<Vertex>> ComputeCut(Vertex seed);
+  void SetParams(PersonalizedPageRank::Parameters params) { ppr.params = params; }
 private:
   UnitFlow::Graph *graph;
   PersonalizedPageRank ppr;
