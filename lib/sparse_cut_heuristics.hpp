@@ -54,80 +54,17 @@ private:
 class LocalSearch {
 public:
   using Vertex = UnitFlow::Vertex;
-  void SetGraph(UnitFlow::Graph& graph_) {
-    graph = &graph_;
-    if (affinity_to_cluster.size() < graph->size()) {
-      affinity_to_cluster.resize(graph->size(), 0);
-      in_cluster.resize(graph->size(), false);
-    }
-  }
-  void Compute(std::vector<Vertex>& seed_cluster) {
-    std::cout << "Start local search on cluster of size " << seed_cluster.size() << std::endl;
+  struct Result {
+    double cut; double volume; double conductance;
+    std::vector<bool>* in_cluster;
+  };
 
-    // Initialize data structures
-    for (Vertex u : seed_cluster) {
-      in_cluster[u] = true;
-      for (auto e = graph->beginEdge(u); e != graph->endEdge(u); ++e) {
-        affinity_to_cluster[e->to]++;
-      }
-    }
-    for (Vertex u : seed_cluster) {
-      pq.insert(u, RemoveVertexConductanceGain(u));
-    }
-
-    std::vector<Vertex> fruitless_moves;
-    double best_conductance = Conductance(curr_cluster_cut, curr_cluster_vol);
-
-    while (!pq.empty() && fruitless_moves.size() < max_fruitless_moves) {
-      Vertex u = pq.top();
-
-      // TODO add double-check mechanism because only neighbors receive the volume update
-
-      double old_conductance = Conductance(curr_cluster_cut, curr_cluster_vol);
-      MoveNode<true>(u);
-      double new_conductance = Conductance(curr_cluster_cut, curr_cluster_vol);
-
-      std::cout << "Moved node " << u << " diff " << old_conductance - new_conductance << std::endl;
-      if (new_conductance <= best_conductance) {
-        fruitless_moves.clear();
-        best_conductance = new_conductance;
-      } else {
-        fruitless_moves.push_back(u);
-      }
-    }
-
-    // revert fruitless moves
-    for (Vertex u : fruitless_moves) {
-      MoveNode<false>(u);
-    }
-
-    // reset datastructures
-    for (size_t i = 0; i < pq.size(); ++i) {
-      Vertex u = pq.at(i);
-      affinity_to_cluster[u] = 0;
-      in_cluster[u] = false;
-    }
-    pq.clear();
-  }
+  void SetGraph(UnitFlow::Graph& graph_);
+  Result Compute(std::vector<Vertex>& seed_cluster);
 
 private:
   template<bool update_pq>
-  void MoveNode(Vertex u) {
-    int multiplier = in_cluster[u] ? -1 : 1;
-    in_cluster[u] = !in_cluster[u];
-    curr_cluster_vol += multiplier * graph->degree(u);
-    curr_cluster_cut += multiplier * (graph->degree(u) - 2 * affinity_to_cluster[u]);
-    for (auto e = graph->beginEdge(u); e != graph->endEdge(u); ++e) {
-      Vertex v = e->to;
-      if (in_cluster[v]) {
-        affinity_to_cluster[v] += multiplier;
-      } else {
-        affinity_to_cluster[v] -= multiplier;
-      }
-      if constexpr (update_pq) { PQUpdate(v); }
-    }
-    if constexpr (update_pq) { PQUpdate(u); }
-  }
+  void MoveNode(Vertex u);
 
   void PQUpdate(Vertex v) {
     double gain = in_cluster[v] ? RemoveVertexConductanceGain(v) : AddVertexConductanceGain(v);
