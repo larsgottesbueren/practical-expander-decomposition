@@ -61,7 +61,7 @@ void Nibble::SetGraph(UnitFlow::Graph& graph_) {
   total_vol = graph->volume();
 }
 
-std::optional<std::vector<Nibble::Vertex>> Nibble::ComputeCut(Vertex seed) {
+std::pair<double, std::vector<Nibble::Vertex>> Nibble::ComputeCut(Vertex seed) {
   ppr.Compute(seed);
   auto ppr_distr = ppr.ExtractSparsePageRankValues();
   for (auto& pru : ppr_distr) {
@@ -94,13 +94,9 @@ std::optional<std::vector<Nibble::Vertex>> Nibble::ComputeCut(Vertex seed) {
     }
   }
 
-  if (best_conductance <= conductance_goal) {
-    std::vector<Vertex> cutset;
-    for (int i = 0; i <= best_cut_index; ++i) {
-      cutset.push_back(ppr_distr[i].u);
-    }
-    return cutset;
-  } else {
-    return std::nullopt;
+  std::vector<Vertex> cutset;
+  for (int i = 0; i <= best_cut_index; ++i) {
+    cutset.push_back(ppr_distr[i].u);
   }
+  return std::make_pair(best_conductance, std::move(cutset));
 }
