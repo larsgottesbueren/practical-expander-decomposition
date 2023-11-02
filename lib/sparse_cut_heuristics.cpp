@@ -19,6 +19,8 @@ void PersonalizedPageRank::Compute(Vertex seed) {
     const double mass_preserved = (1.0-params.alpha)*res_u/2;
     const double mass_pushed_to_neighbors = mass_preserved / graph->degree(u);  // TODO beware. do we need the volume in the surrounding graph?
 
+    // std::cout << "Push from " << u << " residual[u] = " << residual[u] << " mass preserved " << mass_preserved << " mass pushed " << mass_pushed_to_neighbors << std::endl;
+
     for (auto e = graph->beginEdge(u); e != graph->endEdge(u); ++e) {
       const Vertex v = e->to;
       const double insert_threshold = params.epsilon * graph->degree(v);
@@ -30,13 +32,18 @@ void PersonalizedPageRank::Compute(Vertex seed) {
 
     page_rank[u] += params.alpha * res_u;
     residual[u] = mass_preserved;
+    if (residual[u] >= params.epsilon * graph->degree(u)) {
+      queue.push_back(u);
+    }
   }
 }
 
 std::vector<PersonalizedPageRank::PageRankAndNode> PersonalizedPageRank::ExtractSparsePageRankValues() {
   std::vector<PageRankAndNode> result;
   for (Vertex u : queue) {
-    result.emplace_back(page_rank[u], u);
+    if (page_rank[u] > 0.0) {
+      result.emplace_back(page_rank[u], u);
+    }
     residual[u] = 0.0;
     page_rank[u] = 0.0;
   }
@@ -61,7 +68,7 @@ void Nibble::SetGraph(UnitFlow::Graph& graph_) {
   total_vol = graph->volume();
 }
 
-std::pair<double, std::vector<Nibble::Vertex>> Nibble::ComputeCut(Vertex seed) {
+Nibble::Cut Nibble::ComputeCut(Vertex seed) {
   ppr.Compute(seed);
   auto ppr_distr = ppr.ExtractSparsePageRankValues();
   for (auto& pru : ppr_distr) {
@@ -86,6 +93,10 @@ std::pair<double, std::vector<Nibble::Vertex>> Nibble::ComputeCut(Vertex seed) {
         cut += 1;
       }
     }
+
+    in_cut[u] = true;
+
+    // TODO add filter / preference for min balance
 
     const double conductance = cut / std::min(vol, total_vol - vol);
     if (conductance < best_conductance) {
