@@ -272,7 +272,7 @@ struct HandlesPBase {
 template<typename HeapT>
 class ExclusiveHandleHeap : protected HandlesPBase, public HeapT {
 public:
-  explicit ExclusiveHandleHeap(size_t nHandles) :
+  explicit ExclusiveHandleHeap(size_t nHandles = 0) :
     HandlesPBase(nHandles),
     HeapT(this->handles.data(), this->handles.size()) { }
 
@@ -290,9 +290,6 @@ public:
 };
 
 template<typename KeyT, typename IdT>
-using MaxHeap = Heap<KeyT, IdT, std::less<KeyT>, 2>;
-
-template<typename KeyT, typename IdT>
-using MinHeap = Heap<KeyT, IdT, std::greater<KeyT>, 2>;
+using MaxHeap = ExclusiveHandleHeap<Heap<KeyT, IdT, std::less<KeyT>, 2>>;
 
 } // namespace mt_kahypar::ds
