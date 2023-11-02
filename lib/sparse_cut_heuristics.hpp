@@ -73,8 +73,11 @@ public:
     double best_conductance = Conductance(curr_cluster_cut, curr_cluster_vol);
 
     while (!pq.empty() && fruitless_moves.size() < max_fruitless_moves) {
-      double old_conductance = Conductance(curr_cluster_cut, curr_cluster_vol);
       Vertex u = pq.top();
+
+      // TODO add double-check mechanism because only neighbors receive the volume update
+
+      double old_conductance = Conductance(curr_cluster_cut, curr_cluster_vol);
       MoveNode<true>(u);
       double new_conductance = Conductance(curr_cluster_cut, curr_cluster_vol);
 
