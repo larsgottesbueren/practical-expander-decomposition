@@ -119,10 +119,19 @@ private:
 };
 
 class SparseCutHeuristics {
+public:
+  using Vertex = UnitFlow::Vertex;
 
+  bool Compute(UnitFlow::Graph& graph, double conductance_goal, double balance_goal);
+
+  std::pair<std::vector<int>, std::vector<int>> ExtractCutSides();
 
 private:
+  int num_trials = 10;
   Nibble nibble;
   LocalSearch local_search;
-  // MQI / Trim
+
+  std::vector<bool> in_cluster;
+  // TODO add MQI / Trim
+  // TODO add kaminpar
 };
