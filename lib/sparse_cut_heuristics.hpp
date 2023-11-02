@@ -21,8 +21,8 @@ public:
   std::vector<PageRankAndNode> ExtractSparsePageRankValues();
 
   struct Parameters {
-    double alpha = 0.15;
-    double epsilon = 1e-12;
+    double alpha = 0.1;
+    double epsilon = 1e-9;
   };
   Parameters params;
 private:
