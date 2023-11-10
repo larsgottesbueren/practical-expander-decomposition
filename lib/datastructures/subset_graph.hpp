@@ -435,6 +435,8 @@ public:
     for (auto it = begin(); it != end(); ++it) {
       const int u = *it;
       int offset = 0;
+      assert(edgeBounds[u].top().middle == edgeBounds[u].top().end
+              && "Removes not restored before taking subgraph");
       for (int fromIdx = 0; fromIdx < edgeBounds[u].top().end; ++fromIdx) {
         const auto &e = edges[u][fromIdx];
         if (visited[e.to]) {

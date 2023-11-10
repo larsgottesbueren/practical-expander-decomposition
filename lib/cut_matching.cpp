@@ -244,6 +244,10 @@ Result Solver::compute(Parameters params) {
     VLOG(3) << "Number of sources: " << axLeft.size()
             << " sinks: " << axRight.size();
 
+    if (axLeft.empty() || axRight.empty()) {
+      break;
+    }
+
     subdivGraph->reset();
     for (const auto u : axLeft)
       subdivGraph->addSource(u, 1);

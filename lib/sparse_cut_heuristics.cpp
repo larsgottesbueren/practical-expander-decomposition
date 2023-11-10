@@ -1,12 +1,19 @@
 #include "sparse_cut_heuristics.hpp"
 
 void PersonalizedPageRank::Compute(Vertex seed) {
+
+  //residual.assign(residual.size(), 0.0);
+  //page_rank.assign(page_rank.size(), 0.0);
+
   // clear old queue
-  for (Vertex u : queue) {
+  for (Vertex u : non_zeroes) {
     residual[u] = 0.0;
     page_rank[u] = 0.0;
   }
+  non_zeroes.clear();
   queue.clear();
+
+  for (size_t i = 0; i < residual.size(); ++i) { if (residual[i] != 0.0 || page_rank[i] != 0.0) throw std::runtime_error("residual or pagerank vector not clean"); }
 
   // add new seed
   queue.push_back(seed);
@@ -15,15 +22,20 @@ void PersonalizedPageRank::Compute(Vertex seed) {
   // push loop
   for (size_t i = 0; i < queue.size(); i++) {
     const Vertex u = queue[i];
+    if (!graph->alive(u)) {
+      VLOG(1) << u << seed;
+      throw std::runtime_error("Node unalive");
+    }
     const double res_u = residual[u];
     const double mass_preserved = (1.0-params.alpha)*res_u/2;
     const double mass_pushed_to_neighbors = mass_preserved / graph->degree(u);  // TODO beware. do we need the volume in the surrounding graph?
 
-    // std::cout << "Push from " << u << " residual[u] = " << residual[u] << " mass preserved " << mass_preserved << " mass pushed " << mass_pushed_to_neighbors << std::endl;
-
     for (auto e = graph->beginEdge(u); e != graph->endEdge(u); ++e) {
       const Vertex v = e->to;
       const double insert_threshold = params.epsilon * graph->degree(v);
+      if (residual[v] == 0.0) {
+        non_zeroes.push_back(v);
+      }
       if (residual[v] < insert_threshold && residual[v] + mass_pushed_to_neighbors >= insert_threshold) {
         queue.push_back(v);
       }
@@ -41,6 +53,7 @@ void PersonalizedPageRank::Compute(Vertex seed) {
 std::vector<PersonalizedPageRank::PageRankAndNode> PersonalizedPageRank::ExtractSparsePageRankValues() {
   std::vector<PageRankAndNode> result;
   for (Vertex u : queue) {
+    if (!graph->alive(u)) { throw std::runtime_error("Node unalive -- extract"); }
     if (page_rank[u] > 0.0) {
       result.emplace_back(page_rank[u], u);
     }
@@ -69,6 +82,9 @@ void Nibble::SetGraph(UnitFlow::Graph& graph_) {
 }
 
 Nibble::Cut Nibble::ComputeCut(Vertex seed) {
+  for (size_t i = 0; i < in_cut.size(); ++i) {
+    if (in_cut[i]) throw std::runtime_error("in_cut in Nibble unclean");
+  }
   ppr.Compute(seed);
   auto ppr_distr = ppr.ExtractSparsePageRankValues();
   for (auto& pru : ppr_distr) {
@@ -118,9 +134,9 @@ Nibble::Cut Nibble::ComputeCut(Vertex seed) {
   }
   result.cut = best_conductance * std::min(result.volume, total_vol - result.volume);
 
-  std::cout << "len(PPR) = " << ppr_distr.size() << " best cut index = " << best_cut_index
+  VLOG(3) << "len(PPR) = " << ppr_distr.size() << " best cut index = " << best_cut_index
             << " cut = " << result.cut << " vol = " << result.volume
-            << " conductance = " << result.conductance << std::endl;
+            << " conductance = " << result.conductance;
 
   return result;
 }
@@ -154,8 +170,6 @@ void LocalSearch::MoveNode(Vertex u) {
 }
 
 LocalSearch::Result LocalSearch::Compute(std::vector<LocalSearch::Vertex>& seed_cluster) {
-  std::cout << "Start local search on cluster of size " << seed_cluster.size() << std::endl;
-
   // clean up old datastructures
   for (size_t i = 0; i < pq.size(); ++i) {
     Vertex u = pq.at(i);
@@ -191,8 +205,8 @@ LocalSearch::Result LocalSearch::Compute(std::vector<LocalSearch::Vertex>& seed_
 
   std::vector<Vertex> fruitless_moves;
   double best_conductance = Conductance(curr_cluster_cut, curr_cluster_vol);
-  std::cout << "Vol = " << curr_cluster_vol << " Cut = " << curr_cluster_cut << " Conductance = "
-            << best_conductance << " PQ size " << pq.size() << std::endl;
+  VLOG(3) << "Vol = " << curr_cluster_vol << " Cut = " << curr_cluster_cut << " Conductance = "
+            << best_conductance << " PQ size " << pq.size();
 
   int steps = 0;
 
@@ -236,7 +250,7 @@ LocalSearch::Result LocalSearch::Compute(std::vector<LocalSearch::Vertex>& seed_
 
 
 bool SparseCutHeuristics::Compute(UnitFlow::Graph& graph, double conductance_goal, double balance_goal) {
-  std::cout << "Sparse cut heuristics. conductance goal = " <<  conductance_goal << " balance goal = " << balance_goal << std::endl;
+  VLOG(1) << "Sparse cut heuristics. conductance goal = " <<  conductance_goal << " balance goal = " << balance_goal;
   nibble.SetGraph(graph);
   local_search.SetGraph(graph);
   auto total_volume = graph.volume();
@@ -245,18 +259,21 @@ bool SparseCutHeuristics::Compute(UnitFlow::Graph& graph, double conductance_goa
   std::mt19937 prng(prng_seed);
   std::uniform_int_distribution<> seed_distr(0, graph.size() - 1);
   for (int r = 0; r < num_trials; ++r) {
-    std::cout << "Rep " << r << " of sparse cut heuristics" << std::endl;
-    Vertex seed_vertex = seed_distr(prng);
+    // TODO try different PPR parameters
+
+    int seed_vertex_index = seed_distr(prng);
+    Vertex seed_vertex = *(graph.cbegin() + seed_vertex_index);
     auto nibble_cut = nibble.ComputeCut(seed_vertex);
+    VLOG(2) << "Nibble cut phi " << nibble_cut.conductance;
     if (nibble_cut.conductance <= conductance_goal &&
         std::min(nibble_cut.volume, total_volume - nibble_cut.volume) >= balance_goal) {
-      std::cout << "Nibble cut was balanced" << std::endl;
+      VLOG(3) << "Nibble cut was balanced";
       for (Vertex u : nibble_cut.cut_side) in_cluster[u] = true;
       return true;
     }
 
-    std::cout << "Try local search" << std::endl;
     auto ls_cut = local_search.Compute(nibble_cut.cut_side);
+    VLOG(2) << "Local search cut phi " << ls_cut.conductance;
     if (ls_cut.conductance <= conductance_goal &&
         std::min(ls_cut.volume, total_volume - ls_cut.volume) >= balance_goal) {
       in_cluster = *ls_cut.in_cluster;

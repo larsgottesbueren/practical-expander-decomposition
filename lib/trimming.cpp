@@ -46,4 +46,5 @@ void Solver::compute() {
 
   VLOG(2) << "After trimming partition has " << graph->size() << " vertices.";
 }
-}; // namespace Trimming
+
+} // namespace Trimming

@@ -30,6 +30,7 @@ private:
   std::vector<double> page_rank;
   std::vector<double> residual;
   std::vector<Vertex> queue;
+  std::vector<Vertex> non_zeroes;
 };
 
 class Nibble {
@@ -121,6 +122,12 @@ private:
 class SparseCutHeuristics {
 public:
   using Vertex = UnitFlow::Vertex;
+
+  void Allocate(UnitFlow::Graph& graph) {
+    nibble.SetGraph(graph);
+    local_search.SetGraph(graph);
+    in_cluster.assign(graph.size(), false);
+  }
 
   bool Compute(UnitFlow::Graph& graph, double conductance_goal, double balance_goal);
 

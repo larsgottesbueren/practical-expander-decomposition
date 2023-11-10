@@ -5,6 +5,7 @@
 #include "cut_matching.hpp"
 #include "datastructures/undirected_graph.hpp"
 #include "datastructures/unit_flow.hpp"
+#include "sparse_cut_heuristics.hpp"
 
 namespace ExpanderDecomposition {
 
@@ -85,6 +86,8 @@ public:
       partitionOf[*it] = numPartitions;
     numPartitions++;
   }
+
+  SparseCutHeuristics sparse_cut_heuristics;
 
 public:
   /**
