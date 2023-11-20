@@ -260,6 +260,8 @@ LocalSearch::Result LocalSearch::Compute2(std::vector<LocalSearch::Vertex>& seed
 }
 
 void LocalSearch::InitializeDatastructures(const std::vector<LocalSearch::Vertex>& seed_cluster) {
+  // TODO make the runtime of this sensitive again to the size of the local search (or at least the current subgraph size)
+#if false
   // clean up old datastructures
   for (size_t i = 0; i < pq.size(); ++i) {
     Vertex u = pq.at(i);
@@ -273,6 +275,12 @@ void LocalSearch::InitializeDatastructures(const std::vector<LocalSearch::Vertex
     in_cluster[u] = false;
     tabu_reinsertions.pop();
   }
+#endif
+
+  affinity_to_cluster.assign(affinity_to_cluster.size(), 0);
+  in_cluster.assign(in_cluster.size(), false);
+  pq.clear();
+  while (!tabu_reinsertions.empty()) tabu_reinsertions.pop();
   last_moved_step.assign(last_moved_step.size(), std::numeric_limits<int>::min());
 
   if (!std::ranges::all_of(affinity_to_cluster, [](const auto& x) { return x == 0; })
@@ -310,7 +318,7 @@ LocalSearch::Result LocalSearch::Compute(std::vector<LocalSearch::Vertex>& seed_
   std::vector<Vertex> fruitless_moves;
   double best_conductance = Conductance(curr_cluster_cut, curr_cluster_vol);
   VLOG(3)   << "Vol = " << curr_cluster_vol << " Cut = " << curr_cluster_cut << " Conductance = "
-            << best_conductance << " PQ size " << pq.size();
+                << best_conductance << " PQ size " << pq.size();
 
   while (!pq.empty() && fruitless_moves.size() < max_fruitless_moves) {
     // TODO add preference for min balance
@@ -332,8 +340,13 @@ LocalSearch::Result LocalSearch::Compute(std::vector<LocalSearch::Vertex>& seed_
     double new_conductance = Conductance(curr_cluster_cut, curr_cluster_vol);
 
     last_moved_step[u] = current_step++;
+    while (!tabu_reinsertions.empty() && !IsMoveTabu(tabu_reinsertions.front())) {
+      Vertex v = tabu_reinsertions.front();
+      tabu_reinsertions.pop();
+      pq.insertOrAdjustKey(v, ConductanceGain(v));
+    }
 
-    VLOG(2) << "Moved node" << u << "diff" << old_conductance - new_conductance
+    VLOG(3) << "Moved node" << u << "diff" << old_conductance - new_conductance
                << "predicted gain" << conductance_gain
                << "cut =" << curr_cluster_cut << "vol =" << curr_cluster_vol
                << "phi =" << new_conductance;
