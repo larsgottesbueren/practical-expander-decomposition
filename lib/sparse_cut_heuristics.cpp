@@ -379,6 +379,8 @@ bool SparseCutHeuristics::Compute(UnitFlow::Graph& graph, double conductance_goa
   local_search.SetGraph(graph);
   auto total_volume = graph.volume();
 
+  double best_conductance = std::numeric_limits<double>::max();
+
   int prng_seed = 555;
   std::mt19937 prng(prng_seed);
   std::uniform_int_distribution<> seed_distr(0, graph.size() - 1);
@@ -389,22 +391,26 @@ bool SparseCutHeuristics::Compute(UnitFlow::Graph& graph, double conductance_goa
     Vertex seed_vertex = *(graph.cbegin() + seed_vertex_index);
     auto nibble_cut = nibble.ComputeCut(seed_vertex);
     VLOG(2) << "Nibble cut phi " << nibble_cut.conductance;
-    if (nibble_cut.conductance <= conductance_goal &&
+    if (nibble_cut.conductance <= conductance_goal && nibble_cut.conductance < best_conductance &&
         std::min(nibble_cut.volume, total_volume - nibble_cut.volume) >= balance_goal) {
       VLOG(3) << "Nibble cut was balanced";
-      for (Vertex u : nibble_cut.cut_side) in_cluster[u] = true;
-      return true;
+      in_cluster.assign(in_cluster.size(), false);
+      for (Vertex u : nibble_cut.cut_side) {
+        in_cluster[u] = true;
+      }
+      best_conductance = nibble_cut.conductance;
     }
 
     auto ls_cut = local_search.Compute(nibble_cut.cut_side);
     VLOG(2) << "Local search cut phi " << ls_cut.conductance;
-    if (ls_cut.conductance <= conductance_goal &&
+    if (ls_cut.conductance <= conductance_goal && ls_cut.conductance < best_conductance &&
         std::min(ls_cut.volume, total_volume - ls_cut.volume) >= balance_goal) {
       in_cluster = *ls_cut.in_cluster;
-      return true;
+      best_conductance = ls_cut.conductance;
     }
   }
-  return false;
+  VLOG(1) << "Sparsest cut " << best_conductance << "/" << conductance_goal;
+  return best_conductance <= conductance_goal;
 }
 
 std::pair<std::vector<int>, std::vector<int>> SparseCutHeuristics::ExtractCutSides() {
