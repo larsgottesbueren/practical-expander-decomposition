@@ -58,7 +58,7 @@ private:
 };
 
 #define VLOG(X) Logger(X, true)
-
+#define V(X) #X << "=" << X
 
 using Duration = std::chrono::duration<double>;
 using Timepoint = decltype(std::chrono::high_resolution_clock::now());
@@ -141,3 +141,7 @@ struct Timings {
         std::cout << "--- Total measured time " << total << " ---" << std::endl;
     }
 };
+
+inline bool DoubleEquals(double x, double y, double eps = 1e-12) {
+  return std::abs(x-y) < eps;
+}

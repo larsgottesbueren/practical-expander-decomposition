@@ -143,10 +143,11 @@ Nibble::Cut Nibble::ComputeCut(Vertex seed) {
 
 void LocalSearch::SetGraph(UnitFlow::Graph& graph_) {
   graph = &graph_;
-  if (affinity_to_cluster.size() < graph->size()) {
+  if (affinity_to_cluster.size() < size_t(graph->size())) {
     affinity_to_cluster.resize(graph->size(), 0);
     in_cluster.resize(graph->size(), false);
     pq.resize(graph->size());
+    last_moved_step.resize(graph->size(), std::numeric_limits<int>::min());
   }
   total_vol = graph->volume();
 }
@@ -159,17 +160,106 @@ void LocalSearch::MoveNode(Vertex u) {
   curr_cluster_cut += multiplier * (graph->degree(u) - 2 * affinity_to_cluster[u]);
   for (auto e = graph->beginEdge(u); e != graph->endEdge(u); ++e) {
     Vertex v = e->to;
-    if (in_cluster[v]) {
-      affinity_to_cluster[v] += multiplier;
-    } else {
-      affinity_to_cluster[v] -= multiplier;
-    }
+    assert(v != u);
+    affinity_to_cluster[v] += multiplier;
     if constexpr (update_pq) { PQUpdate(v); }
   }
-  if constexpr (update_pq) { PQUpdate(u); }
+  assert(CheckDatastructures());
 }
 
-LocalSearch::Result LocalSearch::Compute(std::vector<LocalSearch::Vertex>& seed_cluster) {
+
+LocalSearch::Result LocalSearch::Compute2(std::vector<LocalSearch::Vertex>& seed_cluster) {
+  // clean up old datastructures
+  affinity_to_cluster.assign(affinity_to_cluster.size(), 0);
+  in_cluster.assign(in_cluster.size(), false);
+  last_moved_step.assign(last_moved_step.size(), std::numeric_limits<int>::min());
+
+  // Initialize data structures
+  for (Vertex u : seed_cluster) {
+    in_cluster[u] = true;
+    for (auto e = graph->beginEdge(u); e != graph->endEdge(u); ++e) {
+      affinity_to_cluster[e->to]++;
+    }
+  }
+  curr_cluster_vol = 0;
+  curr_cluster_cut = 0;
+  for (Vertex u : seed_cluster) {
+    curr_cluster_cut += graph->degree(u) - affinity_to_cluster[u];
+    curr_cluster_vol += graph->degree(u);
+  }
+
+  std::vector<Vertex> fruitless_moves;
+  double best_conductance = Conductance(curr_cluster_cut, curr_cluster_vol);
+
+#ifndef NDEBUG
+  std::cout << "Take snapshot" << std::endl;
+  auto in_cluster_snapshot = in_cluster;
+  auto affinity_snapshot = affinity_to_cluster;
+#endif
+
+  size_t total_moves = 0;
+  while (fruitless_moves.size() < max_fruitless_moves) {
+    Vertex best_move_node = -1;
+    double best_gain = std::numeric_limits<double>::lowest();
+    for (Vertex u : *graph) {
+      if (last_moved_step[u] >= current_step - tabu_length) {
+        continue;
+      }
+      double gain = ConductanceGain(u);
+      if (gain > best_gain) {
+        best_gain = gain;
+        best_move_node = u;
+      }
+    }
+
+    if (best_move_node == -1) {
+      break;
+    }
+
+    double prev_conductance = Conductance(curr_cluster_cut, curr_cluster_vol);
+    MoveNode<false>(best_move_node);  // changes in_cluster --> capture before
+    double current_conductance = Conductance(curr_cluster_cut, curr_cluster_vol);
+    double recalculated_gain = prev_conductance - current_conductance;
+    assert(DoubleEquals(recalculated_gain, best_gain));
+    ++total_moves;
+
+    last_moved_step[best_move_node] = current_step++;
+    if (current_step == std::numeric_limits<int>::max()) {
+      last_moved_step.assign(last_moved_step.size(), std::numeric_limits<int>::min());
+      current_step = 0;
+    }
+
+    VLOG(4)    << "Moved node " << best_move_node << " diff " << recalculated_gain
+                  << " cut = " << curr_cluster_cut << " vol = " << curr_cluster_vol
+                  << " phi = " << current_conductance << "step =" << total_moves;
+
+    fruitless_moves.push_back(best_move_node);
+    if (current_conductance < best_conductance) {
+      best_conductance = current_conductance;
+      fruitless_moves.clear();
+#ifndef NDEBUG
+      in_cluster_snapshot = in_cluster;
+      affinity_snapshot = affinity_to_cluster;
+#endif
+    }
+  }
+
+  for (Vertex u : fruitless_moves) {
+    MoveNode<false>(u);
+  }
+  VLOG(3) << V(best_conductance) << V(Conductance(curr_cluster_cut, curr_cluster_vol)) << V(total_moves);
+  assert(in_cluster_snapshot == in_cluster);
+  assert(affinity_snapshot == affinity_to_cluster);
+
+  return Result {
+      .cut = curr_cluster_cut,
+      .volume = curr_cluster_vol,
+      .conductance = Conductance(curr_cluster_cut, curr_cluster_vol),
+      .in_cluster = &in_cluster,
+  };
+}
+
+void LocalSearch::InitializeDatastructures(const std::vector<LocalSearch::Vertex>& seed_cluster) {
   // clean up old datastructures
   for (size_t i = 0; i < pq.size(); ++i) {
     Vertex u = pq.at(i);
@@ -177,8 +267,19 @@ LocalSearch::Result LocalSearch::Compute(std::vector<LocalSearch::Vertex>& seed_
     in_cluster[u] = false;
   }
   pq.clear();
+  while (!tabu_reinsertions.empty()) {
+    Vertex u = tabu_reinsertions.front();
+    affinity_to_cluster[u] = 0;
+    in_cluster[u] = false;
+    tabu_reinsertions.pop();
+  }
+  last_moved_step.assign(last_moved_step.size(), std::numeric_limits<int>::min());
 
-  // Initialize data structures
+  if (!std::ranges::all_of(affinity_to_cluster, [](const auto& x) { return x == 0; })
+      || !std::ranges::all_of(in_cluster, [](const bool x) { return !x; })) {
+    throw std::runtime_error("data structures not cleaned");
+  }
+
   for (Vertex u : seed_cluster) {
     in_cluster[u] = true;
     for (auto e = graph->beginEdge(u); e != graph->endEdge(u); ++e) {
@@ -201,31 +302,41 @@ LocalSearch::Result LocalSearch::Compute(std::vector<LocalSearch::Vertex>& seed_
       }
     }
   }
+}
 
+LocalSearch::Result LocalSearch::Compute(std::vector<LocalSearch::Vertex>& seed_cluster) {
+  InitializeDatastructures(seed_cluster);
 
   std::vector<Vertex> fruitless_moves;
   double best_conductance = Conductance(curr_cluster_cut, curr_cluster_vol);
-  VLOG(3) << "Vol = " << curr_cluster_vol << " Cut = " << curr_cluster_cut << " Conductance = "
+  VLOG(3)   << "Vol = " << curr_cluster_vol << " Cut = " << curr_cluster_cut << " Conductance = "
             << best_conductance << " PQ size " << pq.size();
 
-  int steps = 0;
-
-
-
   while (!pq.empty() && fruitless_moves.size() < max_fruitless_moves) {
-    Vertex u = pq.top();
-
-    // TODO add double-check mechanism because only neighbors receive the volume update
-
     // TODO add preference for min balance
+    Vertex u = pq.top();
+    pq.deleteTop();
+    if (IsMoveTabu(u)) {
+      tabu_reinsertions.push(u);
+      continue;
+    }
+    double conductance_gain = ConductanceGain(u);
+    if (conductance_gain < pq.topKey()) {
+      // freshen up the PQ and try again
+      pq.insertOrAdjustKey(u, conductance_gain);
+      continue;
+    }
 
     double old_conductance = Conductance(curr_cluster_cut, curr_cluster_vol);
     MoveNode<true>(u);
     double new_conductance = Conductance(curr_cluster_cut, curr_cluster_vol);
 
-    //std::cout << "Moved node " << u << " diff " << old_conductance - new_conductance
-    //          << " cut = " << curr_cluster_cut << " vol = " << curr_cluster_vol
-    //          << " phi = " << new_conductance << std::endl;
+    last_moved_step[u] = current_step++;
+
+    VLOG(2) << "Moved node" << u << "diff" << old_conductance - new_conductance
+               << "predicted gain" << conductance_gain
+               << "cut =" << curr_cluster_cut << "vol =" << curr_cluster_vol
+               << "phi =" << new_conductance;
 
     if (new_conductance < best_conductance) {
       fruitless_moves.clear();
@@ -285,7 +396,7 @@ bool SparseCutHeuristics::Compute(UnitFlow::Graph& graph, double conductance_goa
 
 std::pair<std::vector<int>, std::vector<int>> SparseCutHeuristics::ExtractCutSides() {
   std::vector<int> a, r;
-  for (int x = 0; x < in_cluster.size(); ++x) {
+  for (size_t x = 0; x < in_cluster.size(); ++x) {
     if (in_cluster[x]) {
       a.push_back(x);
     } else {

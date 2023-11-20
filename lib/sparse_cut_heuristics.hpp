@@ -62,8 +62,11 @@ public:
 
   void SetGraph(UnitFlow::Graph& graph_);
   Result Compute(std::vector<Vertex>& seed_cluster);
+  Result Compute2(std::vector<Vertex>& seed_cluster);
 
 private:
+  void InitializeDatastructures(const std::vector<Vertex>& seed_cluster);
+
   template<bool update_pq>
   void MoveNode(Vertex u);
 
@@ -80,12 +83,35 @@ private:
     return Conductance(curr_cluster_cut, curr_cluster_vol) - Conductance(new_cut, new_vol) ;
   }
 
+  double ConductanceGain(Vertex u) {
+    return in_cluster[u] ? RemoveVertexConductanceGain(u) : AddVertexConductanceGain(u);
+  }
+
   double ComputeAffinityToCluster(Vertex u) const {
     double aff = 0.0;
     for (auto edge = graph->beginEdge(u); edge != graph->endEdge(u); ++edge) {
       aff += static_cast<int>(in_cluster[edge->to]);
     }
     return aff;
+  }
+
+  bool CheckDatastructures() const {
+    for (Vertex u : *graph) {
+      assert(ComputeAffinityToCluster(u) == affinity_to_cluster[u]);
+    }
+    size_t cluster_vol = 0; size_t cluster_cut = 0;
+    for (Vertex u : *graph) {
+      if (in_cluster[u]) cluster_vol += graph->degree(u);
+      for (auto edge = graph->beginEdge(u); edge != graph->endEdge(u); ++edge) {
+        cluster_cut += static_cast<int>(in_cluster[edge->to] != in_cluster[u]);
+      }
+    }
+    assert(cluster_cut % 2 == 0);
+    cluster_cut /= 2; // double-counted each cut edge;
+    assert(cluster_vol == curr_cluster_vol);
+    if (cluster_cut != curr_cluster_cut) VLOG(2) << V(cluster_cut) << V(curr_cluster_cut);
+    assert(cluster_cut == curr_cluster_cut);
+    return true;
   }
 
   double AddVertexConductanceGain(Vertex u) const {
@@ -106,6 +132,10 @@ private:
     return ConductanceGain(new_cut, new_vol);
   }
 
+  bool IsMoveTabu(Vertex u) const {
+    return last_moved_step[u] >= current_step - tabu_length;
+  }
+
   mt_kahypar::ds::MaxHeap<double, Vertex> pq;
   std::vector<bool> in_cluster;
   std::vector<double> affinity_to_cluster;
@@ -115,6 +145,11 @@ private:
   double curr_cluster_cut = 0.0;
 
   size_t max_fruitless_moves = 200;
+
+  std::queue<Vertex> tabu_reinsertions;
+  std::vector<int> last_moved_step;
+  int tabu_length = 500;
+  int current_step = 0;
 
   // TODO add tabu search
 };

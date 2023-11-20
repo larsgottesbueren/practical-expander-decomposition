@@ -153,6 +153,8 @@ void Solver::compute() {
         VLOG(1)  << "vol(A)" << vol_a << "cut(A) " << cut_a << "phi(A)" << conductance_a
                     << "vol(R)" << vol_r << "cut(R) " << cut_r << "phi(R)" << conductance_r;
 
+        std::exit(0);
+
 
         auto subA = subdivisionFlowGraph->subdivisionVertices(a.begin(), a.end());
         auto subR = subdivisionFlowGraph->subdivisionVertices(r.begin(), r.end());
