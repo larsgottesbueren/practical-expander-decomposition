@@ -67,7 +67,11 @@ int main(int argc, char *argv[]) {
 
   auto g = readGraph(false);
 
-  CutMatching::Parameters params = { .tConst = 22, .tFactor = 5.0, .minIterations = 0, .minBalance = 0.45, .samplePotential = false, .balancedCutStrategy = true };
+  CutMatching::Parameters params = {
+      .tConst = 22, .tFactor = 5.0, .minIterations = 0, .minBalance = 0.45,
+      .samplePotential = false, .balancedCutStrategy = true,
+      .use_cut_heuristics = true
+  };
   double phi = 0.001;
 
   Timer timer; timer.Start();

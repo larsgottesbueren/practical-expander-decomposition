@@ -48,6 +48,9 @@ struct Parameters {
      Otherwise use the original cut strategy from Lemma 3.3 in RST.
    */
   bool balancedCutStrategy;
+
+
+  bool use_cut_heuristics = true;
 };
 
 /**

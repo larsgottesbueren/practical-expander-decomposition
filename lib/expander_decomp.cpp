@@ -92,20 +92,26 @@ void Solver::compute() {
     }
   } else {
 
-    Timer cut_timer; cut_timer.Start();
+    bool heuristic_sparse_cut_found = false;
+
+    Timer cut_timer;
     size_t cut_matching_rounds =
         cutMatchingParams.tConst
         + ceil(cutMatchingParams.tFactor * square(std::log10(flowGraph->edgeCount())));
     double vol_balance_lb = flowGraph->volume() / 10.0 / cut_matching_rounds;
-    bool balanced_sparse_cut_found = sparse_cut_heuristics.Compute(*flowGraph, phi, vol_balance_lb);
-    Timings::GlobalTimings().AddTiming(Timing::CutHeuristics, cut_timer.Stop());
-    balanced_sparse_cut_found = false;
+
+    if (cutMatchingParams.use_cut_heuristics) {
+      cut_timer.Start();
+      double cut_goal = phi * square(std::log10(flowGraph->edgeCount())) * 2.0;
+      heuristic_sparse_cut_found = sparse_cut_heuristics.Compute(*flowGraph, cut_goal, vol_balance_lb);
+      Timings::GlobalTimings().AddTiming(Timing::CutHeuristics, cut_timer.Stop());
+    }
 
     CutMatching::Result cut_matching_result;
     Duration cm_dur(0.0);
     std::vector<int> a, r;
     bool restore_removes = true;
-    if (balanced_sparse_cut_found) {
+    if (heuristic_sparse_cut_found) {
       cut_matching_result.type = CutMatching::Result::Balanced;
       std::tie(a, r) = sparse_cut_heuristics.ExtractCutSides();
       restore_removes = false;
@@ -115,11 +121,11 @@ void Solver::compute() {
                              randomGen, subdivisionIdx.get(), phi,
                              cutMatchingParams);
       cut_matching_result = cm.compute(cutMatchingParams);
+
+      std::copy(flowGraph->cbegin(), flowGraph->cend(), std::back_inserter(a));
+      std::copy(flowGraph->cbeginRemoved(), flowGraph->cendRemoved(), std::back_inserter(r));
       cm_dur = cm_timer.Stop();
     }
-
-    std::copy(flowGraph->cbegin(), flowGraph->cend(), std::back_inserter(a));
-    std::copy(flowGraph->cbeginRemoved(), flowGraph->cendRemoved(), std::back_inserter(r));
 
     switch (cut_matching_result.type) {
       case CutMatching::Result::Balanced: {
@@ -130,31 +136,6 @@ void Solver::compute() {
           flowGraph->restoreRemoves();
           subdivisionFlowGraph->restoreRemoves();
         }
-
-        VLOG(1) << "Balanced cut. len(A) =" << a.size() << " len(R) =" << r.size() << " |V| =" << flowGraph->size() << " |E| =" << flowGraph->edgeCount();
-        auto vol_a = flowGraph->volume(a.begin(), a.end());
-        auto vol_r = flowGraph->volume(r.begin(), r.end());
-        std::vector<bool> in_a(flowGraph->size(), false);
-        for (int x : a) in_a[x] = true;
-        int cut_a = 0;
-        for (int x : a) {
-          for (auto e = flowGraph->beginEdge(x); e != flowGraph->endEdge(x); ++e) {
-            if (!in_a[e->to]) cut_a++;
-          }
-        }
-        int cut_r = 0;
-        for (int x : r) {
-          for (auto e = flowGraph->beginEdge(x); e != flowGraph->endEdge(x); ++e) {
-            if (in_a[e->to]) cut_r++;
-          }
-        }
-        double conductance_a = double(cut_a) / std::min(vol_a, flowGraph->volume() - vol_a);
-        double conductance_r = double(cut_r) / std::min(vol_r, flowGraph->volume() - vol_r);
-        VLOG(1)  << "vol(A)" << vol_a << "cut(A) " << cut_a << "phi(A)" << conductance_a
-                    << "vol(R)" << vol_r << "cut(R) " << cut_r << "phi(R)" << conductance_r;
-
-        std::exit(0);
-
 
         auto subA = subdivisionFlowGraph->subdivisionVertices(a.begin(), a.end());
         auto subR = subdivisionFlowGraph->subdivisionVertices(r.begin(), r.end());
