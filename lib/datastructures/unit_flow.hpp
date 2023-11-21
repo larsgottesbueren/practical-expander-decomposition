@@ -78,13 +78,7 @@ private:
 
   size_t flow_pushed_since = 0;
 
-  void DischargeLoopFIFO(int maxHeight);
-
   void SinglePushLowestLabel(int maxHeight);
-
-  void GlobalRelabeling(int max_height, std::vector<std::queue<Vertex>>& level_queues);
-
-
 
 public:
   /**

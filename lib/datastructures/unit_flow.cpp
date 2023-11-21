@@ -19,67 +19,6 @@ Graph::Graph(int n, const std::vector<Edge> &es)
     : SubsetGraph::Graph<int, Edge>(n, es), absorbed(n), sink(n), height(n),
       nextEdgeIdx(n) {}
 
-
-void Graph::DischargeLoopFIFO(int maxHeight) {
-    const int maxH = std::min(maxHeight, size() * 2 + 1);
-
-    std::queue<Vertex> q;
-
-    for (auto u : *this) {
-        if (excess(u) > 0) {
-            q.push(u);
-        }
-    }
-
-    int min_level = 0;
-
-    while (min_level <= maxH && !q.empty()) {
-        const Vertex u = q.front(); q.pop();
-        const int deg = degree(u);
-        if (deg == 0) continue;
-
-        int my_level = height[u];
-        int my_next_level = std::numeric_limits<int>::max();
-
-        while (excess(u) > 0 && my_level < maxH) {
-            auto &e = getEdge(u, nextEdgeIdx[u]);
-            assert(e.flow + reverse(e).flow == 0 &&
-                   "Flow across edge and its reverse should cancel.");
-
-            if (e.residual() > 0) {
-                // TODO also skip if excess[e.to] is too high
-                // TODO this is an assertion in unit flow thanks to lowest label selection
-                // probably needed for correctness
-                if (my_level == height[e.to] + 1) {
-                    if (height[e.to] < maxH && excess(e.to) == 0) {
-                        q.push(e.to);
-                        nextEdgeIdx[e.to] = 0;
-                    }
-
-                    // Push flow across 'e'
-                    UnitFlow::Flow delta = std::min(
-                            {excess(u), e.residual(), (UnitFlow::Flow) degree(e.to)});
-
-                    e.flow += delta;
-                    reverse(e).flow -= delta;
-
-                    absorbed[u] -= delta;
-                    absorbed[e.to] += delta;
-                } else {
-                    my_next_level = std::min(my_next_level, height[e.to]);
-                }
-            }
-
-            if (++nextEdgeIdx[u] == deg) {
-                nextEdgeIdx[u] = 0;
-                my_level = my_next_level + 1;
-                my_next_level = std::numeric_limits<int>::max();
-            }
-        }
-        height[u] = my_level;
-    }
-}
-
 void Graph::SinglePushLowestLabel(int maxHeight) {
     past_excess_fraction_time_measure_started = false;
     Timer timer;
@@ -168,46 +107,6 @@ void Graph::SinglePushLowestLabel(int maxHeight) {
         post_excess += timer.Stop();
     } else {
         pre_excess += timer.Stop();
-    }
-}
-
-void Graph::GlobalRelabeling(int max_height, std::vector<std::queue<Vertex>>& level_queues) {
-    std::cout << "Start global relabeling. flow pushed since " << flow_pushed_since << std::endl;
-    std::vector<Vertex> queue, next;
-    size_t num_sinks = 0;
-    size_t num_excesses = 0;
-    auto old_height = height;
-    for (Vertex u : *this) {
-        height[u] = max_height;
-        if (sink[u] > 0) {
-            height[u] = 0;
-            queue.push_back(u);
-            num_sinks++;
-            if (excess(u) > 0) {
-                level_queues[0].push(u);
-            }
-        }
-        if (excess(u) > 0) {
-            num_excesses++;
-        }
-    }
-    int dist = 1;
-    while (!queue.empty() && dist <= level_queues.size()) {
-        for (Vertex u : queue) {
-            for (auto e = cbeginEdge(u); e != cendEdge(u); ++e) {
-                if (reverse(*e).residual() > 0 && height[e->to] == max_height) {
-                    height[e->to] = dist;
-                    assert(dist >= old_height[e->to]);
-                    next.push_back(e->to);
-                    if (excess(e->to) > 0) {
-                        level_queues[dist].push(e->to);
-                    }
-                }
-            }
-        }
-        queue.clear();
-        std::swap(queue, next);
-        dist++;
     }
 }
 
