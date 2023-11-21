@@ -184,7 +184,6 @@ Solver::proposeCut(const std::vector<double> &flow,
   }
 
   // what is the benefit of making the X_l, X_r parts equal-sized...
-
   // TODO this part looks odd. and error-prone
   if (params.balancedCutStrategy) {
     while (axRight.size() > axLeft.size())
@@ -199,6 +198,44 @@ Solver::proposeCut(const std::vector<double> &flow,
   return std::make_pair(axLeft, axRight);
 }
 
+bool Solver::FlowIsWellDiffused(const std::vector<double>& flow) const {
+  const int curSubdivisionCount = subdivGraph->size() - graph->size();
+  double avgFlow;
+  {
+    double sum = 0, kahanError = 0;
+    for (auto u : *subdivGraph) {
+      const int idx = (*subdivisionIdx)[u];
+      if (idx >= 0) {
+        const double y = flow[idx] - kahanError;
+        const double t = sum + y;
+        kahanError = t - sum - y;
+        sum = t;
+      }
+    }
+    avgFlow = sum / (double)curSubdivisionCount;
+  }
+  double potential_sum;
+  {
+    double sum = 0, kahanError = 0;
+    for (auto u : *subdivGraph) {
+      const int idx = (*subdivisionIdx)[u];
+      if (idx >= 0) {
+        const double summand = square(flow[idx] - avgFlow);
+        const double y = summand - kahanError;
+        const double t = sum + y;
+        kahanError = t - sum - y;
+        sum = t;
+      }
+    }
+    potential_sum = sum;
+  }
+
+  // the normal stopping condition is full_potential <= 1 / (16 m * m)
+  // we have the projected potential on just m values --> therefore <= 1 / (16 * m)
+  // multiply with log(m) for high probability that full_potential <= 1 / (16 * m * m)
+  return potential_sum <= 1.0 / 16 / curSubdivisionCount / std::log10(curSubdivisionCount);
+}
+
 Result Solver::compute(Parameters params) {
   if (numSplitNodes <= 1) {
     VLOG(3) << "Cut matching exited early with " << numSplitNodes
@@ -209,8 +246,7 @@ Result Solver::compute(Parameters params) {
   const int totalVolume = subdivGraph->globalVolume();
   const int lowerVolumeBalance = totalVolume / 2 / 10 / T;
 
-  // TODO minBalance is much too high?? Should revisit. This should be somewhere around the desired recursion imbalance right?
-  // TODO this isn't even for the balancedCut strategy I think. What is this used for?
+  // TODO minBalance is way too high?? Should revisit.
   const int targetVolumeBalance =
       std::max(lowerVolumeBalance, int(params.minBalance * totalVolume));
 
@@ -235,6 +271,14 @@ Result Solver::compute(Parameters params) {
         result.iterationsUntilValidExpansion =
             std::min(result.iterationsUntilValidExpansion, iterations);
       VLOG(4) << "Finished sampling potential function";
+    }
+
+    if (params.use_potential_based_dynamic_stopping_criterion && FlowIsWellDiffused(flow)) {
+      if (result.iterationsUntilValidExpansion == std::numeric_limits<int>::max()) {
+        result.iterationsUntilValidExpansion = iterations;
+      }
+      // TODO actually break; after testing how many fewer rounds we need
+      // break;
     }
 
     Timer timer; timer.Start();

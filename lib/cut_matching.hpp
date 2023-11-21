@@ -51,6 +51,8 @@ struct Parameters {
 
 
   bool use_cut_heuristics = true;
+
+  bool use_potential_based_dynamic_stopping_criterion = false;
 };
 
 /**
@@ -74,7 +76,7 @@ struct Result {
      threshold '1/(16m^2)' is reached. If potentials are not sampled or the
      threshold isn't reached value defaults to INT_MAX.
    */
-  int iterationsUntilValidExpansion;
+  int iterationsUntilValidExpansion = std::numeric_limits<int>::max();
 
   /**
      Congestion of the embedding. If result is an expander, then conductance of
@@ -139,7 +141,7 @@ private:
   std::pair<std::vector<int>, std::vector<int>>
   proposeCut(const std::vector<double> &flow, const Parameters &params) const;
 
-
+  bool FlowIsWellDiffused(const std::vector<double>& flow) const;
 
 public:
   /**
