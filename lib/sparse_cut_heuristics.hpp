@@ -150,8 +150,6 @@ private:
   std::vector<int> last_moved_step;
   int tabu_length = 500;
   int current_step = 0;
-
-  // TODO add tabu search
 };
 
 class SparseCutHeuristics {

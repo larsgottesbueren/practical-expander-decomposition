@@ -23,7 +23,7 @@ Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG,
   assert(graph->size() != 0 && "Cut-matching expected non-empty subset.");
 
   // Set edge capacities in subdivision flow graph.
-  const UnitFlow::Flow capacity = std::ceil(1.0 / phi / T); // TODO is it T or just log^2(m)?
+  const UnitFlow::Flow capacity = std::ceil(1.0 / phi / T);
   for (auto u : *graph)
     for (auto e = subdivGraph->beginEdge(u); e != subdivGraph->endEdge(u); ++e)
       e->capacity = capacity, subdivGraph->reverse(*e).capacity = capacity,
@@ -312,8 +312,6 @@ Result Solver::compute(Parameters params) {
     }();
     subdivGraph->excess_fraction = excess_fraction;
 
-    // TODO how do we adapt the level cut procedure if we have unfinished distance labels?
-
     VLOG(3) << "Computing flow with |S| = " << axLeft.size()
             << " |T| = " << axRight.size() << " and max height " << h << ".";
     const auto hasExcess = subdivGraph->compute(h);
@@ -329,8 +327,6 @@ Result Solver::compute(Parameters params) {
       const auto [cutLeft, cutRight] = subdivGraph->levelCut(h);
       VLOG(3) << "\tHas level cut with (" << cutLeft.size() << ", "
               << cutRight.size() << ") vertices.";
-
-      // TODO if any of the level cuts give sufficient conductance --> can we not stop?
 
       if (subdivGraph->globalVolume(cutLeft.begin(), cutLeft.end()) <
           subdivGraph->globalVolume(cutRight.begin(), cutRight.end())) {

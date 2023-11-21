@@ -149,12 +149,9 @@ Graph::levelCut(const int h) {
     for (auto u : levels[level]) {
       volume += degree(u);
       for (auto e = beginEdge(u); e != endEdge(u); ++e)
-          // TODO is this correct? shouldn't we just check for all edges to lower-level vertices?
-          // This might be an issue if the distance labels aren't quite correct
         if (height[u] == height[e->to] + 1)
           z++;
     }
-    // TODO check if there is a balanced cut --> pick the lowest conductance one out of those
     double conductance =
         double(z) / double(std::min(volume, this->volume() - volume));
     if (conductance < bestConductance)

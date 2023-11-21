@@ -225,7 +225,7 @@ protected:
       } else {
         assert(arity == 2);
 
-        const PosT second = std::min(first + 1, size() - 1);    // TODO this branch is not cool. maybe make the while loop condition secondChild(pos) < size() ?
+        const PosT second = std::min(first + 1, size() - 1);
         const KeyT k1 = heap[first].key, k2 = heap[second].key;
         const bool c2IsLarger = comp(k1, k2);
         const KeyT largestChildKey = c2IsLarger ? k2 : k1;
