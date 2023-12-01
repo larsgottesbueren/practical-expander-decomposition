@@ -361,38 +361,47 @@ Result Solver::compute(Parameters params) {
 
       if (subdivGraph->globalVolume(cutLeft.begin(), cutLeft.end()) <
           subdivGraph->globalVolume(cutRight.begin(), cutRight.end())) {
-        for (auto u : cutLeft)
+        for (auto u : cutLeft) {
           removed.insert(u);
+        }
       } else {
-        for (auto u : cutRight)
+        for (auto u : cutRight) {
           removed.insert(u);
+        }
       }
-    }
 
-    VLOG(3) << "\tRemoving " << removed.size() << " vertices.";
+      VLOG(3) << "\tRemoving " << removed.size() << " vertices.";
 
-    auto isRemoved = [&removed](int u) {
-      return removed.find(u) != removed.end();
-    };
-    axLeft.erase(std::remove_if(axLeft.begin(), axLeft.end(), isRemoved),
-                 axLeft.end());
-    axRight.erase(std::remove_if(axRight.begin(), axRight.end(), isRemoved),
-                  axRight.end());
+      auto isRemoved = [&removed](int u) {
+        return removed.find(u) != removed.end();
+      };
+      axLeft.erase(std::remove_if(axLeft.begin(), axLeft.end(), isRemoved),
+                   axLeft.end());
+      axRight.erase(std::remove_if(axRight.begin(), axRight.end(), isRemoved),
+                    axRight.end());
 
-    for (auto u : removed) {
-      if ((*subdivisionIdx)[u] == -1)
-        graph->remove(u);
-      subdivGraph->remove(u);
-    }
+      for (auto u : removed) {
+        if ((*subdivisionIdx)[u] == -1) {
+          graph->remove(u);
+        }
+        subdivGraph->remove(u);
+      }
 
-    std::vector<int> zeroDegrees;
-    for (auto it = subdivGraph->cbegin(); it != subdivGraph->cend(); ++it)
-      if (subdivGraph->degree(*it) == 0)
-        zeroDegrees.push_back(*it), removed.insert(*it);
-    for (auto u : zeroDegrees) {
-      if ((*subdivisionIdx)[u] == -1)
-        graph->remove(u);
-      subdivGraph->remove(u);
+      std::vector<int> zeroDegrees;
+      for (auto u : *subdivGraph) {
+        if (subdivGraph->degree(u) == 0) {
+          zeroDegrees.push_back(u);
+          removed.insert(u);
+        }
+      }
+
+      for (auto u : zeroDegrees) {
+        if ((*subdivisionIdx)[u] == -1) {
+          graph->remove(u);
+        }
+        subdivGraph->remove(u);
+      }
+
     }
 
     Timings::GlobalTimings().AddTiming(Timing::Misc, timer.Restart());
