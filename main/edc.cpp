@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
 
   CutMatching::Parameters params = {
       .tConst = 22, .tFactor = 5.0, .minIterations = 0, .minBalance = 0.45,
-      .samplePotential = true,
+      .samplePotential = false,
       .balancedCutStrategy = true,
       .use_cut_heuristics = true,
       .use_potential_based_dynamic_stopping_criterion = true

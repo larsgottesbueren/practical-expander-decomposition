@@ -107,7 +107,8 @@ Solver::proposeCut(const std::vector<double> &flow,
   const int curSubdivisionCount = subdivGraph->size() - graph->size();
   double avgFlow;
   {
-    double sum = 0, kahanError = 0;
+#if true
+    double sum = 0.0, kahanError = 0.0;
     for (auto u : *subdivGraph) {
       const int idx = (*subdivisionIdx)[u];
       if (idx >= 0) {
@@ -117,6 +118,19 @@ Solver::proposeCut(const std::vector<double> &flow,
         sum = t;
       }
     }
+#else
+    long double sum = 0.0;
+#if false
+    for (auto u : *subdivGraph) {
+      const int idx = (*subdivisionIdx)[u];
+      if (idx >= 0) {
+        sum += flow[idx];
+      }
+    }
+#else
+    for (double x : flow) sum += x;
+#endif
+#endif
     VLOG(2) << "flow" << V(sum) << "in proposeCut()" << V(curSubdivisionCount);
     avgFlow = sum / (double)curSubdivisionCount;
   }
@@ -131,6 +145,8 @@ Solver::proposeCut(const std::vector<double> &flow,
         axRight.push_back(u);
     }
   }
+
+  VLOG(3) << "propose cut check 1 " <<  V(axLeft.size()) << V(axRight.size());
 
   // Sort by flow
   auto cmpFlow = [&flow, &subdivisionIdx = subdivisionIdx](int u, int v) {
@@ -150,7 +166,7 @@ Solver::proposeCut(const std::vector<double> &flow,
   }
 
   // Compute potentials
-  double totalPotential = 0.0, leftPotential = 0.0;
+  long double totalPotential = 0.0, leftPotential = 0.0;
   for (auto u : *subdivGraph) {
     const int idx = (*subdivisionIdx)[u];
     if (idx >= 0)
@@ -162,9 +178,11 @@ Solver::proposeCut(const std::vector<double> &flow,
     leftPotential += square(flow[idx] - avgFlow);
   }
 
-  VLOG(3) << V(axLeft.size()) << V(axRight.size()) << V(leftPotential) << V(totalPotential);
-
+  VLOG(3) << "propose cut check 2 " << V(axLeft.size()) << V(axRight.size()) << V(leftPotential) << V(totalPotential);
+  bool called_repart = false;
   if (leftPotential <= totalPotential / 20.0) {
+    called_repart = true;
+    VLOG(3) << "repartition along mu";
     double l = 0.0;
     for (auto u : axLeft) {
       const int idx = (*subdivisionIdx)[u];
@@ -186,18 +204,33 @@ Solver::proposeCut(const std::vector<double> &flow,
     }
     // TODO sort again??
     std::reverse(axRight.begin(), axRight.end());
+
+    VLOG(3) << "propose cut check 2.5 (in repart) " << V(axLeft.size()) << V(axRight.size()) << V(mu);
   }
+
+  VLOG(3) << "propose cut check 3 " << V(axLeft.size()) << V(axRight.size());
 
   if (params.balancedCutStrategy) {
-    while (axRight.size() > axLeft.size())
+    while (axRight.size() > axLeft.size()) {
       axRight.pop_back();
+    }
   } else {
-    while ((int)axLeft.size() * 8 > curSubdivisionCount)
+    while ((int)axLeft.size() * 8 > curSubdivisionCount) {
       axLeft.pop_back();
+    }
   }
-  while (axLeft.size() > axRight.size())
-    axLeft.pop_back();
 
+  while (axLeft.size() > axRight.size()) {
+    axLeft.pop_back();
+  }
+
+  VLOG(3) << "propose cut check 4 " << V(axLeft.size()) << V(axRight.size());
+
+  if (axLeft.empty() || axRight.empty())
+  {
+    VLOG(3) << "exit because I want to see the case";
+    std::exit(0);
+  }
   return std::make_pair(axLeft, axRight);
 }
 

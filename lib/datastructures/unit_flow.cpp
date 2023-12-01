@@ -111,11 +111,7 @@ void Graph::SinglePushLowestLabel(int maxHeight) {
 }
 
 std::vector<Vertex> Graph::compute(const int maxHeight) {
-#if true
     SinglePushLowestLabel(maxHeight);
-#else
-    DischargeLoopFIFO(maxHeight);
-#endif
 
     for (auto u : *this) {
         for (auto e = beginEdge(u); e != endEdge(u); ++e) {
@@ -141,22 +137,25 @@ Graph::levelCut(const int h) {
     levels[height[u]].push_back(u);
 
   int volume = 0;
+  const int total_volume = this->volume();      // TODO volume() or globalVolume()?
   // int bestZ = INT_MAX;
   double bestConductance = 1.0;
   int bestLevel = h;
   for (int level = h; level > 0; --level) {
     int z = 0;
     for (auto u : levels[level]) {
-      volume += degree(u);
+      volume += degree(u);                      // TODO degree() or globalDegree()?
       for (auto e = beginEdge(u); e != endEdge(u); ++e)
         if (height[u] == height[e->to] + 1)
-          z++;
+          z++;      // TODO this is not actually the edge cut in the graph. there can be saturated edges that are steep
     }
     double conductance =
-        double(z) / double(std::min(volume, this->volume() - volume));
+        double(z) / double(std::min(volume, total_volume - volume));
     if (conductance < bestConductance)
       bestConductance = conductance, bestLevel = level;
   }
+
+  VLOG(3) << V(bestConductance);
 
   std::vector<int> left, right;
   for (int level = h; level >= bestLevel; --level)
