@@ -349,7 +349,6 @@ Result Solver::compute(Parameters params) {
 
     Timings::GlobalTimings().AddTiming(Timing::FlowMatch, timer.Restart());
 
-    std::unordered_set<int> removed;
     if (hasExcess.empty()) {
       VLOG(3) << "\tAll flow routed.";
     } else {
@@ -359,6 +358,7 @@ Result Solver::compute(Parameters params) {
       VLOG(3) << "\tHas level cut with (" << cutLeft.size() << ", "
               << cutRight.size() << ") vertices.";
 
+      std::unordered_set<int> removed;
       if (subdivGraph->globalVolume(cutLeft.begin(), cutLeft.end()) <
           subdivGraph->globalVolume(cutRight.begin(), cutRight.end())) {
         for (auto u : cutLeft) {
