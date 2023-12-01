@@ -134,10 +134,6 @@ Nibble::Cut Nibble::ComputeCut(Vertex seed) {
   }
   result.cut = best_conductance * std::min(result.volume, total_vol - result.volume);
 
-  VLOG(3) << "len(PPR) = " << ppr_distr.size() << " best cut index = " << best_cut_index
-            << " cut = " << result.cut << " vol = " << result.volume
-            << " conductance = " << result.conductance;
-
   return result;
 }
 
@@ -229,10 +225,6 @@ LocalSearch::Result LocalSearch::Compute2(std::vector<LocalSearch::Vertex>& seed
       current_step = 0;
     }
 
-    VLOG(4)    << "Moved node " << best_move_node << " diff " << recalculated_gain
-                  << " cut = " << curr_cluster_cut << " vol = " << curr_cluster_vol
-                  << " phi = " << current_conductance << "step =" << total_moves;
-
     fruitless_moves.push_back(best_move_node);
     if (current_conductance < best_conductance) {
       best_conductance = current_conductance;
@@ -317,8 +309,6 @@ LocalSearch::Result LocalSearch::Compute(std::vector<LocalSearch::Vertex>& seed_
 
   std::vector<Vertex> fruitless_moves;
   double best_conductance = Conductance(curr_cluster_cut, curr_cluster_vol);
-  VLOG(3)   << "Vol = " << curr_cluster_vol << " Cut = " << curr_cluster_cut << " Conductance = "
-                << best_conductance << " PQ size " << pq.size();
 
   while (!pq.empty() && fruitless_moves.size() < max_fruitless_moves) {
     // TODO add preference for min balance
@@ -345,11 +335,6 @@ LocalSearch::Result LocalSearch::Compute(std::vector<LocalSearch::Vertex>& seed_
       tabu_reinsertions.pop();
       pq.insertOrAdjustKey(v, ConductanceGain(v));
     }
-
-    VLOG(3) << "Moved node" << u << "diff" << old_conductance - new_conductance
-               << "predicted gain" << conductance_gain
-               << "cut =" << curr_cluster_cut << "vol =" << curr_cluster_vol
-               << "phi =" << new_conductance;
 
     if (new_conductance < best_conductance) {
       fruitless_moves.clear();
@@ -393,7 +378,6 @@ bool SparseCutHeuristics::Compute(UnitFlow::Graph& graph, double conductance_goa
     VLOG(2) << "Nibble cut phi " << nibble_cut.conductance;
     if (nibble_cut.conductance <= conductance_goal && nibble_cut.conductance < best_conductance &&
         std::min(nibble_cut.volume, total_volume - nibble_cut.volume) >= balance_goal) {
-      VLOG(3) << "Nibble cut was balanced";
       in_cluster.assign(in_cluster.size(), false);
       for (Vertex u : nibble_cut.cut_side) {
         in_cluster[u] = true;

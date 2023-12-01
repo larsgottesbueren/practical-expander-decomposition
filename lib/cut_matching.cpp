@@ -29,21 +29,23 @@ Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG,
       e->capacity = capacity, subdivGraph->reverse(*e).capacity = capacity,
       e->congestion = 0, subdivGraph->reverse(*e).congestion = 0;
 
-  // If potential is sampled, set the flow matrix to the identity matrix.
-  if (params.samplePotential) {
-    flowMatrix.resize(subdivGraph->size());
-    for (int u : *subdivGraph)
-      flowMatrix[u].resize(subdivGraph->size());
-
-    for (int i = 0; i < subdivGraph->size(); ++i)
-      flowMatrix[i][i] = 1.0;
-  }
-
   // Give each 'm' subdivision vertex a unique index in the range '[0,m)'.
   int count = 0;
   for (auto u : *subdivGraph) {
     if ((*subdivisionIdx)[u] >= 0) {
       (*subdivisionIdx)[u] = count++;
+    }
+  }
+
+  // If potential is sampled, set the flow matrix to the identity matrix.
+  if (params.samplePotential) {
+    flowMatrix.resize(count);
+    for (int i : *subdivGraph) {
+      int u = (*subdivisionIdx)[i];
+      if (u >= 0) {
+        flowMatrix[u].resize(count);
+        flowMatrix[u][u] = 1.0;
+      }
     }
   }
 }
@@ -115,6 +117,7 @@ Solver::proposeCut(const std::vector<double> &flow,
         sum = t;
       }
     }
+    VLOG(2) << "flow" << V(sum) << "in proposeCut()" << V(curSubdivisionCount);
     avgFlow = sum / (double)curSubdivisionCount;
   }
   // Partition subdivision vertices into a left and right set.
@@ -159,6 +162,8 @@ Solver::proposeCut(const std::vector<double> &flow,
     leftPotential += square(flow[idx] - avgFlow);
   }
 
+  VLOG(3) << V(axLeft.size()) << V(axRight.size()) << V(leftPotential) << V(totalPotential);
+
   if (leftPotential <= totalPotential / 20.0) {
     double l = 0.0;
     for (auto u : axLeft) {
@@ -183,8 +188,6 @@ Solver::proposeCut(const std::vector<double> &flow,
     std::reverse(axRight.begin(), axRight.end());
   }
 
-  // what is the benefit of making the X_l, X_r parts equal-sized...
-  // TODO this part looks odd. and error-prone
   if (params.balancedCutStrategy) {
     while (axRight.size() > axLeft.size())
       axRight.pop_back();
@@ -202,38 +205,31 @@ bool Solver::FlowIsWellDiffused(const std::vector<double>& flow) const {
   const int curSubdivisionCount = subdivGraph->size() - graph->size();
   double avgFlow;
   {
-    double sum = 0, kahanError = 0;
+    long double sum = 0.0;
     for (auto u : *subdivGraph) {
       const int idx = (*subdivisionIdx)[u];
       if (idx >= 0) {
-        const double y = flow[idx] - kahanError;
-        const double t = sum + y;
-        kahanError = t - sum - y;
-        sum = t;
+        sum += flow[idx];
       }
     }
     avgFlow = sum / (double)curSubdivisionCount;
   }
-  double potential_sum;
+  double projected_potential_sum;
   {
-    double sum = 0, kahanError = 0;
+    long double sum = 0.0;
     for (auto u : *subdivGraph) {
       const int idx = (*subdivisionIdx)[u];
       if (idx >= 0) {
-        const double summand = square(flow[idx] - avgFlow);
-        const double y = summand - kahanError;
-        const double t = sum + y;
-        kahanError = t - sum - y;
-        sum = t;
+        sum += square(flow[idx] - avgFlow);
       }
     }
-    potential_sum = sum;
+    projected_potential_sum = sum;
   }
 
-  // the normal stopping condition is full_potential <= 1 / (16 m * m)
-  // we have the projected potential on just m values --> therefore <= 1 / (16 * m)
-  // multiply with log(m) for high probability that full_potential <= 1 / (16 * m * m)
-  return potential_sum <= 1.0 / 16 / curSubdivisionCount / std::log10(curSubdivisionCount);
+  double convergence_limit = 1.0 / 16 / curSubdivisionCount / curSubdivisionCount / curSubdivisionCount;
+  VLOG(2) << V(projected_potential_sum) << " / " << V(convergence_limit) << V(avgFlow);
+
+  return projected_potential_sum <= convergence_limit;
 }
 
 Result Solver::compute(Parameters params) {
@@ -260,22 +256,24 @@ Result Solver::compute(Parameters params) {
                                    subdivGraph->cendRemoved()) <=
              targetVolumeBalance;
        ++iterations) {
-    VLOG(3) << "Iteration " << iterations << " out of " << iterationsToRun
+    VLOG(2) << "Iteration " << iterations << " out of " << iterationsToRun
             << ".";
 
     if (params.samplePotential) {
-      VLOG(4) << "Sampling potential function";
       double p = samplePotential();
+      // TODO numSplitNodes should be reducing in each iteration... this condition is wrong
+
+      VLOG(2) << V(p) << " / limit = " << 1.0/(16.0*square(numSplitNodes));
       result.sampledPotentials.push_back(p);
-      if (p < 1.0 / (16.0 * square(numSplitNodes)))
+      if (p < 1.0 / (16.0 * square(numSplitNodes))) {
         result.iterationsUntilValidExpansion =
             std::min(result.iterationsUntilValidExpansion, iterations);
-      VLOG(4) << "Finished sampling potential function";
+      }
     }
 
     if (params.use_potential_based_dynamic_stopping_criterion && FlowIsWellDiffused(flow)) {
-      if (result.iterationsUntilValidExpansion == std::numeric_limits<int>::max()) {
-        result.iterationsUntilValidExpansion = iterations;
+      if (result.iterationsUntilValidExpansion2 == std::numeric_limits<int>::max()) {
+        result.iterationsUntilValidExpansion2 = iterations;
       }
       // TODO actually break; after testing how many fewer rounds we need
       // break;
@@ -394,17 +392,14 @@ Result Solver::compute(Parameters params) {
     VLOG(3) << "Found matching of size " << matching.size() << ".";
   }
 
+  VLOG(2) << "Iterations until potential reached convergence limit " << V(result.iterationsUntilValidExpansion2)
+              << V(result.iterationsUntilValidExpansion) << V(result.iterations);
+
   result.iterations = iterations;
   result.congestion = 1;
   for (auto u : *subdivGraph)
     for (auto e = subdivGraph->beginEdge(u); e != subdivGraph->endEdge(u); ++e)
       result.congestion = std::max(result.congestion, e->congestion);
-
-  if (params.samplePotential) {
-    VLOG(4) << "Final sampling of potential function";
-    result.sampledPotentials.push_back(samplePotential());
-    VLOG(4) << "Finished final sampling of potential function";
-  }
 
   if (graph->size() != 0 && graph->removedSize() != 0 &&
       subdivGraph->globalVolume(subdivGraph->cbeginRemoved(),

@@ -77,6 +77,7 @@ struct Result {
      threshold isn't reached value defaults to INT_MAX.
    */
   int iterationsUntilValidExpansion = std::numeric_limits<int>::max();
+  int iterationsUntilValidExpansion2 = std::numeric_limits<int>::max();
 
   /**
      Congestion of the embedding. If result is an expander, then conductance of
