@@ -259,12 +259,9 @@ Solver::proposeCut(const std::vector<double> &flow, const Parameters &params) co
   }
 }
 
-bool Solver::FlowIsWellDiffused(const std::vector<double>& flow) const {
-  const int curSubdivisionCount = subdivGraph->size() - graph->size();
-  const double projected_potential = ProjectedPotential(flow);
-  const double convergence_limit = 1.0 / 16 / curSubdivisionCount / curSubdivisionCount / curSubdivisionCount;
-  VLOG(2) << V(projected_potential) << " / " << V(convergence_limit);
-  return projected_potential <= convergence_limit;
+double Solver::ProjectedPotentialConvergenceThreshold() const {
+  const int s = subdivGraph->size() - graph->size();
+  return 1.0 / (16.0 * s * s * s);
 }
 
 void Solver::RemoveCutSide(const std::vector<UnitFlow::Vertex>& cutLeft, const std::vector<UnitFlow::Vertex>& cutRight,
@@ -313,7 +310,7 @@ void Solver::RemoveCutSide(const std::vector<UnitFlow::Vertex>& cutLeft, const s
   }
 }
 
-size_t Solver::SelectHighestPotentialFlowVector(const std::vector<std::vector<double>>& flows) const {
+std::pair<size_t, double> Solver::SelectHighestPotentialFlowVector(const std::vector<std::vector<double>>& flows) const {
   size_t highest = -1;
   double highest_potential = std::numeric_limits<double>::lowest();
   for (size_t i = 0; i < flows.size(); ++i) {
@@ -323,7 +320,8 @@ size_t Solver::SelectHighestPotentialFlowVector(const std::vector<std::vector<do
       highest_potential = potential;
     }
   }
-  return highest;
+  VLOG(3) << V(highest_potential) << V(highest);
+  return std::make_pair(highest, highest_potential);
 }
 
 Result Solver::compute(Parameters params) {
@@ -369,9 +367,9 @@ Result Solver::compute(Parameters params) {
       }
     }
 
-    if (params.use_potential_based_dynamic_stopping_criterion &&
-          std::all_of(flow_vectors.begin(), flow_vectors.end(),
-            [&](const auto& f) { return FlowIsWellDiffused((f)); })) {
+    auto [flow_vector_id, potential] = SelectHighestPotentialFlowVector(flow_vectors);
+
+    if (params.use_potential_based_dynamic_stopping_criterion && potential <= ProjectedPotentialConvergenceThreshold()) {
       if (result.iterationsUntilValidExpansion2 == std::numeric_limits<int>::max()) {
         result.iterationsUntilValidExpansion2 = iterations;
       }
@@ -380,19 +378,20 @@ Result Solver::compute(Parameters params) {
     }
 
     {
+      size_t max = 0;
       for (const auto& flow : flow_vectors) {
         size_t significant_entries = 0;
         for (double x : flow) {
           if (std::abs(x) > 1e-17)
             significant_entries++;
         }
-        VLOG(3) << V(significant_entries) << V(flow.size());
+        max = std::max(max, significant_entries);
       }
+      VLOG(3) << "#significant entries" << max;
     }
 
     Timer timer; timer.Start();
-    auto [axLeft, axRight] =
-      proposeCut(flow_vectors[SelectHighestPotentialFlowVector(flow_vectors)], params);
+    auto [axLeft, axRight] = proposeCut(flow_vectors[flow_vector_id], params);
     Timings::GlobalTimings().AddTiming(Timing::ProposeCut, timer.Restart());
 
     VLOG(3) << "Number of sources: " << axLeft.size()

@@ -54,7 +54,7 @@ struct Parameters {
 
   bool use_potential_based_dynamic_stopping_criterion = false;
 
-  int num_flow_vectors = 5;
+  int num_flow_vectors = 20;
 };
 
 /**
@@ -148,7 +148,7 @@ private:
   std::pair<std::vector<int>, std::vector<int>> RSTCutStep(
       const std::vector<double> &flow, const Parameters &params) const;
 
-  size_t SelectHighestPotentialFlowVector(const std::vector<std::vector<double>>& flows) const;
+  std::pair<size_t, double> SelectHighestPotentialFlowVector(const std::vector<std::vector<double>>& flows) const;
 
   /**
      Create a cut according to the cut player strategy given the current flow.
@@ -156,7 +156,7 @@ private:
   std::pair<std::vector<int>, std::vector<int>>
   proposeCut(const std::vector<double> &flow, const Parameters &params) const;
 
-  bool FlowIsWellDiffused(const std::vector<double>& flow) const;
+  double ProjectedPotentialConvergenceThreshold() const;
 
   void RemoveCutSide(const std::vector<UnitFlow::Vertex>& cutLeft, const std::vector<UnitFlow::Vertex>& cutRight,
       std::vector<UnitFlow::Vertex>& axLeft, std::vector<UnitFlow::Vertex>& axRight);
