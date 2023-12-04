@@ -124,6 +124,8 @@ private:
    */
   std::vector<std::vector<double>> flowMatrix;
 
+  std::vector<int> num_matched_steps;
+
   /**
      Construct a semi-random vector for the currently alive subdivision vertices
      with length 'numSplitNodes' normalized by the number of alive subdivision
@@ -136,6 +138,14 @@ private:
    */
   double samplePotential() const;
 
+  double ProjectedPotential(const std::vector<double>& flow) const;
+  double AvgFlow(const std::vector<double>& flow) const;
+
+  std::pair<std::vector<int>, std::vector<int>> KRVCutStep(
+      const std::vector<double> &flow, const Parameters &params) const;
+  std::pair<std::vector<int>, std::vector<int>> RSTCutStep(
+      const std::vector<double> &flow, const Parameters &params) const;
+
   /**
      Create a cut according to the cut player strategy given the current flow.
    */
@@ -143,6 +153,9 @@ private:
   proposeCut(const std::vector<double> &flow, const Parameters &params) const;
 
   bool FlowIsWellDiffused(const std::vector<double>& flow) const;
+
+  void RemoveCutSide(const std::vector<UnitFlow::Vertex>& cutLeft, const std::vector<UnitFlow::Vertex>& cutRight,
+      std::vector<UnitFlow::Vertex>& axLeft, std::vector<UnitFlow::Vertex>& axRight);
 
 public:
   /**

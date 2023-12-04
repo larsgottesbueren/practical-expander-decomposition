@@ -23,11 +23,12 @@ Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG,
   assert(graph->size() != 0 && "Cut-matching expected non-empty subset.");
 
   // Set edge capacities in subdivision flow graph.
-  const UnitFlow::Flow capacity = std::ceil(1.0 / phi / T);
+  const UnitFlow::Flow capacity = std::ceil(1.0 / phi / T);   // TODO SW'19 says its log^2(m) not T (no hidden constants) page 29 top
   for (auto u : *graph)
     for (auto e = subdivGraph->beginEdge(u); e != subdivGraph->endEdge(u); ++e)
       e->capacity = capacity, subdivGraph->reverse(*e).capacity = capacity,
       e->congestion = 0, subdivGraph->reverse(*e).congestion = 0;
+
 
   // Give each 'm' subdivision vertex a unique index in the range '[0,m)'.
   int count = 0;
@@ -36,6 +37,8 @@ Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG,
       (*subdivisionIdx)[u] = count++;
     }
   }
+
+  num_matched_steps.assign(count, 0);
 
   // If potential is sampled, set the flow matrix to the identity matrix.
   if (params.samplePotential) {
@@ -88,52 +91,80 @@ double Solver::samplePotential() const {
     f /= (long double)alive.size();
 
   long double sum = 0, kahanError = 0;
+  long double sum2 = 0.0, max_sq = 0.0;
+  double max_entry = std::numeric_limits<double>::lowest();
+  double min_entry = std::numeric_limits<double>::max();
   for (int u : alive) {
     for (int v : alive) {
+      // TODO Why are we subtracting the avg flow vector here? ah it's 1/n (unless something was removed)
       const long double sq = square(flowMatrix[u][v] - avgFlowVector[v]);
       const long double y = sq - kahanError;
       const long double t = sum + y;
       kahanError = t - sum - y;
       sum = t;
+
+      sum2 += sq;
+      max_sq = std::max(max_sq, sq);
+      max_entry = std::max(max_entry, flowMatrix[u][v]);
+      min_entry = std::min(min_entry, flowMatrix[u][v]);
     }
   }
 
+  VLOG(3) << V(sum) << V(sum2) << V(max_sq) << V(max_entry) << V(min_entry);
   return (double)sum;
 }
 
-std::pair<std::vector<int>, std::vector<int>>
-Solver::proposeCut(const std::vector<double> &flow,
-                   const Parameters &params) const {
-  const int curSubdivisionCount = subdivGraph->size() - graph->size();
-  double avgFlow;
-  {
-#if true
-    double sum = 0.0, kahanError = 0.0;
-    for (auto u : *subdivGraph) {
-      const int idx = (*subdivisionIdx)[u];
-      if (idx >= 0) {
-        const double y = flow[idx] - kahanError;
-        const double t = sum + y;
-        kahanError = t - sum - y;
-        sum = t;
-      }
+double Solver::AvgFlow(const std::vector<double>& flow) const {
+  long double sum = 0.0;
+  for (auto u : *subdivGraph) {
+    const int idx = (*subdivisionIdx)[u];
+    if (idx >= 0) {
+      sum += flow[idx];
     }
-#else
-    long double sum = 0.0;
-#if false
-    for (auto u : *subdivGraph) {
-      const int idx = (*subdivisionIdx)[u];
-      if (idx >= 0) {
-        sum += flow[idx];
-      }
-    }
-#else
-    for (double x : flow) sum += x;
-#endif
-#endif
-    VLOG(2) << "flow" << V(sum) << "in proposeCut()" << V(curSubdivisionCount);
-    avgFlow = sum / (double)curSubdivisionCount;
   }
+  const int curSubdivisionCount = subdivGraph->size() - graph->size();
+  return sum / (double)curSubdivisionCount;
+}
+
+double Solver::ProjectedPotential(const std::vector<double>& flow) const {
+  const double avg_flow = AvgFlow(flow);
+  long double potential = 0.0;
+  for (auto u : *subdivGraph) {
+    const int idx = (*subdivisionIdx)[u];
+    if (idx >= 0) {
+      potential += square(flow[idx] - avg_flow);
+    }
+  }
+  return potential;
+}
+
+std::pair<std::vector<int>, std::vector<int>> Solver::KRVCutStep(
+      const std::vector<double> &flow, const Parameters &params) const {
+  std::vector<std::pair<double, UnitFlow::Vertex>> perm;
+  for (auto u : *subdivGraph) {
+    const int idx = (*subdivisionIdx)[u];
+    if (idx >= 0) {
+      perm.emplace_back(flow[idx], u);
+    }
+  }
+  size_t mid = perm.size() / 2;
+  std::nth_element(perm.begin(), perm.begin() + mid, perm.end());
+  std::vector<int> axLeft, axRight;
+  for (size_t i = 0; i < mid; ++i) {
+    axLeft.push_back(perm[i].second);
+  }
+  for (size_t i = mid; i < perm.size(); ++i) {
+    axRight.push_back(perm[i].second);
+  }
+  return std::make_pair(std::move(axLeft), std::move(axRight));
+}
+
+std::pair<std::vector<int>, std::vector<int>> Solver::RSTCutStep(
+    const std::vector<double> &flow, const Parameters &params) const
+{
+  const int curSubdivisionCount = subdivGraph->size() - graph->size();
+  // TODO as long as nothing was removed (no cut was made), we can match half and half (median)
+  double avgFlow = AvgFlow(flow);
   // Partition subdivision vertices into a left and right set.
   std::vector<int> axLeft, axRight;
   for (auto u : *subdivGraph) {
@@ -145,8 +176,6 @@ Solver::proposeCut(const std::vector<double> &flow,
         axRight.push_back(u);
     }
   }
-
-  VLOG(3) << "propose cut check 1 " <<  V(axLeft.size()) << V(axRight.size());
 
   // Sort by flow
   auto cmpFlow = [&flow, &subdivisionIdx = subdivisionIdx](int u, int v) {
@@ -178,10 +207,7 @@ Solver::proposeCut(const std::vector<double> &flow,
     leftPotential += square(flow[idx] - avgFlow);
   }
 
-  VLOG(3) << "propose cut check 2 " << V(axLeft.size()) << V(axRight.size()) << V(leftPotential) << V(totalPotential);
-  bool called_repart = false;
   if (leftPotential <= totalPotential / 20.0) {
-    called_repart = true;
     VLOG(3) << "repartition along mu";
     double l = 0.0;
     for (auto u : axLeft) {
@@ -202,13 +228,10 @@ Solver::proposeCut(const std::vector<double> &flow,
           axLeft.push_back(u);
       }
     }
-    // TODO sort again??
+    // TODO sort again?? check in RST'14
     std::reverse(axRight.begin(), axRight.end());
 
-    VLOG(3) << "propose cut check 2.5 (in repart) " << V(axLeft.size()) << V(axRight.size()) << V(mu);
   }
-
-  VLOG(3) << "propose cut check 3 " << V(axLeft.size()) << V(axRight.size());
 
   if (params.balancedCutStrategy) {
     while (axRight.size() > axLeft.size()) {
@@ -224,45 +247,72 @@ Solver::proposeCut(const std::vector<double> &flow,
     axLeft.pop_back();
   }
 
-  VLOG(3) << "propose cut check 4 " << V(axLeft.size()) << V(axRight.size());
-
-  if (axLeft.empty() || axRight.empty())
-  {
-    VLOG(3) << "exit because I want to see the case";
-    std::exit(0);
-  }
   return std::make_pair(axLeft, axRight);
+}
+
+
+
+std::pair<std::vector<int>, std::vector<int>>
+Solver::proposeCut(const std::vector<double> &flow, const Parameters &params) const {
+  if (subdivGraph->removedSize() == 0) {
+    return KRVCutStep(flow, params);
+  } else {
+    return RSTCutStep(flow, params);
+  }
 }
 
 bool Solver::FlowIsWellDiffused(const std::vector<double>& flow) const {
   const int curSubdivisionCount = subdivGraph->size() - graph->size();
-  double avgFlow;
-  {
-    long double sum = 0.0;
-    for (auto u : *subdivGraph) {
-      const int idx = (*subdivisionIdx)[u];
-      if (idx >= 0) {
-        sum += flow[idx];
-      }
+  const double projected_potential = ProjectedPotential(flow);
+  const double convergence_limit = 1.0 / 16 / curSubdivisionCount / curSubdivisionCount / curSubdivisionCount;
+  VLOG(2) << V(projected_potential) << " / " << V(convergence_limit);
+  return projected_potential <= convergence_limit;
+}
+
+void Solver::RemoveCutSide(const std::vector<UnitFlow::Vertex>& cutLeft, const std::vector<UnitFlow::Vertex>& cutRight,
+                          std::vector<UnitFlow::Vertex>& axLeft, std::vector<UnitFlow::Vertex>& axRight) {
+  std::unordered_set<int> removed;
+  if (subdivGraph->globalVolume(cutLeft.begin(), cutLeft.end()) < subdivGraph->globalVolume(cutRight.begin(), cutRight.end())) {
+    for (auto u : cutLeft) {
+      removed.insert(u);
     }
-    avgFlow = sum / (double)curSubdivisionCount;
-  }
-  double projected_potential_sum;
-  {
-    long double sum = 0.0;
-    for (auto u : *subdivGraph) {
-      const int idx = (*subdivisionIdx)[u];
-      if (idx >= 0) {
-        sum += square(flow[idx] - avgFlow);
-      }
+  } else {
+    for (auto u : cutRight) {
+      removed.insert(u);
     }
-    projected_potential_sum = sum;
   }
 
-  double convergence_limit = 1.0 / 16 / curSubdivisionCount / curSubdivisionCount / curSubdivisionCount;
-  VLOG(2) << V(projected_potential_sum) << " / " << V(convergence_limit) << V(avgFlow);
+  VLOG(3) << "\tRemoving " << removed.size() << " vertices.";
 
-  return projected_potential_sum <= convergence_limit;
+  auto isRemoved = [&removed](int u) {
+    return removed.find(u) != removed.end();
+  };
+  axLeft.erase(std::remove_if(axLeft.begin(), axLeft.end(), isRemoved),
+               axLeft.end());
+  axRight.erase(std::remove_if(axRight.begin(), axRight.end(), isRemoved),
+                axRight.end());
+
+  for (auto u : removed) {
+    if ((*subdivisionIdx)[u] == -1) {
+      graph->remove(u);
+    }
+    subdivGraph->remove(u);
+  }
+
+  std::vector<int> zeroDegrees;
+  for (auto u : *subdivGraph) {
+    if (subdivGraph->degree(u) == 0) {
+      zeroDegrees.push_back(u);
+      removed.insert(u);
+    }
+  }
+
+  for (auto u : zeroDegrees) {
+    if ((*subdivisionIdx)[u] == -1) {
+      graph->remove(u);
+    }
+    subdivGraph->remove(u);
+  }
 }
 
 Result Solver::compute(Parameters params) {
@@ -312,6 +362,15 @@ Result Solver::compute(Parameters params) {
       // break;
     }
 
+    {
+      size_t significant_entries = 0;
+      for (double x : flow) {
+        if (std::abs(x) > 1e-17)
+          significant_entries++;
+      }
+      VLOG(3) << V(significant_entries) << V(flow.size());
+    }
+
     Timer timer; timer.Start();
     auto [axLeft, axRight] = proposeCut(flow, params);
     Timings::GlobalTimings().AddTiming(Timing::ProposeCut, timer.Restart());
@@ -352,67 +411,24 @@ Result Solver::compute(Parameters params) {
     if (hasExcess.empty()) {
       VLOG(3) << "\tAll flow routed.";
     } else {
-      VLOG(3) << "\tHas " << hasExcess.size()
-              << " vertices with excess. Computing level cut.";
+      VLOG(3) << "\tHas " << hasExcess.size() << " vertices with excess. Computing level cut.";
       const auto [cutLeft, cutRight] = subdivGraph->levelCut(h);
-      VLOG(3) << "\tHas level cut with (" << cutLeft.size() << ", "
-              << cutRight.size() << ") vertices.";
+      VLOG(3) << "\tHas level cut with (" << cutLeft.size() << ", " << cutRight.size() << ") vertices.";
 
-      std::unordered_set<int> removed;
-      if (subdivGraph->globalVolume(cutLeft.begin(), cutLeft.end()) <
-          subdivGraph->globalVolume(cutRight.begin(), cutRight.end())) {
-        for (auto u : cutLeft) {
-          removed.insert(u);
-        }
-      } else {
-        for (auto u : cutRight) {
-          removed.insert(u);
-        }
-      }
-
-      VLOG(3) << "\tRemoving " << removed.size() << " vertices.";
-
-      auto isRemoved = [&removed](int u) {
-        return removed.find(u) != removed.end();
-      };
-      axLeft.erase(std::remove_if(axLeft.begin(), axLeft.end(), isRemoved),
-                   axLeft.end());
-      axRight.erase(std::remove_if(axRight.begin(), axRight.end(), isRemoved),
-                    axRight.end());
-
-      for (auto u : removed) {
-        if ((*subdivisionIdx)[u] == -1) {
-          graph->remove(u);
-        }
-        subdivGraph->remove(u);
-      }
-
-      std::vector<int> zeroDegrees;
-      for (auto u : *subdivGraph) {
-        if (subdivGraph->degree(u) == 0) {
-          zeroDegrees.push_back(u);
-          removed.insert(u);
-        }
-      }
-
-      for (auto u : zeroDegrees) {
-        if ((*subdivisionIdx)[u] == -1) {
-          graph->remove(u);
-        }
-        subdivGraph->remove(u);
-      }
-
+      RemoveCutSide(cutLeft, cutRight, axLeft, axRight);
     }
 
     Timings::GlobalTimings().AddTiming(Timing::Misc, timer.Restart());
 
-    VLOG(3) << "Computing matching with |S| = " << axLeft.size()
-            << " |T| = " << axRight.size() << ".";
+    VLOG(3) << "Computing matching with |S| = " << axLeft.size() << " |T| = " << axRight.size() << ".";
     auto matching =
         subdivGraph->matching(axLeft);
     for (auto &p : matching) {
       int u = (*subdivisionIdx)[p.first];
       int v = (*subdivisionIdx)[p.second];
+
+      num_matched_steps[u]++;
+      num_matched_steps[v]++;
 
       const double avg = 0.5 * (flow[u] + flow[v]);
       flow[u] = avg;
@@ -430,6 +446,22 @@ Result Solver::compute(Parameters params) {
     }
 
     Timings::GlobalTimings().AddTiming(Timing::Match, timer.Stop());
+
+    if (false)
+    {
+      size_t avg_num_matched_steps =
+        std::accumulate(num_matched_steps.begin(), num_matched_steps.end(), 0) * 1.0 / num_matched_steps.size();
+      std::cout << V(avg_num_matched_steps) << " ";
+      auto copy = num_matched_steps;
+      std::sort(copy.begin(), copy.end());
+      std::vector<double> qs = {0.0, 0.001, 0.01, 0.05, 0.1, 0.5, 0.9, 0.95, 0.99, 0.999};
+      for (double q : qs)
+      {
+        int64_t pos = q * copy.size();
+        std::cout << q << " : " << copy[std::clamp<int64_t>(pos, 0, copy.size() - 1)] << " | ";
+      }
+
+    }
 
     VLOG(3) << "Found matching of size " << matching.size() << ".";
   }
