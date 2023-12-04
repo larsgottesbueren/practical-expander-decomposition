@@ -343,7 +343,7 @@ Result Solver::compute(Parameters params) {
   Result result;
 
   std::vector<std::vector<double>> flow_vectors;
-  for (size_t i = 0; i < params.num_flow_vectors; ++i) {
+  for (int i = 0; i < params.num_flow_vectors; ++i) {
     flow_vectors.push_back(randomUnitVector());
   }
 
@@ -370,7 +370,8 @@ Result Solver::compute(Parameters params) {
     }
 
     if (params.use_potential_based_dynamic_stopping_criterion &&
-          std::all_of(flow_vectors.begin(), flow_vectors.end(), FlowIsWellDiffused)) {
+          std::all_of(flow_vectors.begin(), flow_vectors.end(),
+            [&](const auto& f) { return FlowIsWellDiffused((f)); })) {
       if (result.iterationsUntilValidExpansion2 == std::numeric_limits<int>::max()) {
         result.iterationsUntilValidExpansion2 = iterations;
       }
