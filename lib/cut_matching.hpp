@@ -53,6 +53,8 @@ struct Parameters {
   bool use_cut_heuristics = true;
 
   bool use_potential_based_dynamic_stopping_criterion = false;
+
+  int num_flow_vectors = 5;
 };
 
 /**
@@ -145,6 +147,8 @@ private:
       const std::vector<double> &flow, const Parameters &params) const;
   std::pair<std::vector<int>, std::vector<int>> RSTCutStep(
       const std::vector<double> &flow, const Parameters &params) const;
+
+  size_t SelectHighestPotentialFlowVector(const std::vector<std::vector<double>>& flows) const;
 
   /**
      Create a cut according to the cut player strategy given the current flow.

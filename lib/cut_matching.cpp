@@ -160,10 +160,8 @@ std::pair<std::vector<int>, std::vector<int>> Solver::KRVCutStep(
 }
 
 std::pair<std::vector<int>, std::vector<int>> Solver::RSTCutStep(
-    const std::vector<double> &flow, const Parameters &params) const
-{
+    const std::vector<double> &flow, const Parameters &params) const {
   const int curSubdivisionCount = subdivGraph->size() - graph->size();
-  // TODO as long as nothing was removed (no cut was made), we can match half and half (median)
   double avgFlow = AvgFlow(flow);
   // Partition subdivision vertices into a left and right set.
   std::vector<int> axLeft, axRight;
@@ -315,6 +313,19 @@ void Solver::RemoveCutSide(const std::vector<UnitFlow::Vertex>& cutLeft, const s
   }
 }
 
+size_t Solver::SelectHighestPotentialFlowVector(const std::vector<std::vector<double>>& flows) const {
+  size_t highest = -1;
+  double highest_potential = std::numeric_limits<double>::lowest();
+  for (size_t i = 0; i < flows.size(); ++i) {
+    double potential = ProjectedPotential(flows[i]);
+    if (potential > highest_potential) {
+      highest = i;
+      highest_potential = potential;
+    }
+  }
+  return highest;
+}
+
 Result Solver::compute(Parameters params) {
   if (numSplitNodes <= 1) {
     VLOG(3) << "Cut matching exited early with " << numSplitNodes
@@ -330,7 +341,11 @@ Result Solver::compute(Parameters params) {
       std::max(lowerVolumeBalance, int(params.minBalance * totalVolume));
 
   Result result;
-  auto flow = randomUnitVector();
+
+  std::vector<std::vector<double>> flow_vectors;
+  for (size_t i = 0; i < params.num_flow_vectors; ++i) {
+    flow_vectors.push_back(randomUnitVector());
+  }
 
   int iterations = 0;
   const int iterationsToRun = std::max(params.minIterations, T);
@@ -354,7 +369,8 @@ Result Solver::compute(Parameters params) {
       }
     }
 
-    if (params.use_potential_based_dynamic_stopping_criterion && FlowIsWellDiffused(flow)) {
+    if (params.use_potential_based_dynamic_stopping_criterion &&
+          std::all_of(flow_vectors.begin(), flow_vectors.end(), FlowIsWellDiffused)) {
       if (result.iterationsUntilValidExpansion2 == std::numeric_limits<int>::max()) {
         result.iterationsUntilValidExpansion2 = iterations;
       }
@@ -363,16 +379,19 @@ Result Solver::compute(Parameters params) {
     }
 
     {
-      size_t significant_entries = 0;
-      for (double x : flow) {
-        if (std::abs(x) > 1e-17)
-          significant_entries++;
+      for (const auto& flow : flow_vectors) {
+        size_t significant_entries = 0;
+        for (double x : flow) {
+          if (std::abs(x) > 1e-17)
+            significant_entries++;
+        }
+        VLOG(3) << V(significant_entries) << V(flow.size());
       }
-      VLOG(3) << V(significant_entries) << V(flow.size());
     }
 
     Timer timer; timer.Start();
-    auto [axLeft, axRight] = proposeCut(flow, params);
+    auto [axLeft, axRight] =
+      proposeCut(flow_vectors[SelectHighestPotentialFlowVector(flow_vectors)], params);
     Timings::GlobalTimings().AddTiming(Timing::ProposeCut, timer.Restart());
 
     VLOG(3) << "Number of sources: " << axLeft.size()
@@ -430,9 +449,11 @@ Result Solver::compute(Parameters params) {
       num_matched_steps[u]++;
       num_matched_steps[v]++;
 
-      const double avg = 0.5 * (flow[u] + flow[v]);
-      flow[u] = avg;
-      flow[v] = avg;
+      for (auto& flow : flow_vectors) {
+        const double avg = 0.5 * (flow[u] + flow[v]);
+        flow[u] = avg;
+        flow[v] = avg;
+      }
 
       if (params.samplePotential) {
         for (int i : *subdivGraph) {
@@ -446,22 +467,6 @@ Result Solver::compute(Parameters params) {
     }
 
     Timings::GlobalTimings().AddTiming(Timing::Match, timer.Stop());
-
-    if (false)
-    {
-      size_t avg_num_matched_steps =
-        std::accumulate(num_matched_steps.begin(), num_matched_steps.end(), 0) * 1.0 / num_matched_steps.size();
-      std::cout << V(avg_num_matched_steps) << " ";
-      auto copy = num_matched_steps;
-      std::sort(copy.begin(), copy.end());
-      std::vector<double> qs = {0.0, 0.001, 0.01, 0.05, 0.1, 0.5, 0.9, 0.95, 0.99, 0.999};
-      for (double q : qs)
-      {
-        int64_t pos = q * copy.size();
-        std::cout << q << " : " << copy[std::clamp<int64_t>(pos, 0, copy.size() - 1)] << " | ";
-      }
-
-    }
 
     VLOG(3) << "Found matching of size " << matching.size() << ".";
   }
@@ -489,26 +494,26 @@ Result Solver::compute(Parameters params) {
     result.type = Result::NearExpander;
 
   switch (result.type) {
-  case Result::Balanced: {
-    VLOG(2) << "Cut matching ran " << iterations
-            << " iterations and resulted in balanced cut with size ("
-            << graph->size() << ", " << graph->removedSize() << ") and volume ("
-            << graph->globalVolume(graph->cbegin(), graph->cend()) << ", "
-            << graph->globalVolume(graph->cbeginRemoved(), graph->cendRemoved())
-            << ").";
-    break;
-  }
-  case Result::Expander: {
-    VLOG(2) << "Cut matching ran " << iterations
-            << " iterations and resulted in expander.";
-    break;
-  }
-  case Result::NearExpander: {
-    VLOG(2) << "Cut matching ran " << iterations
-            << " iterations and resulted in near expander of size "
-            << graph->size() << ".";
-    break;
-  }
+    case Result::Balanced: {
+      VLOG(2) << "Cut matching ran " << iterations
+              << " iterations and resulted in balanced cut with size ("
+              << graph->size() << ", " << graph->removedSize() << ") and volume ("
+              << graph->globalVolume(graph->cbegin(), graph->cend()) << ", "
+              << graph->globalVolume(graph->cbeginRemoved(), graph->cendRemoved())
+              << ").";
+      break;
+    }
+    case Result::Expander: {
+      VLOG(2) << "Cut matching ran " << iterations
+              << " iterations and resulted in expander.";
+      break;
+    }
+    case Result::NearExpander: {
+      VLOG(2) << "Cut matching ran " << iterations
+              << " iterations and resulted in near expander of size "
+              << graph->size() << ".";
+      break;
+    }
   }
 
   return result;
