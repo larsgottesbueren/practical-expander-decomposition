@@ -122,6 +122,10 @@ void Solver::compute() {
                              cutMatchingParams);
       cut_matching_result = cm.compute(cutMatchingParams);
 
+      if (cutMatchingParams.tune_num_flow_vectors) {
+        num_flow_vectors_needed = std::max(num_flow_vectors_needed, cut_matching_result.num_flow_vectors_needed);
+      }
+
       std::copy(flowGraph->cbegin(), flowGraph->cend(), std::back_inserter(a));
       std::copy(flowGraph->cbeginRemoved(), flowGraph->cendRemoved(), std::back_inserter(r));
       cm_dur = cm_timer.Stop();

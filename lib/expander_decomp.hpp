@@ -113,5 +113,8 @@ public:
   int getEdgesCut() const;
 
   Duration time_balanced_cut = Duration(0.0), time_expander = Duration(0.0);
+
+  // for tuning this parameter in cut-matching
+  int num_flow_vectors_needed = -1;
 };
 } // namespace ExpanderDecomposition

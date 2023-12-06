@@ -525,8 +525,9 @@ Result Solver::compute(Parameters params) {
 
   params.num_flow_vectors = 1;
   while (true) {
-    const Result result = computeInternal(params);
+    Result result = computeInternal(params);
     if (result.iterationsUntilValidExpansion <= result.iterationsUntilValidExpansion2) {
+      result.num_flow_vectors_needed = params.num_flow_vectors;
       return result;
     } else {
       params.num_flow_vectors++;

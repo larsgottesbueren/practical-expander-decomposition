@@ -97,6 +97,8 @@ struct Result {
      congestion 1.
    */
   Result();
+
+  int num_flow_vectors_needed = -1;
 };
 
 struct FlowVector {
