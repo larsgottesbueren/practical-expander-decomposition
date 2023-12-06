@@ -97,6 +97,7 @@ private:
 
   bool CheckDatastructures() const {
     for (Vertex u : *graph) {
+      (void)u;
       assert(ComputeAffinityToCluster(u) == affinity_to_cluster[u]);
     }
     size_t cluster_vol = 0; size_t cluster_cut = 0;
