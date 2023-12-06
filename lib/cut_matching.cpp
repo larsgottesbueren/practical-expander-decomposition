@@ -60,8 +60,7 @@ std::vector<double> Solver::randomUnitVector() {
   for (auto &r : result)
     r = distr(*randomGen);
 
-  double offset = std::accumulate(result.begin(), result.end(), 0.0) /
-                  double(numSplitNodes);
+  double offset = std::accumulate(result.begin(), result.end(), 0.0) / double(numSplitNodes);
   double sumSq = 0;
   for (auto &r : result)
     r -= offset, sumSq += r * r;
@@ -96,7 +95,6 @@ double Solver::samplePotential() const {
   double min_entry = std::numeric_limits<double>::max();
   for (int u : alive) {
     for (int v : alive) {
-      // TODO Why are we subtracting the avg flow vector here? ah it's 1/n (unless something was removed)
       const long double sq = square(flowMatrix[u][v] - avgFlowVector[v]);
       const long double y = sq - kahanError;
       const long double t = sum + y;
@@ -114,6 +112,8 @@ double Solver::samplePotential() const {
   return (double)sum;
 }
 
+  // TODO cache the avg flow value. when edges get removed, update it.
+  // should be faster than recomputing this all the time
 double Solver::AvgFlow(const std::vector<double>& flow) const {
   long double sum = 0.0;
   for (auto u : *subdivGraph) {

@@ -100,6 +100,20 @@ struct Result {
   Result();
 };
 
+struct FlowVector {
+    std::vector<double> entries;
+    double sum;
+    size_t num_entries;
+    void RemoveEntry(size_t ind) {
+        sum -= entries[ind];
+        entries[ind] = 0.0;
+    }
+    double AvgFlow() const { return sum / num_entries; }
+    double ProjectedPotential() const {
+
+    }
+};
+
 class Solver {
 private:
   UnitFlow::Graph *graph;
