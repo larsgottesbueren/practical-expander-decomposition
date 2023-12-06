@@ -72,7 +72,9 @@ int main(int argc, char *argv[]) {
       .samplePotential = true,
       .balancedCutStrategy = true,
       .use_cut_heuristics = true,
-      .use_potential_based_dynamic_stopping_criterion = true
+      .use_potential_based_dynamic_stopping_criterion = true,
+      .num_flow_vectors = 20,
+      .tune_num_flow_vectors = true,
   };
   double phi = 0.001;
 
@@ -88,6 +90,9 @@ int main(int argc, char *argv[]) {
   std::cout << "--- Time for balanced cuts " << solver.time_balanced_cut << " time for expanders " << solver.time_expander << " ---" << std::endl;
 
   std::cout << "Time pre excess " << solver.subdivisionFlowGraph->pre_excess << " time post excess " << solver.subdivisionFlowGraph->post_excess << std::endl;
+  if (params.tune_num_flow_vectors) {
+      std::cout << "Num flow vectors" << solver.num_flow_vectors_needed << std::endl;
+  }
 
   return 0;
 

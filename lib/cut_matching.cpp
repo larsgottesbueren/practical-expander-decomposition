@@ -481,9 +481,8 @@ Result Solver::computeInternal(Parameters params) {
       result.congestion = std::max(result.congestion, e->congestion);
 
   if (graph->size() != 0 && graph->removedSize() != 0 &&
-      subdivGraph->globalVolume(subdivGraph->cbeginRemoved(),
-                                subdivGraph->cendRemoved()) >
-          lowerVolumeBalance)
+        subdivGraph->globalVolume(subdivGraph->cbeginRemoved(), subdivGraph->cendRemoved())
+                                   > lowerVolumeBalance)
     // We have: graph.volume(R) > m / (10 * T)
     result.type = Result::Balanced;
   else if (graph->removedSize() == 0)
@@ -525,12 +524,18 @@ Result Solver::compute(Parameters params) {
 
   params.num_flow_vectors = 1;
   while (true) {
+    VLOG(2) << "Testing convergence with " << V(params.num_flow_vectors) << "projected flow vectors";
     Result result = computeInternal(params);
     if (result.iterationsUntilValidExpansion <= result.iterationsUntilValidExpansion2) {
       result.num_flow_vectors_needed = params.num_flow_vectors;
+      VLOG(2) << V(params.num_flow_vectors) << " were needed to converge similarly";
       return result;
-    } else {
-      params.num_flow_vectors++;
+    }
+    params.num_flow_vectors++;
+    if (result.type != Result::Expander) {
+      // restoreRemoves() is safe to call repeatedly --> don't worry about the case expander and graph->size() == 0 (before restore)
+      graph->restoreRemoves();
+      subdivGraph->restoreRemoves();
     }
   }
 }
