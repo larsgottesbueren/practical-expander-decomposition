@@ -114,6 +114,7 @@ double Solver::samplePotential() const {
 
   // TODO cache the avg flow value. when edges get removed, update it.
   // should be faster than recomputing this all the time
+  // can we also update the projected potential?
 double Solver::AvgFlow(const std::vector<double>& flow) const {
   long double sum = 0.0;
   for (auto u : *subdivGraph) {
@@ -324,7 +325,7 @@ std::pair<size_t, double> Solver::SelectHighestPotentialFlowVector(const std::ve
   return std::make_pair(highest, highest_potential);
 }
 
-Result Solver::compute(Parameters params) {
+Result Solver::computeInternal(Parameters params) {
   if (numSplitNodes <= 1) {
     VLOG(3) << "Cut matching exited early with " << numSplitNodes
             << " subdivision vertices.";
@@ -360,7 +361,6 @@ Result Solver::compute(Parameters params) {
       // TODO numSplitNodes should be reducing in each iteration... this condition is wrong
 
       VLOG(2) << V(p) << " / limit = " << 1.0/(16.0*square(numSplitNodes));
-      result.sampledPotentials.push_back(p);
       if (p < 1.0 / (16.0 * square(numSplitNodes))) {
         result.iterationsUntilValidExpansion =
             std::min(result.iterationsUntilValidExpansion, iterations);
@@ -518,4 +518,20 @@ Result Solver::compute(Parameters params) {
 
   return result;
 }
+
+
+Result Solver::compute(Parameters params) {
+  if (!params.tune_num_flow_vectors) { return computeInternal(params); }
+
+  params.num_flow_vectors = 1;
+  while (true) {
+    const Result result = computeInternal(params);
+    if (result.iterationsUntilValidExpansion <= result.iterationsUntilValidExpansion2) {
+      return result;
+    } else {
+      params.num_flow_vectors++;
+    }
+  }
+}
+
 } // namespace CutMatching

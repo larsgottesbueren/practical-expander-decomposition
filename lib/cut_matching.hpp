@@ -3,7 +3,6 @@
 #include <random>
 #include <vector>
 
-#include "datastructures/undirected_graph.hpp"
 #include "datastructures/unit_flow.hpp"
 #include "util.hpp"
 
@@ -55,6 +54,12 @@ struct Parameters {
   bool use_potential_based_dynamic_stopping_criterion = false;
 
   int num_flow_vectors = 20;
+
+  /**
+   * use in combination with 'samplePotential' to determine how many flow vectors are needed to not converge faster
+   * than the full multi-commodity flow matrix.
+   */
+  bool tune_num_flow_vectors = false;
 };
 
 /**
@@ -88,12 +93,6 @@ struct Result {
   long long congestion;
 
   /**
-     Vector of potential function at the start of the cut-matching game and
-     after each iteration.
-   */
-  std::vector<double> sampledPotentials;
-
-  /**
      Construct a default result. This is an expander with 0 iterations and
      congestion 1.
    */
@@ -109,9 +108,6 @@ struct FlowVector {
         entries[ind] = 0.0;
     }
     double AvgFlow() const { return sum / num_entries; }
-    double ProjectedPotential() const {
-
-    }
 };
 
 class Solver {
@@ -202,6 +198,7 @@ public:
   /**
      Compute a sparse cut.
    */
+  Result computeInternal(Parameters params);
   Result compute(Parameters params);
 };
 }; // namespace CutMatching
