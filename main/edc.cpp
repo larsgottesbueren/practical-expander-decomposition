@@ -13,7 +13,7 @@
 #include <datastructures/undirected_graph.hpp>
 #include <expander_decomp.hpp>
 
-int Logger::LOG_LEVEL = 3;
+int Logger::LOG_LEVEL = 0;
 
 std::unique_ptr<std::mt19937> configureRandomness(unsigned int seed) {
     std::mt19937 randomGen(seed);
