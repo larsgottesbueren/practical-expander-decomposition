@@ -71,12 +71,12 @@ struct Result {
   /**
      Type of cut-matching result.
    */
-  Type type;
+  Type type = Expander;
 
   /**
      Number of iterations the cut-matching step ran.
    */
-  int iterations;
+  int iterations = 0;
 
   /**
      If potentials are sampled, the number of iterations until the potential
@@ -90,13 +90,7 @@ struct Result {
      Congestion of the embedding. If result is an expander, then conductance of
      graph is '1/congestion'.
    */
-  long long congestion;
-
-  /**
-     Construct a default result. This is an expander with 0 iterations and
-     congestion 1.
-   */
-  Result();
+  long long congestion = 1;
 
   int num_flow_vectors_needed = -1;
 };

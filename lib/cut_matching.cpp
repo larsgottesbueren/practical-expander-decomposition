@@ -8,10 +8,6 @@
 
 namespace CutMatching {
 
-Result::Result()
-    : type(Result::Type::Expander), iterations(0),
-      iterationsUntilValidExpansion(std::numeric_limits<int>::max()), congestion(1) {}
-
 void Solver::Initialize(Parameters params) {
   // Set edge capacities in subdivision flow graph.
   const UnitFlow::Flow capacity = std::ceil(1.0 / phi / T);   // TODO SW'19 says its log^2(m) not T (no hidden constants) page 29 top
