@@ -380,6 +380,11 @@ Result Solver::computeInternal(Parameters params) {
       // break;
     }
 
+    if (result.iterationsUntilValidExpansion != std::numeric_limits<int>::max()
+        && result.iterationsUntilValidExpansion2 != std::numeric_limits<int>::max()) {
+      break;
+    }
+
     {
       size_t max = 0;
       for (const auto& flow : flow_vectors) {
