@@ -85,11 +85,11 @@ int main(int argc, char *argv[]) {
   auto partitions = solver.getPartition();
   auto conductances = solver.getConductance();
 
-  Timings::GlobalTimings().Print();
-  std::cout << "--- Total time " << total_time << " --- " << std::endl;
-  std::cout << "--- Time for balanced cuts " << solver.time_balanced_cut << " time for expanders " << solver.time_expander << " ---" << std::endl;
+  // Timings::GlobalTimings().Print();
+  // std::cout << "--- Total time " << total_time << " --- " << std::endl;
+  // std::cout << "--- Time for balanced cuts " << solver.time_balanced_cut << " time for expanders " << solver.time_expander << " ---" << std::endl;
 
-  std::cout << "Time pre excess " << solver.subdivisionFlowGraph->pre_excess << " time post excess " << solver.subdivisionFlowGraph->post_excess << std::endl;
+  // std::cout << "Time pre excess " << solver.subdivisionFlowGraph->pre_excess << " time post excess " << solver.subdivisionFlowGraph->post_excess << std::endl;
   if (params.tune_num_flow_vectors) {
       std::cout << "Num flow vectors" << solver.num_flow_vectors_needed << std::endl;
   }
