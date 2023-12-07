@@ -12,16 +12,7 @@ Result::Result()
     : type(Result::Type::Expander), iterations(0),
       iterationsUntilValidExpansion(std::numeric_limits<int>::max()), congestion(1) {}
 
-Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG,
-               std::mt19937 *randomGen, std::vector<int> *subdivisionIdx,
-               double phi, Parameters params)
-    : graph(g), subdivGraph(subdivG), randomGen(randomGen),
-      subdivisionIdx(subdivisionIdx), phi(phi),
-      T(std::max(1, params.tConst + int(ceil(params.tFactor *square(
-                                        std::log10(graph->edgeCount())))))),
-      numSplitNodes(subdivGraph->size() - graph->size()) {
-  assert(graph->size() != 0 && "Cut-matching expected non-empty subset.");
-
+void Solver::Initialize(Parameters params) {
   // Set edge capacities in subdivision flow graph.
   const UnitFlow::Flow capacity = std::ceil(1.0 / phi / T);   // TODO SW'19 says its log^2(m) not T (no hidden constants) page 29 top
   for (auto u : *graph)
@@ -46,11 +37,22 @@ Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG,
     for (int i : *subdivGraph) {
       int u = (*subdivisionIdx)[i];
       if (u >= 0) {
-        flowMatrix[u].resize(count);
+        flowMatrix[u].assign(count, 0.0);
         flowMatrix[u][u] = 1.0;
       }
     }
   }
+}
+
+Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG,
+               std::mt19937 *randomGen, std::vector<int> *subdivisionIdx,
+               double phi, Parameters params)
+    : graph(g), subdivGraph(subdivG), randomGen(randomGen),
+      subdivisionIdx(subdivisionIdx), phi(phi),
+      T(std::max(1, params.tConst + int(ceil(params.tFactor *square(
+                                        std::log10(graph->edgeCount())))))),
+      numSplitNodes(subdivGraph->size() - graph->size()) {
+  assert(graph->size() != 0 && "Cut-matching expected non-empty subset.");
 }
 
 std::vector<double> Solver::randomUnitVector() {
@@ -326,6 +328,8 @@ std::pair<size_t, double> Solver::SelectHighestPotentialFlowVector(const std::ve
 }
 
 Result Solver::computeInternal(Parameters params) {
+  Initialize(params);
+
   if (numSplitNodes <= 1) {
     VLOG(3) << "Cut matching exited early with " << numSplitNodes
             << " subdivision vertices.";

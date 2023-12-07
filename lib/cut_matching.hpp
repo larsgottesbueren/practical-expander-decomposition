@@ -173,6 +173,8 @@ private:
   void RemoveCutSide(const std::vector<UnitFlow::Vertex>& cutLeft, const std::vector<UnitFlow::Vertex>& cutRight,
       std::vector<UnitFlow::Vertex>& axLeft, std::vector<UnitFlow::Vertex>& axRight);
 
+  void Initialize(Parameters params);
+
 public:
   /**
      Create a cut-matching problem.
