@@ -358,10 +358,9 @@ Result Solver::computeInternal(Parameters params) {
 
     if (params.samplePotential) {
       double p = samplePotential();
-      // TODO numSplitNodes should be reducing in each iteration... this condition is wrong
-
-      VLOG(2) << V(p) << " / limit = " << 1.0/(16.0*square(numSplitNodes));
-      if (p < 1.0 / (16.0 * square(numSplitNodes))) {
+      const int curSubdivisionCount = subdivGraph->size() - graph->size();
+      VLOG(2) << V(p) << " / limit = " << 1.0/(16.0*square(curSubdivisionCount));
+      if (p < 1.0 / (16.0 * square(curSubdivisionCount))) {
         result.iterationsUntilValidExpansion =
             std::min(result.iterationsUntilValidExpansion, iterations);
       }
