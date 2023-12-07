@@ -525,17 +525,19 @@ Result Solver::compute(Parameters params) {
   while (true) {
     VLOG(2) << "Testing convergence with " << V(params.num_flow_vectors) << "projected flow vectors";
     Result result = computeInternal(params);
-    if (result.iterationsUntilValidExpansion <= result.iterationsUntilValidExpansion2) {
+    if (result.type != Result::Expander) {
+      return result;
+    }
+    if (result.iterationsUntilValidExpansion2 != std::numeric_limits<int>::max() &&
+      result.iterationsUntilValidExpansion <= result.iterationsUntilValidExpansion2) {
       result.num_flow_vectors_needed = params.num_flow_vectors;
       VLOG(2) << V(params.num_flow_vectors) << " were needed to converge similarly";
       return result;
     }
+
     params.num_flow_vectors++;
-    if (result.type != Result::Expander) {
-      // restoreRemoves() is safe to call repeatedly --> don't worry about the case expander and graph->size() == 0 (before restore)
-      graph->restoreRemoves();
-      subdivGraph->restoreRemoves();
-    }
+    graph->restoreRemoves();
+    subdivGraph->restoreRemoves();
   }
 }
 
