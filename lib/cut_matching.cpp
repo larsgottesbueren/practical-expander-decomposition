@@ -476,7 +476,7 @@ Result Solver::computeInternal(Parameters params) {
   }
 
   VLOG(2) << "Iterations until potential reached convergence limit " << V(result.iterationsUntilValidExpansion2)
-              << V(result.iterationsUntilValidExpansion) << V(result.iterations);
+              << V(result.iterationsUntilValidExpansion) << V(iterations);
 
   result.iterations = iterations;
   result.congestion = 1;
@@ -526,13 +526,11 @@ Result Solver::computeInternal(Parameters params) {
 Result Solver::compute(Parameters params) {
   if (!params.tune_num_flow_vectors) { return computeInternal(params); }
 
+  int T_increases = 0;
   params.num_flow_vectors = 1;
   while (true) {
     VLOG(2) << "Testing convergence with " << V(params.num_flow_vectors) << "projected flow vectors";
     Result result = computeInternal(params);
-    if (result.type != Result::Expander) {
-      return result;
-    }
     if (result.iterationsUntilValidExpansion2 != std::numeric_limits<int>::max() &&
       result.iterationsUntilValidExpansion <= result.iterationsUntilValidExpansion2) {
       result.num_flow_vectors_needed = params.num_flow_vectors;
@@ -543,6 +541,19 @@ Result Solver::compute(Parameters params) {
     params.num_flow_vectors++;
     graph->restoreRemoves();
     subdivGraph->restoreRemoves();
+
+    if (params.num_flow_vectors >= T)
+    {
+      std::cout << "Increase T" << std::endl;
+      T++;
+      T_increases++;
+
+      if (T_increases > 50)
+      {
+        std::cout << "50 increases, still nothing." << std::endl;
+        std::exit(0);
+      }
+    }
   }
 }
 

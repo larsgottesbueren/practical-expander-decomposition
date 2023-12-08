@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
       .balancedCutStrategy = true,
       .use_cut_heuristics = true,
       .use_potential_based_dynamic_stopping_criterion = true,
-      .num_flow_vectors = 20,
+      .num_flow_vectors = 3,
       .tune_num_flow_vectors = true,
   };
   double phi = 0.001;

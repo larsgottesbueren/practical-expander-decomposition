@@ -141,6 +141,22 @@ void Solver::compute() {
           subdivisionFlowGraph->restoreRemoves();
         }
 
+        {
+          size_t cut_size = 0;
+          size_t vol = 0;
+          std::vector<bool> in_a(flowGraph->size(), false);
+          for (auto u : a) {
+            in_a[u] = true;
+            vol += flowGraph->degree(u);
+          }
+          for (auto u : a) {
+            for (auto e = flowGraph->beginEdge(u); e < flowGraph->endEdge(u); ++e) {
+              if (!in_a[e->to]) cut_size++;
+            }
+          }
+          VLOG(2) << V(cut_size) << V(vol) << " conductance " << double(cut_size) / std::min(vol, flowGraph->volume() - vol);
+        }
+
         auto subA = subdivisionFlowGraph->subdivisionVertices(a.begin(), a.end());
         auto subR = subdivisionFlowGraph->subdivisionVertices(r.begin(), r.end());
 

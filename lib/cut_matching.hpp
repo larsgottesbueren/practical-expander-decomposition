@@ -119,7 +119,7 @@ private:
   std::vector<int> *subdivisionIdx;
 
   const double phi;
-  const int T;
+  int T;
 
   /**
      Number of subdivision vertices at beginning of computation.
