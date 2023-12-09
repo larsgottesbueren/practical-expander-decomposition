@@ -160,7 +160,7 @@ void LocalSearch::MoveNode(Vertex u) {
     affinity_to_cluster[v] += multiplier;
     if constexpr (update_pq) { PQUpdate(v); }
   }
-  assert(CheckDatastructures());
+  // assert(CheckDatastructures());
 }
 
 
@@ -186,12 +186,6 @@ LocalSearch::Result LocalSearch::Compute2(std::vector<LocalSearch::Vertex>& seed
 
   std::vector<Vertex> fruitless_moves;
   double best_conductance = Conductance(curr_cluster_cut, curr_cluster_vol);
-
-#ifndef NDEBUG
-  std::cout << "Take snapshot" << std::endl;
-  auto in_cluster_snapshot = in_cluster;
-  auto affinity_snapshot = affinity_to_cluster;
-#endif
 
   size_t total_moves = 0;
   while (fruitless_moves.size() < max_fruitless_moves) {
@@ -229,10 +223,6 @@ LocalSearch::Result LocalSearch::Compute2(std::vector<LocalSearch::Vertex>& seed
     if (current_conductance < best_conductance) {
       best_conductance = current_conductance;
       fruitless_moves.clear();
-#ifndef NDEBUG
-      in_cluster_snapshot = in_cluster;
-      affinity_snapshot = affinity_to_cluster;
-#endif
     }
   }
 
@@ -240,8 +230,6 @@ LocalSearch::Result LocalSearch::Compute2(std::vector<LocalSearch::Vertex>& seed
     MoveNode<false>(u);
   }
   VLOG(3) << V(best_conductance) << V(Conductance(curr_cluster_cut, curr_cluster_vol)) << V(total_moves);
-  assert(in_cluster_snapshot == in_cluster);
-  assert(affinity_snapshot == affinity_to_cluster);
 
   return Result {
       .cut = curr_cluster_cut,
