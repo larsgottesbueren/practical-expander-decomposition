@@ -438,6 +438,7 @@ Result Solver::computeInternal(Parameters params) {
       const auto [cutLeft, cutRight] = subdivGraph->levelCut(h);
       VLOG(3) << "\tHas level cut with (" << cutLeft.size() << ", " << cutRight.size() << ") vertices.";
 
+      // TODO why does the cut have good conductance?
       RemoveCutSide(cutLeft, cutRight, axLeft, axRight);
     }
 
@@ -531,6 +532,12 @@ Result Solver::compute(Parameters params) {
   while (true) {
     VLOG(2) << "Testing convergence with " << V(params.num_flow_vectors) << "projected flow vectors";
     Result result = computeInternal(params);
+
+    if (result.iterationsUntilValidExpansion2 == std::numeric_limits<int>::max() && result.type != Result::Expander)
+    {
+      return result;
+    }
+
     if (result.iterationsUntilValidExpansion2 != std::numeric_limits<int>::max() &&
       result.iterationsUntilValidExpansion <= result.iterationsUntilValidExpansion2) {
       result.num_flow_vectors_needed = params.num_flow_vectors;
