@@ -136,7 +136,8 @@ struct Timings {
         for (const auto& dur : durations) total += dur;
         std::cout << "Category\t\ttime[s]\t\tpercentage of total runtime" << std::endl;
         for (int i = 0; i < LAST_TIMING; ++i) {
-            std::cout << TimingNames[i] << "\t\t" << std::setprecision(3) << durations[i] << "\t\t" << 100.0 * durations[i] / total.count()  << "%" << std::endl;
+            std::cout   << TimingNames[i] << "\t\t" << std::setprecision(3) << durations[i].count()
+                        << "\t\t" << 100.0 * durations[i].count() / total.count()  << "%" << std::endl;
         }
         std::cout << "--- Total measured time " << total.count() << " ---" << std::endl;
     }
