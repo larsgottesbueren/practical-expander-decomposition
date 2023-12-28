@@ -66,10 +66,10 @@ int main(int argc, char* argv[])
 
     tlx::CmdlineParser cp;
     cp.set_description("Expander Decomposition");
-    cp.set_author("Isaac Arvestad and Lars Gottesbüren");
-    cp.add_int("log", Logger::LOG_LEVEL, "log level");
-    cp.add_param_double("phi", phi, "The conductance value");
     cp.add_param_string("graph", graph_file, "Path to the graph");
+    cp.add_param_double("phi", phi, "The conductance value");
+
+    cp.add_int("log", Logger::LOG_LEVEL, "log level");
     cp.add_int('S', "seed", seed, "Seed");
 
     cp.add_bool("sample-potential", params.samplePotential, "Sample potentials [for debugging]");
@@ -78,6 +78,8 @@ int main(int argc, char* argv[])
     cp.add_bool("use-cut-heuristics", params.use_cut_heuristics, "Try heuristic cut procedures before cut-matching.");
     cp.add_bool("adaptive", params.use_potential_based_dynamic_stopping_criterion,
         "Perform dynamic number of cut-matching rounds based on how well the flow vectors are mixing.");
+    cp.add_bool("flow-fraction", params.stop_flow_at_fraction,
+        "Stop flow computation once almost all flow is routed.");
 
 
     if (!cp.process(argc, argv))

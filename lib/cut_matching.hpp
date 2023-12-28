@@ -53,6 +53,8 @@ struct Parameters {
 
   bool use_potential_based_dynamic_stopping_criterion = false;
 
+  bool stop_flow_at_fraction = false;
+
   int num_flow_vectors = 20;
 
   /**
