@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
     cp.set_description("Expander Decomposition");
     cp.set_author("Isaac Arvestad and Lars Gottesbüren");
     cp.add_int("log", Logger::LOG_LEVEL, "log level");
-    cp.add_double("phi", phi, "The conductance value");
+    cp.add_param_double("phi", phi, "The conductance value");
     cp.add_param_string("graph", graph_file, "Path to the graph");
     cp.add_int('S', "seed", seed, "Seed");
 
