@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
     cp.set_author("Isaac Arvestad and Lars Gottesbüren");
     cp.add_int("log", Logger::LOG_LEVEL, "log level");
     cp.add_double("phi", phi, "The conductance value");
-    cp.add_string('G', "graph", graph_file, "Path to the graph");
+    cp.add_param_string("graph", graph_file, "Path to the graph");
     cp.add_int('S', "seed", seed, "Seed");
 
     cp.add_bool("sample-potential", params.samplePotential, "Sample potentials [for debugging]");
@@ -84,7 +84,6 @@ int main(int argc, char* argv[])
     {
         std::exit(-1);
     }
-
 
     auto g = readGraph(graph_file);
 
