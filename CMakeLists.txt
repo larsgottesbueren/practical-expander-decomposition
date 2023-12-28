@@ -8,6 +8,8 @@ set(CMAKE_CXX_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -g")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O1 -g -mtune=native -march=native")
 set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -lm")
 
+add_subdirectory(external/tlx)
+
 include_directories("lib")
 
 add_executable(EDC main/edc.cpp)
@@ -18,3 +20,5 @@ target_sources(EDC PRIVATE
 		lib/expander_decomp.cpp
 		lib/sparse_cut_heuristics.cpp
 		)
+
+target_link_libraries(EDC tlx)
