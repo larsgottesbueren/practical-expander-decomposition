@@ -66,20 +66,27 @@ int main(int argc, char* argv[])
 
     tlx::CmdlineParser cp;
     cp.set_description("Expander Decomposition");
+    // required
     cp.add_param_string("graph", graph_file, "Path to the graph");
     cp.add_param_double("phi", phi, "The conductance value");
 
+    // standard options
     cp.add_int("log", Logger::LOG_LEVEL, "log level");
     cp.add_int('S', "seed", seed, "Seed");
+    cp.add_int("flow-vectors", params.num_flow_vectors, "Number of flow vectors to use");
 
-    cp.add_bool("sample-potential", params.samplePotential, "Sample potentials [for debugging]");
-    cp.add_bool("tune-flow-vectors", params.tune_num_flow_vectors,
-        "Tune the number of flow vectors needed for good convergence speed [for debugging]");
+    // our optimizations
     cp.add_bool("use-cut-heuristics", params.use_cut_heuristics, "Try heuristic cut procedures before cut-matching.");
     cp.add_bool("adaptive", params.use_potential_based_dynamic_stopping_criterion,
-        "Perform dynamic number of cut-matching rounds based on how well the flow vectors are mixing.");
+                "Perform dynamic number of cut-matching rounds based on how well the flow vectors are mixing.");
     cp.add_bool("flow-fraction", params.stop_flow_at_fraction,
-        "Stop flow computation once almost all flow is routed.");
+                "Stop flow computation once almost all flow is routed.");
+    cp.add_bool("krv-first", params.krv_step_first, "Perform the matching step from KRV instead of RST as long as no cut was made.");
+
+    // stuff for debugging
+    cp.add_bool("sample-potential", params.samplePotential, "Sample potentials [for debugging]");
+    cp.add_bool("tune-flow-vectors", params.tune_num_flow_vectors,
+                "Tune the number of flow vectors needed for good convergence speed [for debugging]");
 
 
     if (!cp.process(argc, argv))

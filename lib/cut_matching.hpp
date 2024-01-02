@@ -55,6 +55,8 @@ struct Parameters {
 
   bool stop_flow_at_fraction = false;
 
+  bool krv_step_first = false;
+
   int num_flow_vectors = 20;
 
   /**
