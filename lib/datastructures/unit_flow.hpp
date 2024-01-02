@@ -5,137 +5,130 @@
 #include <queue>
 #include <vector>
 
-#include "subset_graph.hpp"
 #include "../util.hpp"
+#include "subset_graph.hpp"
 
 namespace UnitFlow {
 
-using Vertex = int;
-using Flow = long long;
+    using Vertex = int;
+    using Flow = long long;
 
-struct Edge {
-  Vertex from, to, revIdx;
-  Flow flow, capacity, congestion;
+    struct Edge {
+        Vertex from, to, revIdx;
+        Flow flow, capacity, congestion;
 
-  Edge(Vertex from, Vertex to, Flow flow, Flow capacity, Flow congestion);
+        Edge(Vertex from, Vertex to, Flow flow, Flow capacity, Flow congestion);
 
-  Edge(Vertex from, Vertex to, Flow flow, Flow capacity);
-  /**
-     Construct an edge between two vertices with a certain capacity and zero
-     flow.
-   */
-  Edge(Vertex from, Vertex to, Flow capacity);
+        Edge(Vertex from, Vertex to, Flow flow, Flow capacity);
+        /**
+           Construct an edge between two vertices with a certain capacity and zero
+           flow.
+         */
+        Edge(Vertex from, Vertex to, Flow capacity);
 
-  /**
-     Residual capacity. I.e. the amount of capacity left over.
-   */
-  Flow residual() const { return capacity - flow; }
+        /**
+           Residual capacity. I.e. the amount of capacity left over.
+         */
+        Flow residual() const { return capacity - flow; }
 
-  /**
-     Construct the reverse of this edge. 'capacity' is the same but 'flow' is
-     set to zero. 'revIdx' remains undefined since it is maintained by the graph
-     representation.
-  */
-  Edge reverse() const {
-    Edge e{to, from, 0, capacity};
-    return e;
-  }
+        /**
+           Construct the reverse of this edge. 'capacity' is the same but 'flow' is
+           set to zero. 'revIdx' remains undefined since it is maintained by the graph
+           representation.
+        */
+        Edge reverse() const {
+            Edge e{ to, from, 0, capacity };
+            return e;
+        }
 
-  /**
-     Two edges are equal if all their fields agree, including reverse index.
-  */
-  friend bool operator==(const Edge &lhs, const Edge &rhs) {
-    return lhs.from == rhs.from && lhs.to == rhs.to &&
-           lhs.revIdx == rhs.revIdx && lhs.flow == rhs.flow &&
-           lhs.capacity == rhs.capacity;
-  }
-};
+        /**
+           Two edges are equal if all their fields agree, including reverse index.
+        */
+        friend bool operator==(const Edge &lhs, const Edge &rhs) {
+            return lhs.from == rhs.from && lhs.to == rhs.to && lhs.revIdx == rhs.revIdx && lhs.flow == rhs.flow && lhs.capacity == rhs.capacity;
+        }
+    };
 
-/**
-   Push relabel based unit flow algorithm. Based on push relabel in KACTL.
- */
-class Graph : public SubsetGraph::Graph<int, Edge> {
-private:
-  /**
-     The amount of flow a vertex is absorbing. In the beginning, before any flow
-     has been moved, this corresponds to the source function '\Delta(v)'.
-   */
-  std::vector<Flow> absorbed;
-  /**
-     The sink capacity of a vertex, i.e. the amount of flow possible to absorb.
-   */
-  std::vector<Flow> sink;
-  /**
-     The height of a vertex.
-   */
-  std::vector<Vertex> height;
+    /**
+       Push relabel based unit flow algorithm. Based on push relabel in KACTL.
+     */
+    class Graph : public SubsetGraph::Graph<int, Edge> {
+    private:
+        /**
+           The amount of flow a vertex is absorbing. In the beginning, before any flow
+           has been moved, this corresponds to the source function '\Delta(v)'.
+         */
+        std::vector<Flow> absorbed;
+        /**
+           The sink capacity of a vertex, i.e. the amount of flow possible to absorb.
+         */
+        std::vector<Flow> sink;
+        /**
+           The height of a vertex.
+         */
+        std::vector<Vertex> height;
 
-  /**
-     For each vertex, keep track of which edge in their neighbor list they
-     should consider next.
-   */
-  std::vector<int> nextEdgeIdx;
+        /**
+           For each vertex, keep track of which edge in their neighbor list they
+           should consider next.
+         */
+        std::vector<int> nextEdgeIdx;
 
-  size_t flow_pushed_since = 0;
+        size_t flow_pushed_since = 0;
 
-  void SinglePushLowestLabel(int maxHeight);
+        void SinglePushLowestLabel(int maxHeight);
 
-public:
-  /**
-     Construct a unit flow problem with 'n' vertices and edges 'es'.
-   */
-  Graph(int n, const std::vector<Edge> &es);
+    public:
+        /**
+           Construct a unit flow problem with 'n' vertices and edges 'es'.
+         */
+        Graph(int n, const std::vector<Edge> &es);
 
 
-  /**
-     Increase the amount of flow a vertex is currently absorbing.
-   */
-  void addSource(Vertex u, Flow amount) { absorbed[u] += amount; }
+        /**
+           Increase the amount of flow a vertex is currently absorbing.
+         */
+        void addSource(Vertex u, Flow amount) { absorbed[u] += amount; }
 
-  /**
-     Increase the amount of flow a vertex is able to absorb on its own.
-   */
-  void addSink(Vertex u, Flow amount) { sink[u] += amount; }
+        /**
+           Increase the amount of flow a vertex is able to absorb on its own.
+         */
+        void addSink(Vertex u, Flow amount) { sink[u] += amount; }
 
-  /**
-     Return the excess of a node, i.e. the flow it cannot absorb.
-   */
-  Flow excess(Vertex u) const {
-    return std::max((Flow)0, absorbed[u] - sink[u]);
-  }
+        /**
+           Return the excess of a node, i.e. the flow it cannot absorb.
+         */
+        Flow excess(Vertex u) const { return std::max((Flow) 0, absorbed[u] - sink[u]); }
 
-  /**
-     Compute max flow with push relabel and max height h. Return those vertices
-     with excess flow left over. If an empty vector is returned then all flow
-     was possible to route.
-   */
-  std::vector<Vertex> compute(const int maxHeight);
+        /**
+           Compute max flow with push relabel and max height h. Return those vertices
+           with excess flow left over. If an empty vector is returned then all flow
+           was possible to route.
+         */
+        std::vector<Vertex> compute(const int maxHeight);
 
-  /**
-     Compute a level cut. See Saranurak and Wang A.1.
+        /**
+           Compute a level cut. See Saranurak and Wang A.1.
 
-     Precondition: A flow has been computed.
-   */
-  std::pair<std::vector<Vertex>, std::vector<Vertex>>
-  levelCut(const int maxHeight);
+           Precondition: A flow has been computed.
+         */
+        std::pair<std::vector<Vertex>, std::vector<Vertex>> levelCut(const int maxHeight);
 
-  /**
-     Set all flow, sinks and source capacities to 0.
-   */
-  void reset();
+        /**
+           Set all flow, sinks and source capacities to 0.
+         */
+        void reset();
 
-  double excess_fraction = 0.0;
-  bool past_excess_fraction_time_measure_started = false;
-  Duration pre_excess = Duration(0.0);
-  Duration post_excess = Duration(0.0);
+        double excess_fraction = 0.0;
+        bool past_excess_fraction_time_measure_started = false;
+        Duration pre_excess = Duration(0.0);
+        Duration post_excess = Duration(0.0);
 
-private:
-  std::vector<std::pair<Vertex, Vertex>>
-  matchingDfs(const std::vector<Vertex> &sources);
+    private:
+        std::vector<std::pair<Vertex, Vertex>> matchingDfs(const std::vector<Vertex> &sources);
 
 
-public:
-  std::vector<std::pair<Vertex, Vertex>>
-  matching(const std::vector<Vertex> &sources);
-};
+    public:
+        std::vector<std::pair<Vertex, Vertex>> matching(const std::vector<Vertex> &sources);
+    };
 } // namespace UnitFlow
