@@ -11,7 +11,7 @@
 class PersonalizedPageRank {
 public:
     using Vertex = UnitFlow::Vertex;
-    void SetGraph(UnitFlow::Graph &graph_);
+    void SetGraph(UnitFlow::Graph& graph_);
     void Compute(Vertex seed);
     struct PageRankAndNode {
         PageRankAndNode(double pr_, Vertex u_) : pr(pr_), u(u_) {}
@@ -27,7 +27,7 @@ public:
     Parameters params;
 
 private:
-    UnitFlow::Graph *graph;
+    UnitFlow::Graph* graph;
     std::vector<double> page_rank;
     std::vector<double> residual;
     std::vector<Vertex> queue;
@@ -43,12 +43,12 @@ public:
         double conductance = 0.0;
         std::vector<Vertex> cut_side;
     };
-    void SetGraph(UnitFlow::Graph &graph_);
+    void SetGraph(UnitFlow::Graph& graph_);
     Cut ComputeCut(Vertex seed);
     void SetParams(PersonalizedPageRank::Parameters params) { ppr.params = params; }
 
 private:
-    UnitFlow::Graph *graph;
+    UnitFlow::Graph* graph;
     PersonalizedPageRank ppr;
     std::vector<bool> in_cut;
     double total_vol = 0.0;
@@ -61,15 +61,15 @@ public:
         double cut;
         double volume;
         double conductance;
-        std::vector<bool> *in_cluster;
+        std::vector<bool>* in_cluster;
     };
 
-    void SetGraph(UnitFlow::Graph &graph_);
-    Result Compute(std::vector<Vertex> &seed_cluster);
-    Result Compute2(std::vector<Vertex> &seed_cluster);
+    void SetGraph(UnitFlow::Graph& graph_);
+    Result Compute(std::vector<Vertex>& seed_cluster);
+    Result Compute2(std::vector<Vertex>& seed_cluster);
 
 private:
-    void InitializeDatastructures(const std::vector<Vertex> &seed_cluster);
+    void InitializeDatastructures(const std::vector<Vertex>& seed_cluster);
 
     template<bool update_pq>
     void MoveNode(Vertex u);
@@ -139,7 +139,7 @@ private:
     mt_kahypar::ds::MaxHeap<double, Vertex> pq;
     std::vector<bool> in_cluster;
     std::vector<double> affinity_to_cluster;
-    UnitFlow::Graph *graph;
+    UnitFlow::Graph* graph;
     double total_vol = 0.0;
     double curr_cluster_vol = 0.0;
     double curr_cluster_cut = 0.0;
@@ -156,13 +156,13 @@ class SparseCutHeuristics {
 public:
     using Vertex = UnitFlow::Vertex;
 
-    void Allocate(UnitFlow::Graph &graph) {
+    void Allocate(UnitFlow::Graph& graph) {
         nibble.SetGraph(graph);
         local_search.SetGraph(graph);
         in_cluster.assign(graph.size(), false);
     }
 
-    bool Compute(UnitFlow::Graph &graph, double conductance_goal, double balance_goal);
+    bool Compute(UnitFlow::Graph& graph, double conductance_goal, double balance_goal);
 
     std::pair<std::vector<int>, std::vector<int>> ExtractCutSides();
 

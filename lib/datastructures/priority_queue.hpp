@@ -43,7 +43,7 @@ namespace mt_kahypar::ds {
     public:
         static_assert(arity > 1);
 
-        explicit Heap(PosT *positions, size_t positions_size) : comp(), heap(), positions(positions), positions_size(positions_size) {}
+        explicit Heap(PosT* positions, size_t positions_size) : comp(), heap(), positions(positions), positions_size(positions_size) {}
 
         IdT top() const { return heap[0].id; }
 
@@ -141,7 +141,7 @@ namespace mt_kahypar::ds {
 
         IdT at(const PosT pos) const { return heap[pos].id; }
 
-        void setHandle(PosT *pos, size_t pos_size) {
+        void setHandle(PosT* pos, size_t pos_size) {
             clear();
             positions = pos;
             positions_size = pos_size;
@@ -230,7 +230,7 @@ namespace mt_kahypar::ds {
         Comparator comp; // comp(heap[parent(pos)].key, heap[pos].key) returns true if the element at pos should move upward --> comp = std::less for MaxHeaps
                          // similarly comp(heap[child(pos)].key, heap[pos].key) returns false if the element at pos should move downward
         std::vector<HeapElement> heap;
-        PosT *positions;
+        PosT* positions;
         size_t positions_size;
     };
 
@@ -247,7 +247,7 @@ namespace mt_kahypar::ds {
         explicit ExclusiveHandleHeap(size_t nHandles = 0) : HandlesPBase(nHandles), HeapT(this->handles.data(), this->handles.size()) {}
 
         // at this point this->handles is already a deep copy of other.handles
-        ExclusiveHandleHeap(const ExclusiveHandleHeap &other) : HandlesPBase(other), HeapT(this->handles.data(), this->handles.size()) {}
+        ExclusiveHandleHeap(const ExclusiveHandleHeap& other) : HandlesPBase(other), HeapT(this->handles.data(), this->handles.size()) {}
 
         void resize(const size_t new_n) {
             if (this->handles.size() < new_n) {

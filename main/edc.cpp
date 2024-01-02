@@ -23,7 +23,7 @@ std::unique_ptr<std::mt19937> configureRandomness(unsigned int seed) {
     return std::make_unique<std::mt19937>(randomGen);
 }
 
-std::unique_ptr<Undirected::Graph> readGraph(const std::string &path) {
+std::unique_ptr<Undirected::Graph> readGraph(const std::string& path) {
     int n, m;
     std::ifstream in(path);
     in >> n >> m;
@@ -45,7 +45,7 @@ std::unique_ptr<Undirected::Graph> readGraph(const std::string &path) {
     return std::make_unique<Undirected::Graph>(n, es);
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     CutMatching::Parameters params = {
         .tConst = 22,
         .tFactor = 5.0,

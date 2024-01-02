@@ -7,7 +7,7 @@
 
 namespace ExpanderDecomposition {
 
-    std::unique_ptr<UnitFlow::Graph> constructFlowGraph(const std::unique_ptr<Undirected::Graph> &g) {
+    std::unique_ptr<UnitFlow::Graph> constructFlowGraph(const std::unique_ptr<Undirected::Graph>& g) {
         std::vector<UnitFlow::Edge> es;
         for (auto u : *g)
             for (auto e = g->cbeginEdge(u); e != g->cendEdge(u); ++e)
@@ -17,7 +17,7 @@ namespace ExpanderDecomposition {
         return std::make_unique<UnitFlow::Graph>(g->size(), es);
     }
 
-    std::unique_ptr<UnitFlow::Graph> constructSubdivisionFlowGraph(const std::unique_ptr<Undirected::Graph> &g) {
+    std::unique_ptr<UnitFlow::Graph> constructSubdivisionFlowGraph(const std::unique_ptr<Undirected::Graph>& g) {
         std::vector<UnitFlow::Edge> es;
         for (auto u : *g)
             for (auto e = g->cbeginEdge(u); e != g->cendEdge(u); ++e)
@@ -29,7 +29,7 @@ namespace ExpanderDecomposition {
         return std::make_unique<UnitFlow::Graph>(g->size() + int(es.size()) / 2, es);
     }
 
-    Solver::Solver(std::unique_ptr<Undirected::Graph> graph, double phi, std::mt19937 *randomGen, CutMatching::Parameters params) :
+    Solver::Solver(std::unique_ptr<Undirected::Graph> graph, double phi, std::mt19937* randomGen, CutMatching::Parameters params) :
         flowGraph(nullptr), subdivisionFlowGraph(nullptr), randomGen(randomGen), subdivisionIdx(nullptr), phi(phi), cutMatchingParams(params), numPartitions(0),
         partitionOf(graph->size(), -1) {
         flowGraph = constructFlowGraph(graph);
@@ -64,13 +64,13 @@ namespace ExpanderDecomposition {
 
         Timer timer;
         timer.Start();
-        const auto &components = flowGraph->connectedComponents();
+        const auto& components = flowGraph->connectedComponents();
         Timings::GlobalTimings().AddTiming(Timing::ConnectedComponents, timer.Stop());
 
         if (components.size() > 1) {
             VLOG(1) << "Found " << components.size() << " connected components.";
 
-            for (auto &comp : components) {
+            for (auto& comp : components) {
                 auto subComp = subdivisionFlowGraph->subdivisionVertices(comp.begin(), comp.end());
 
                 flowGraph->subgraph(comp.begin(), comp.end());
@@ -214,7 +214,7 @@ namespace ExpanderDecomposition {
     int Solver::getEdgesCut() const {
         int count = 0;
         auto partitions = getPartition();
-        for (const auto &p : partitions) {
+        for (const auto& p : partitions) {
             assert(!p.empty() && "Partitions should not be empty.");
             flowGraph->subgraph(p.begin(), p.end());
 

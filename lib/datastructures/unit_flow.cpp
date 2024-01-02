@@ -12,7 +12,7 @@ namespace UnitFlow {
 
     Edge::Edge(Vertex from, Vertex to, Flow capacity) : Edge(from, to, 0, capacity) {}
 
-    Graph::Graph(int n, const std::vector<Edge> &es) : SubsetGraph::Graph<int, Edge>(n, es), absorbed(n), sink(n), height(n), nextEdgeIdx(n) {}
+    Graph::Graph(int n, const std::vector<Edge>& es) : SubsetGraph::Graph<int, Edge>(n, es), absorbed(n), sink(n), height(n), nextEdgeIdx(n) {}
 
     void Graph::SinglePushLowestLabel(int maxHeight) {
         past_excess_fraction_time_measure_started = false;
@@ -45,7 +45,7 @@ namespace UnitFlow {
 
             assert(excess(u) > 0 && "Vertex popped from queue should have excess flow.");
 
-            auto &e = getEdge(u, nextEdgeIdx[u]);
+            auto& e = getEdge(u, nextEdgeIdx[u]);
 
             assert(e.flow + reverse(e).flow == 0 && "Flow across edge and its reverse should cancel.");
 
@@ -170,11 +170,11 @@ namespace UnitFlow {
         }
     }
 
-    std::vector<std::pair<Vertex, Vertex>> Graph::matchingDfs(const std::vector<Vertex> &sources) {
+    std::vector<std::pair<Vertex, Vertex>> Graph::matchingDfs(const std::vector<Vertex>& sources) {
         std::vector<std::pair<Vertex, Vertex>> matches;
 
         auto search = [&](Vertex start) {
-            std::vector<Edge *> path;
+            std::vector<Edge*> path;
             std::function<Vertex(Vertex)> dfs = [&](Vertex u) {
                 visited[u] = start + 1;
 
@@ -218,5 +218,5 @@ namespace UnitFlow {
     }
 
 
-    std::vector<std::pair<Vertex, Vertex>> Graph::matching(const std::vector<Vertex> &sources) { return matchingDfs(sources); }
+    std::vector<std::pair<Vertex, Vertex>> Graph::matching(const std::vector<Vertex>& sources) { return matchingDfs(sources); }
 } // namespace UnitFlow

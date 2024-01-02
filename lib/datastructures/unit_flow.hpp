@@ -44,7 +44,7 @@ namespace UnitFlow {
         /**
            Two edges are equal if all their fields agree, including reverse index.
         */
-        friend bool operator==(const Edge &lhs, const Edge &rhs) {
+        friend bool operator==(const Edge& lhs, const Edge& rhs) {
             return lhs.from == rhs.from && lhs.to == rhs.to && lhs.revIdx == rhs.revIdx && lhs.flow == rhs.flow && lhs.capacity == rhs.capacity;
         }
     };
@@ -82,7 +82,7 @@ namespace UnitFlow {
         /**
            Construct a unit flow problem with 'n' vertices and edges 'es'.
          */
-        Graph(int n, const std::vector<Edge> &es);
+        Graph(int n, const std::vector<Edge>& es);
 
 
         /**
@@ -125,10 +125,10 @@ namespace UnitFlow {
         Duration post_excess = Duration(0.0);
 
     private:
-        std::vector<std::pair<Vertex, Vertex>> matchingDfs(const std::vector<Vertex> &sources);
+        std::vector<std::pair<Vertex, Vertex>> matchingDfs(const std::vector<Vertex>& sources);
 
 
     public:
-        std::vector<std::pair<Vertex, Vertex>> matching(const std::vector<Vertex> &sources);
+        std::vector<std::pair<Vertex, Vertex>> matching(const std::vector<Vertex>& sources);
     };
 } // namespace UnitFlow

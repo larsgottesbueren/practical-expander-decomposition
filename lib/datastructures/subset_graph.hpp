@@ -80,7 +80,7 @@ namespace SubsetGraph {
 
            Time complexity: O(n + m)
          */
-        Graph(int n, const std::vector<E> &es) : edges(n), edgeBounds(n), vertices(n), vertexIndices(n), visited(n) {
+        Graph(int n, const std::vector<E>& es) : edges(n), edgeBounds(n), vertices(n), vertexIndices(n), visited(n) {
             std::iota(vertices.begin(), vertices.end(), 0);
             std::iota(vertexIndices.begin(), vertexIndices.end(), 0);
             vertexBound.push({ n });
@@ -185,7 +185,7 @@ namespace SubsetGraph {
         /**
            Return the i'th edge in the adjacency list of vertex 'u'.
          */
-        E &getEdge(V u, int idx) {
+        E& getEdge(V u, int idx) {
             assert(idx >= 0 && "Edge index cannot be negative.");
             assert(idx < edgeBounds[u].top().middle && "Edge index larger than number of edges in subgraph adjacency list.");
             return edges[u][idx];
@@ -194,7 +194,7 @@ namespace SubsetGraph {
         /**
            Return the i'th edge in the adjacency list of vertex 'u' as constant edge.
          */
-        const E &getEdge(V u, int idx) const {
+        const E& getEdge(V u, int idx) const {
             assert(idx >= 0 && "Edge index cannot be negative.");
             assert(idx < edgeBounds[u].top().middle && "Edge index larger than number of edges in subgraph adjacency list.");
             return edges[u][idx];
@@ -203,7 +203,7 @@ namespace SubsetGraph {
         /**
            Reverse edge in graph.
          */
-        E &reverse(const E &e) {
+        E& reverse(const E& e) {
             assert(e.revIdx != -1 && "Reverse index undefined.");
             return edges[e.to][e.revIdx];
         }
@@ -211,7 +211,7 @@ namespace SubsetGraph {
         /**
            Reverse constant edge in graph.
          */
-        const E &reverse(const E &e) const {
+        const E& reverse(const E& e) const {
             assert(e.revIdx != -1 && "Reverse index undefined.");
             return edges[e.to][e.revIdx];
         }
@@ -412,7 +412,7 @@ namespace SubsetGraph {
                 int offset = 0;
                 assert(edgeBounds[u].top().middle == edgeBounds[u].top().end && "Removes not restored before taking subgraph");
                 for (int fromIdx = 0; fromIdx < edgeBounds[u].top().end; ++fromIdx) {
-                    const auto &e = edges[u][fromIdx];
+                    const auto& e = edges[u][fromIdx];
                     if (visited[e.to]) {
                         const int toIdx = offset++;
                         std::swap(edges[u][fromIdx], edges[u][toIdx]);
@@ -457,7 +457,7 @@ namespace SubsetGraph {
         /**
            Writes the adjacency list of every active vertex.
          */
-        friend std::ostream &operator<<(std::ostream &os, const Graph<V, E> &g) {
+        friend std::ostream& operator<<(std::ostream& os, const Graph<V, E>& g) {
             for (auto it = g.cbegin(); it != g.cend(); ++it) {
                 V u = *it;
                 os << u << ":";

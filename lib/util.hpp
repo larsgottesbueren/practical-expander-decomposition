@@ -16,7 +16,7 @@ class Logger {
 public:
     explicit Logger(int log_level, const bool newline = true) : _log_level(log_level), _newline(newline), _oss() {}
     template<typename T>
-    Logger &operator<<(const T &output) {
+    Logger& operator<<(const T& output) {
         if (_log_level <= LOG_LEVEL) {
             _oss << output << ' ';
         }
@@ -24,7 +24,7 @@ public:
     }
 
     template<typename T>
-    Logger &operator<<(const T *output) {
+    Logger& operator<<(const T* output) {
         if (_log_level <= LOG_LEVEL) {
             _oss << output << ' ';
         }
@@ -32,7 +32,7 @@ public:
     }
 
 
-    Logger &operator<<(decltype(std::left) &output) {
+    Logger& operator<<(decltype(std::left)& output) {
         if (_log_level <= LOG_LEVEL) {
             _oss << output << ' ';
         }
@@ -65,7 +65,7 @@ using Duration = std::chrono::duration<double>;
 using Timepoint = decltype(std::chrono::high_resolution_clock::now());
 
 struct Timer {
-    static Timer &GlobalTimer() {
+    static Timer& GlobalTimer() {
         static Timer GLOBAL_TIMER;
         return GLOBAL_TIMER;
     }
@@ -107,7 +107,7 @@ enum Timing { ProposeCut, FlowMatch, Match, Misc, FlowTrim, ConnectedComponents,
 static std::vector<std::string> TimingNames = { "ProposeCut", "FlowMatch", "MatchDFS", "Miscellaneous", "FlowTrim", "Components", "CutHeuristics" };
 
 struct Timings {
-    static Timings &GlobalTimings() {
+    static Timings& GlobalTimings() {
         static Timings GLOBAL_TIMINGS;
         return GLOBAL_TIMINGS;
     }
@@ -125,7 +125,7 @@ struct Timings {
 
     void Print() {
         Duration total = Duration(0.0);
-        for (const auto &dur : durations)
+        for (const auto& dur : durations)
             total += dur;
         std::cout << "Category\t\ttime[s]\t\tpercentage of total runtime" << std::endl;
         for (int i = 0; i < LAST_TIMING; ++i) {

@@ -38,7 +38,7 @@ namespace CutMatching {
         }
     }
 
-    Solver::Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivG, std::mt19937 *randomGen, std::vector<int> *subdivisionIdx, double phi, Parameters params) :
+    Solver::Solver(UnitFlow::Graph* g, UnitFlow::Graph* subdivG, std::mt19937* randomGen, std::vector<int>* subdivisionIdx, double phi, Parameters params) :
         graph(g), subdivGraph(subdivG), randomGen(randomGen), subdivisionIdx(subdivisionIdx), phi(phi),
         T(std::max(1, params.tConst + int(ceil(params.tFactor * square(std::log10(graph->edgeCount())))))), numSplitNodes(subdivGraph->size() - graph->size()) {
         assert(graph->size() != 0 && "Cut-matching expected non-empty subset.");
@@ -48,16 +48,16 @@ namespace CutMatching {
         std::normal_distribution<> distr(0, 1);
 
         std::vector<double> result(numSplitNodes);
-        for (auto &r : result)
+        for (auto& r : result)
             r = distr(*randomGen);
 
         double offset = std::accumulate(result.begin(), result.end(), 0.0) / double(numSplitNodes);
         double sumSq = 0;
-        for (auto &r : result)
+        for (auto& r : result)
             r -= offset, sumSq += r * r;
 
         const double normalize = sqrt(sumSq);
-        for (auto &r : result)
+        for (auto& r : result)
             r /= normalize;
 
         return result;
@@ -77,7 +77,7 @@ namespace CutMatching {
         for (int u : alive)
             for (int v : alive)
                 avgFlowVector[v] += flowMatrix[u][v];
-        for (auto &f : avgFlowVector)
+        for (auto& f : avgFlowVector)
             f /= (long double) alive.size();
 
         long double sum = 0, kahanError = 0;
@@ -106,7 +106,7 @@ namespace CutMatching {
     // TODO cache the avg flow value. when edges get removed, update it.
     // should be faster than recomputing this all the time
     // can we also update the projected potential?
-    double Solver::AvgFlow(const std::vector<double> &flow) const {
+    double Solver::AvgFlow(const std::vector<double>& flow) const {
         // long double sum = 0.0;
         long double sum = 0.0;
         double kahanError = 0.0;
@@ -124,7 +124,7 @@ namespace CutMatching {
         return sum / (double) curSubdivisionCount;
     }
 
-    double Solver::ProjectedPotential(const std::vector<double> &flow) const {
+    double Solver::ProjectedPotential(const std::vector<double>& flow) const {
         const double avg_flow = AvgFlow(flow);
         // long double potential = 0.0;
         double sum = 0.0, kahanError = 0.0;
@@ -143,7 +143,7 @@ namespace CutMatching {
         return sum;
     }
 
-    std::pair<std::vector<int>, std::vector<int>> Solver::KRVCutStep(const std::vector<double> &flow, const Parameters &params) const {
+    std::pair<std::vector<int>, std::vector<int>> Solver::KRVCutStep(const std::vector<double>& flow, const Parameters& params) const {
         std::vector<std::pair<double, UnitFlow::Vertex>> perm;
         for (auto u : *subdivGraph) {
             const int idx = (*subdivisionIdx)[u];
@@ -163,7 +163,7 @@ namespace CutMatching {
         return std::make_pair(std::move(axLeft), std::move(axRight));
     }
 
-    std::pair<std::vector<int>, std::vector<int>> Solver::RSTCutStep(const std::vector<double> &flow, const Parameters &params) const {
+    std::pair<std::vector<int>, std::vector<int>> Solver::RSTCutStep(const std::vector<double>& flow, const Parameters& params) const {
         const int curSubdivisionCount = subdivGraph->size() - graph->size();
         double avgFlow = AvgFlow(flow);
         // Partition subdivision vertices into a left and right set.
@@ -249,7 +249,7 @@ namespace CutMatching {
     }
 
 
-    std::pair<std::vector<int>, std::vector<int>> Solver::proposeCut(const std::vector<double> &flow, const Parameters &params) const {
+    std::pair<std::vector<int>, std::vector<int>> Solver::proposeCut(const std::vector<double>& flow, const Parameters& params) const {
         if (params.krv_step_first && subdivGraph->removedSize() == 0) {
             return KRVCutStep(flow, params);
         } else {
@@ -262,8 +262,8 @@ namespace CutMatching {
         return 1.0 / (16.0 * s * s * s);
     }
 
-    void Solver::RemoveCutSide(const std::vector<UnitFlow::Vertex> &cutLeft, const std::vector<UnitFlow::Vertex> &cutRight,
-                               std::vector<UnitFlow::Vertex> &axLeft, std::vector<UnitFlow::Vertex> &axRight) {
+    void Solver::RemoveCutSide(const std::vector<UnitFlow::Vertex>& cutLeft, const std::vector<UnitFlow::Vertex>& cutRight,
+                               std::vector<UnitFlow::Vertex>& axLeft, std::vector<UnitFlow::Vertex>& axRight) {
         std::unordered_set<int> removed;
         if (subdivGraph->globalVolume(cutLeft.begin(), cutLeft.end()) < subdivGraph->globalVolume(cutRight.begin(), cutRight.end())) {
             for (auto u : cutLeft) {
@@ -304,7 +304,7 @@ namespace CutMatching {
         }
     }
 
-    std::pair<size_t, double> Solver::SelectHighestPotentialFlowVector(const std::vector<std::vector<double>> &flows) const {
+    std::pair<size_t, double> Solver::SelectHighestPotentialFlowVector(const std::vector<std::vector<double>>& flows) const {
         size_t highest = -1;
         double highest_potential = std::numeric_limits<double>::lowest();
         for (size_t i = 0; i < flows.size(); ++i) {
@@ -415,14 +415,14 @@ namespace CutMatching {
 
             VLOG(3) << "Computing matching with |S| = " << axLeft.size() << " |T| = " << axRight.size() << ".";
             auto matching = subdivGraph->matching(axLeft);
-            for (auto &p : matching) {
+            for (auto& p : matching) {
                 int u = (*subdivisionIdx)[p.first];
                 int v = (*subdivisionIdx)[p.second];
 
                 num_matched_steps[u]++;
                 num_matched_steps[v]++;
 
-                for (auto &flow : flow_vectors) {
+                for (auto& flow : flow_vectors) {
                     const double avg = 0.5 * (flow[u] + flow[v]);
                     flow[u] = avg;
                     flow[v] = avg;

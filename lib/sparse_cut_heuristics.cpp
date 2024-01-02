@@ -69,7 +69,7 @@ std::vector<PersonalizedPageRank::PageRankAndNode> PersonalizedPageRank::Extract
     return result;
 }
 
-void PersonalizedPageRank::SetGraph(UnitFlow::Graph &graph_) {
+void PersonalizedPageRank::SetGraph(UnitFlow::Graph& graph_) {
     graph = &graph_;
     if (page_rank.size() < size_t(graph->size())) {
         page_rank.resize(graph->size());
@@ -77,7 +77,7 @@ void PersonalizedPageRank::SetGraph(UnitFlow::Graph &graph_) {
     }
 }
 
-void Nibble::SetGraph(UnitFlow::Graph &graph_) {
+void Nibble::SetGraph(UnitFlow::Graph& graph_) {
     graph = &graph_;
     ppr.SetGraph(graph_);
     if (in_cut.size() < size_t(graph->size())) {
@@ -93,10 +93,10 @@ Nibble::Cut Nibble::ComputeCut(Vertex seed) {
     }
     ppr.Compute(seed);
     auto ppr_distr = ppr.ExtractSparsePageRankValues();
-    for (auto &pru : ppr_distr) {
+    for (auto& pru : ppr_distr) {
         pru.pr = pru.pr / graph->degree(pru.u);
     }
-    std::sort(ppr_distr.begin(), ppr_distr.end(), [](const auto &l, const auto &r) { return l.pr > r.pr; });
+    std::sort(ppr_distr.begin(), ppr_distr.end(), [](const auto& l, const auto& r) { return l.pr > r.pr; });
 
     double cut = 0;
     double vol = 0;
@@ -127,7 +127,7 @@ Nibble::Cut Nibble::ComputeCut(Vertex seed) {
         }
     }
 
-    for (const auto &x : ppr_distr) {
+    for (const auto& x : ppr_distr) {
         in_cut[x.u] = false;
     }
 
@@ -143,7 +143,7 @@ Nibble::Cut Nibble::ComputeCut(Vertex seed) {
     return result;
 }
 
-void LocalSearch::SetGraph(UnitFlow::Graph &graph_) {
+void LocalSearch::SetGraph(UnitFlow::Graph& graph_) {
     graph = &graph_;
     if (affinity_to_cluster.size() < size_t(graph->size())) {
         affinity_to_cluster.resize(graph->size(), 0);
@@ -172,7 +172,7 @@ void LocalSearch::MoveNode(Vertex u) {
 }
 
 
-LocalSearch::Result LocalSearch::Compute2(std::vector<LocalSearch::Vertex> &seed_cluster) {
+LocalSearch::Result LocalSearch::Compute2(std::vector<LocalSearch::Vertex>& seed_cluster) {
     // clean up old datastructures
     affinity_to_cluster.assign(affinity_to_cluster.size(), 0);
     in_cluster.assign(in_cluster.size(), false);
@@ -247,7 +247,7 @@ LocalSearch::Result LocalSearch::Compute2(std::vector<LocalSearch::Vertex> &seed
     };
 }
 
-void LocalSearch::InitializeDatastructures(const std::vector<LocalSearch::Vertex> &seed_cluster) {
+void LocalSearch::InitializeDatastructures(const std::vector<LocalSearch::Vertex>& seed_cluster) {
     // TODO make the runtime of this sensitive again to the size of the local search (or at least the current subgraph size)
 #if false
   // clean up old datastructures
@@ -272,7 +272,7 @@ void LocalSearch::InitializeDatastructures(const std::vector<LocalSearch::Vertex
         tabu_reinsertions.pop();
     last_moved_step.assign(last_moved_step.size(), std::numeric_limits<int>::min());
 
-    if (!std::ranges::all_of(affinity_to_cluster, [](const auto &x) { return x == 0; }) || !std::ranges::all_of(in_cluster, [](const bool x) { return !x; })) {
+    if (!std::ranges::all_of(affinity_to_cluster, [](const auto& x) { return x == 0; }) || !std::ranges::all_of(in_cluster, [](const bool x) { return !x; })) {
         throw std::runtime_error("data structures not cleaned");
     }
 
@@ -300,7 +300,7 @@ void LocalSearch::InitializeDatastructures(const std::vector<LocalSearch::Vertex
     }
 }
 
-LocalSearch::Result LocalSearch::Compute(std::vector<LocalSearch::Vertex> &seed_cluster) {
+LocalSearch::Result LocalSearch::Compute(std::vector<LocalSearch::Vertex>& seed_cluster) {
     InitializeDatastructures(seed_cluster);
 
     std::vector<Vertex> fruitless_moves;
@@ -354,7 +354,7 @@ LocalSearch::Result LocalSearch::Compute(std::vector<LocalSearch::Vertex> &seed_
 }
 
 
-bool SparseCutHeuristics::Compute(UnitFlow::Graph &graph, double conductance_goal, double balance_goal) {
+bool SparseCutHeuristics::Compute(UnitFlow::Graph& graph, double conductance_goal, double balance_goal) {
     VLOG(1) << "Sparse cut heuristics. conductance goal = " << conductance_goal << " balance goal = " << balance_goal;
     nibble.SetGraph(graph);
     local_search.SetGraph(graph);

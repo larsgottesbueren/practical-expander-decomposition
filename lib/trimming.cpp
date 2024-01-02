@@ -5,7 +5,7 @@
 
 namespace Trimming {
 
-    Solver::Solver(UnitFlow::Graph *g, const double phi) : graph(g), phi(phi) {}
+    Solver::Solver(UnitFlow::Graph* g, const double phi) : graph(g), phi(phi) {}
 
     void Solver::compute() {
         VLOG(2) << "Trimming partition with " << graph->size() << " vertices.";

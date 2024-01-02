@@ -12,13 +12,13 @@ namespace ExpanderDecomposition {
     /**
        Construct a flow graph equivalent to 'g' with all edge capacities set to 0.
      */
-    std::unique_ptr<UnitFlow::Graph> constructFlowGraph(const std::unique_ptr<Undirected::Graph> &g);
+    std::unique_ptr<UnitFlow::Graph> constructFlowGraph(const std::unique_ptr<Undirected::Graph>& g);
 
     /**
        Construct a subdivision flow graph from 'g' with all edge capacities set to
        0.
      */
-    std::unique_ptr<UnitFlow::Graph> constructSubdivisionFlowGraph(const std::unique_ptr<Undirected::Graph> &g);
+    std::unique_ptr<UnitFlow::Graph> constructSubdivisionFlowGraph(const std::unique_ptr<Undirected::Graph>& g);
 
     /**
        Constructs and solves a expander decomposition problem.
@@ -34,7 +34,7 @@ namespace ExpanderDecomposition {
         /**
            Randomness engine.
          */
-        std::mt19937 *randomGen;
+        std::mt19937* randomGen;
 
         /**
            Map to subdivision vertices.
@@ -92,7 +92,7 @@ namespace ExpanderDecomposition {
         /**
            Create a decomposition problem on graph 'g'.
          */
-        Solver(std::unique_ptr<Undirected::Graph> g, double phi, std::mt19937 *randomGen, CutMatching::Parameters params);
+        Solver(std::unique_ptr<Undirected::Graph> g, double phi, std::mt19937* randomGen, CutMatching::Parameters params);
 
         /**
            Return the computed partition as a vector of disjoint vertex vectors.

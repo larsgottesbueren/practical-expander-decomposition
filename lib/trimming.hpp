@@ -8,14 +8,14 @@ namespace Trimming {
 
     class Solver {
     private:
-        UnitFlow::Graph *graph;
+        UnitFlow::Graph* graph;
         const double phi;
 
     public:
         /**
            Construct a trimming problem on the subgraph in 'g' induced by 'subset'.
          */
-        Solver(UnitFlow::Graph *g, const double phi);
+        Solver(UnitFlow::Graph* g, const double phi);
 
         void compute();
     };

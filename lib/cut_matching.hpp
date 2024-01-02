@@ -114,15 +114,15 @@ namespace CutMatching {
 
     class Solver {
     private:
-        UnitFlow::Graph *graph;
-        UnitFlow::Graph *subdivGraph;
+        UnitFlow::Graph* graph;
+        UnitFlow::Graph* subdivGraph;
 
         /**
            Randomness generator.
          */
-        std::mt19937 *randomGen;
+        std::mt19937* randomGen;
 
-        std::vector<int> *subdivisionIdx;
+        std::vector<int>* subdivisionIdx;
 
         const double phi;
         int T;
@@ -152,23 +152,23 @@ namespace CutMatching {
          */
         double samplePotential() const;
 
-        double ProjectedPotential(const std::vector<double> &flow) const;
-        double AvgFlow(const std::vector<double> &flow) const;
+        double ProjectedPotential(const std::vector<double>& flow) const;
+        double AvgFlow(const std::vector<double>& flow) const;
 
-        std::pair<std::vector<int>, std::vector<int>> KRVCutStep(const std::vector<double> &flow, const Parameters &params) const;
-        std::pair<std::vector<int>, std::vector<int>> RSTCutStep(const std::vector<double> &flow, const Parameters &params) const;
+        std::pair<std::vector<int>, std::vector<int>> KRVCutStep(const std::vector<double>& flow, const Parameters& params) const;
+        std::pair<std::vector<int>, std::vector<int>> RSTCutStep(const std::vector<double>& flow, const Parameters& params) const;
 
-        std::pair<size_t, double> SelectHighestPotentialFlowVector(const std::vector<std::vector<double>> &flows) const;
+        std::pair<size_t, double> SelectHighestPotentialFlowVector(const std::vector<std::vector<double>>& flows) const;
 
         /**
            Create a cut according to the cut player strategy given the current flow.
          */
-        std::pair<std::vector<int>, std::vector<int>> proposeCut(const std::vector<double> &flow, const Parameters &params) const;
+        std::pair<std::vector<int>, std::vector<int>> proposeCut(const std::vector<double>& flow, const Parameters& params) const;
 
         double ProjectedPotentialConvergenceThreshold() const;
 
-        void RemoveCutSide(const std::vector<UnitFlow::Vertex> &cutLeft, const std::vector<UnitFlow::Vertex> &cutRight, std::vector<UnitFlow::Vertex> &axLeft,
-                           std::vector<UnitFlow::Vertex> &axRight);
+        void RemoveCutSide(const std::vector<UnitFlow::Vertex>& cutLeft, const std::vector<UnitFlow::Vertex>& cutRight, std::vector<UnitFlow::Vertex>& axLeft,
+                           std::vector<UnitFlow::Vertex>& axRight);
 
         void Initialize(Parameters params);
 
@@ -192,7 +192,7 @@ namespace CutMatching {
 
            - params: Algorithm configuration.
          */
-        Solver(UnitFlow::Graph *g, UnitFlow::Graph *subdivGraph, std::mt19937 *randomGen, std::vector<int> *subdivisionIdx, double phi, Parameters params);
+        Solver(UnitFlow::Graph* g, UnitFlow::Graph* subdivGraph, std::mt19937* randomGen, std::vector<int>* subdivisionIdx, double phi, Parameters params);
 
         /**
            Compute a sparse cut.
