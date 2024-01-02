@@ -107,10 +107,17 @@ namespace CutMatching {
   // should be faster than recomputing this all the time
   // can we also update the projected potential?
   double Solver::AvgFlow(const std::vector<double>& flow) const {
-    long double sum = 0.0;
+    // long double sum = 0.0;
+    double sum = 0.0, kahanError = 0.0;
     for (auto u : *subdivGraph) {
       const int idx = (*subdivisionIdx)[u];
-      if (idx >= 0) { sum += flow[idx]; }
+      if (idx >= 0) {
+        const double y = flow[idx] - kahanError;
+        const double t = sum + y;
+        kahanError = t - sum - y;
+        sum = t;
+        // sum += flow[idx];
+      }
     }
     const int curSubdivisionCount = subdivGraph->size() - graph->size();
     return sum / (double) curSubdivisionCount;
@@ -118,12 +125,21 @@ namespace CutMatching {
 
   double Solver::ProjectedPotential(const std::vector<double>& flow) const {
     const double avg_flow = AvgFlow(flow);
-    long double potential = 0.0;
+    // long double potential = 0.0;
+    double sum = 0.0, kahanError = 0.0;
     for (auto u : *subdivGraph) {
       const int idx = (*subdivisionIdx)[u];
-      if (idx >= 0) { potential += square(flow[idx] - avg_flow); }
+      if (idx >= 0) {
+        const double summand = square(flow[idx] - avg_flow);
+        const double y = summand - kahanError;
+        const double t = sum + y;
+        kahanError = t - sum - y;
+        sum = t;
+        // potential += square(flow[idx] - avg_flow);
+      }
     }
-    return potential;
+    // return potential;
+    return sum;
   }
 
   std::pair<std::vector<int>, std::vector<int>> Solver::KRVCutStep(
