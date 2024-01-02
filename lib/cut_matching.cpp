@@ -368,12 +368,13 @@ Result Solver::computeInternal(Parameters params) {
 
     auto [flow_vector_id, potential] = SelectHighestPotentialFlowVector(flow_vectors);
 
-    if (params.use_potential_based_dynamic_stopping_criterion && potential <= ProjectedPotentialConvergenceThreshold()) {
+    if (potential <= ProjectedPotentialConvergenceThreshold()) {
       if (result.iterationsUntilValidExpansion2 == std::numeric_limits<int>::max()) {
         result.iterationsUntilValidExpansion2 = iterations;
       }
-      // TODO actually break; after testing how many fewer rounds we need
-      // break;
+      if (params.use_potential_based_dynamic_stopping_criterion) {
+        break;
+      }
     }
 
     if (result.iterationsUntilValidExpansion != std::numeric_limits<int>::max()
