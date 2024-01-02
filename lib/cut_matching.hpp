@@ -57,6 +57,8 @@ struct Parameters {
 
   bool krv_step_first = false;
 
+  bool kahan_error = false;
+
   int num_flow_vectors = 20;
 
   /**

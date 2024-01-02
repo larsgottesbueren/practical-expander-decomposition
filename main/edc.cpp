@@ -18,14 +18,12 @@
 
 int Logger::LOG_LEVEL = 0;
 
-std::unique_ptr<std::mt19937> configureRandomness(unsigned int seed)
-{
+std::unique_ptr<std::mt19937> configureRandomness(unsigned int seed) {
     std::mt19937 randomGen(seed);
     return std::make_unique<std::mt19937>(randomGen);
 }
 
-std::unique_ptr<Undirected::Graph> readGraph(const std::string& path)
-{
+std::unique_ptr<Undirected::Graph> readGraph(const std::string& path) {
     int n, m;
     std::ifstream in(path);
     in >> n >> m;
@@ -33,15 +31,13 @@ std::unique_ptr<Undirected::Graph> readGraph(const std::string& path)
     std::vector<Undirected::Edge> es;
 
     std::set<std::pair<int, int>> seen;
-    for (int i = 0; i < m; ++i)
-    {
+    for (int i = 0; i < m; ++i) {
         int u, v;
         in >> u >> v;
         if (u > v)
             std::swap(u, v);
-        if (seen.find({u, v}) == seen.end())
-        {
-            seen.insert({u, v});
+        if (seen.find({ u, v }) == seen.end()) {
+            seen.insert({ u, v });
             es.emplace_back(u, v);
         }
     }
@@ -49,8 +45,7 @@ std::unique_ptr<Undirected::Graph> readGraph(const std::string& path)
     return std::make_unique<Undirected::Graph>(n, es);
 }
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
     CutMatching::Parameters params = {
         .tConst = 22, .tFactor = 5.0, .minIterations = 0, .minBalance = 0.45,
         .samplePotential = false,
@@ -84,6 +79,7 @@ int main(int argc, char* argv[])
     cp.add_bool("flow-fraction", params.stop_flow_at_fraction,
                 "Stop flow computation once almost all flow is routed.");
     cp.add_bool("krv-first", params.krv_step_first, "Perform the matching step from KRV instead of RST as long as no cut was made.");
+    cp.add_bool("kahan-error", params.kahan_error, "Use Kahan summation to reduce floating point issues.");
 
     // stuff for debugging
     cp.add_bool("sample-potential", params.samplePotential, "Sample potentials [for debugging]");
@@ -91,9 +87,7 @@ int main(int argc, char* argv[])
                 "Tune the number of flow vectors needed for good convergence speed [for debugging]");
 
 
-    if (!cp.process(argc, argv)) {
-        std::exit(-1);
-    }
+    if (!cp.process(argc, argv)) { std::exit(-1); }
 
     auto g = readGraph(graph_file);
 
@@ -112,9 +106,7 @@ int main(int argc, char* argv[])
     std::cout << "--- Time for balanced cuts " << solver.time_balanced_cut << " time for expanders " << solver.time_expander << " ---" << std::endl;
 
     // std::cout << "Time pre excess " << solver.subdivisionFlowGraph->pre_excess << " time post excess " << solver.subdivisionFlowGraph->post_excess << std::endl;
-    if (params.tune_num_flow_vectors) {
-        std::cout << "Num flow vectors" << solver.num_flow_vectors_needed << std::endl;
-    }
+    if (params.tune_num_flow_vectors) { std::cout << "Num flow vectors" << solver.num_flow_vectors_needed << std::endl; }
 
     std::cout << solver.getEdgesCut() << " " << partitions.size() << std::endl;
 
