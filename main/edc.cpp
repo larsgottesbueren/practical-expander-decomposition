@@ -55,8 +55,10 @@ int main(int argc, char* argv[])
         .tConst = 22, .tFactor = 5.0, .minIterations = 0, .minBalance = 0.45,
         .samplePotential = false,
         .balancedCutStrategy = true,
-        .use_cut_heuristics = true,
-        .use_potential_based_dynamic_stopping_criterion = true,
+        .use_cut_heuristics = false,
+        .use_potential_based_dynamic_stopping_criterion = false,
+        .stop_flow_at_fraction = false,
+        .krv_step_first = false,
         .num_flow_vectors = 20,
         .tune_num_flow_vectors = false,
     };
@@ -89,8 +91,7 @@ int main(int argc, char* argv[])
                 "Tune the number of flow vectors needed for good convergence speed [for debugging]");
 
 
-    if (!cp.process(argc, argv))
-    {
+    if (!cp.process(argc, argv)) {
         std::exit(-1);
     }
 
@@ -106,24 +107,23 @@ int main(int argc, char* argv[])
     auto partitions = solver.getPartition();
     auto conductances = solver.getConductance();
 
-    // Timings::GlobalTimings().Print();
-    // std::cout << "--- Total time " << total_time << " --- " << std::endl;
-    // std::cout << "--- Time for balanced cuts " << solver.time_balanced_cut << " time for expanders " << solver.time_expander << " ---" << std::endl;
+    Timings::GlobalTimings().Print();
+    std::cout << "--- Total time " << total_time << " --- " << std::endl;
+    std::cout << "--- Time for balanced cuts " << solver.time_balanced_cut << " time for expanders " << solver.time_expander << " ---" << std::endl;
 
     // std::cout << "Time pre excess " << solver.subdivisionFlowGraph->pre_excess << " time post excess " << solver.subdivisionFlowGraph->post_excess << std::endl;
-    if (params.tune_num_flow_vectors)
-    {
+    if (params.tune_num_flow_vectors) {
         std::cout << "Num flow vectors" << solver.num_flow_vectors_needed << std::endl;
     }
 
-    return 0;
-
     std::cout << solver.getEdgesCut() << " " << partitions.size() << std::endl;
-    for (int i = 0; i < int(partitions.size()); ++i)
-    {
+
+#if false
+    for (int i = 0; i < int(partitions.size()); ++i) {
         std::cout << partitions[i].size() << " " << conductances[i];
         for (auto p : partitions[i])
             std::cout << " " << p;
         std::cout << std::endl;
     }
+#endif
 }
