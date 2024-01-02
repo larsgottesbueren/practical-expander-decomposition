@@ -389,10 +389,12 @@ Result Solver::computeInternal(Parameters params) {
     }
 
     subdivGraph->reset();
-    for (const auto u : axLeft)
+    for (const auto u : axLeft) {
       subdivGraph->addSource(u, 1);
-    for (const auto u : axRight)
+    }
+    for (const auto u : axRight) {
       subdivGraph->addSink(u, 1);
+    }
 
     const int h = (int)ceil(1.0 / phi / std::log10(numSplitNodes));
 
@@ -417,19 +419,15 @@ Result Solver::computeInternal(Parameters params) {
     if (hasExcess.empty()) {
       VLOG(3) << "\tAll flow routed.";
     } else {
-      VLOG(3) << "\tHas " << hasExcess.size() << " vertices with excess. Computing level cut.";
       const auto [cutLeft, cutRight] = subdivGraph->levelCut(h);
       VLOG(3) << "\tHas level cut with (" << cutLeft.size() << ", " << cutRight.size() << ") vertices.";
-
-      // TODO why does the cut have good conductance?
       RemoveCutSide(cutLeft, cutRight, axLeft, axRight);
     }
 
     Timings::GlobalTimings().AddTiming(Timing::Misc, timer.Restart());
 
     VLOG(3) << "Computing matching with |S| = " << axLeft.size() << " |T| = " << axRight.size() << ".";
-    auto matching =
-        subdivGraph->matching(axLeft);
+    auto matching = subdivGraph->matching(axLeft);
     for (auto &p : matching) {
       int u = (*subdivisionIdx)[p.first];
       int v = (*subdivisionIdx)[p.second];
