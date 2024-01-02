@@ -251,7 +251,7 @@ std::pair<std::vector<int>, std::vector<int>> Solver::RSTCutStep(
 
 std::pair<std::vector<int>, std::vector<int>>
 Solver::proposeCut(const std::vector<double> &flow, const Parameters &params) const {
-  if (subdivGraph->removedSize() == 0) {
+  if (params.krv_step_first && subdivGraph->removedSize() == 0) {
     return KRVCutStep(flow, params);
   } else {
     return RSTCutStep(flow, params);
