@@ -377,24 +377,6 @@ Result Solver::computeInternal(Parameters params) {
       }
     }
 
-    if (result.iterationsUntilValidExpansion != std::numeric_limits<int>::max()
-        && result.iterationsUntilValidExpansion2 != std::numeric_limits<int>::max()) {
-      break;
-    }
-
-    {
-      size_t max = 0;
-      for (const auto& flow : flow_vectors) {
-        size_t significant_entries = 0;
-        for (double x : flow) {
-          if (std::abs(x) > 1e-17)
-            significant_entries++;
-        }
-        max = std::max(max, significant_entries);
-      }
-      VLOG(3) << "#significant entries" << max;
-    }
-
     Timer timer; timer.Start();
     auto [axLeft, axRight] = proposeCut(flow_vectors[flow_vector_id], params);
     Timings::GlobalTimings().AddTiming(Timing::ProposeCut, timer.Restart());
