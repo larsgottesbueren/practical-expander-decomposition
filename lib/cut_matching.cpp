@@ -13,7 +13,7 @@ void ForEachSubdivVertex(const UnitFlow::Graph& subdivGraph, const std::vector<i
     for (auto it = subdivGraph.cbegin(); it != subdivGraph.cend(); ++it) {
         const int idx = subdivisionIdx[*it];
         if (idx >= 0) {
-            f(idx);
+            f(idx, *it);
         }
     }
 }
@@ -83,7 +83,7 @@ namespace CutMatching {
     double Solver::samplePotential() const {
         // Subdivision vertices remaining.
         std::vector<int> alive;
-        ForEachSubdivVertex(*subdivGraph, *subdivisionIdx, [&](int u) { alive.push_back(u); });
+        ForEachSubdivVertex(*subdivGraph, *subdivisionIdx, [&](int u, int) { alive.push_back(u); });
 
         std::vector<long double> avgFlowVector(numSplitNodes);
 
@@ -208,11 +208,7 @@ namespace CutMatching {
 
         // Compute potentials
         long double totalPotential = 0.0, leftPotential = 0.0;
-        for (auto u : *subdivGraph) {
-            const int idx = (*subdivisionIdx)[u];
-            if (idx >= 0)
-                totalPotential += square(flow[idx] - avgFlow);
-        }
+        ForEachSubdivVertex(*subdivGraph, *subdivisionIdx, [&](int idx, int) { totalPotential += square(flow[idx] - avgFlow); });
         for (auto u : axLeft) {
             const int idx = (*subdivisionIdx)[u];
             assert(idx >= 0);
@@ -231,15 +227,13 @@ namespace CutMatching {
 
             // Re-partition along '\mu'.
             axLeft.clear(), axRight.clear();
-            for (auto u : *subdivGraph) {
-                const int idx = (*subdivisionIdx)[u];
-                if (idx >= 0) {
-                    if (flow[idx] <= mu)
-                        axRight.push_back(u);
-                    else if (flow[idx] >= avgFlow + 6.0 * l / (double) curSubdivisionCount)
-                        axLeft.push_back(u);
-                }
-            }
+            ForEachSubdivVertex(*subdivGraph, *subdivisionIdx, [&](int idx, int u) {
+                if (flow[idx] <= mu)
+                    axRight.push_back(u);
+                else if (flow[idx] >= avgFlow + 6.0 * l / (double) curSubdivisionCount)
+                    axLeft.push_back(u);
+            });
+
             // TODO sort again?? check in RST'14
             std::reverse(axRight.begin(), axRight.end());
         }
