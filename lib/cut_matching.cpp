@@ -51,8 +51,7 @@ namespace CutMatching {
     }
 
     Solver::Solver(UnitFlow::Graph* g, UnitFlow::Graph* subdivG, std::mt19937* randomGen, std::vector<int>* subdivisionIdx, double phi, Parameters params) :
-        params(params),
-        graph(g), subdivGraph(subdivG), randomGen(randomGen), subdivisionIdx(subdivisionIdx), phi(phi),
+        params(params), graph(g), subdivGraph(subdivG), randomGen(randomGen), subdivisionIdx(subdivisionIdx), phi(phi),
         T(std::max(1, params.tConst + int(ceil(params.tFactor * square(std::log10(graph->edgeCount())))))), numSplitNodes(subdivGraph->size() - graph->size()) {
         assert(graph->size() != 0 && "Cut-matching expected non-empty subset.");
     }
@@ -436,13 +435,10 @@ namespace CutMatching {
                 }
 
                 if (params.samplePotential) {
-                    for (int i : *subdivGraph) {
-                        int w = (*subdivisionIdx)[i];
-                        if (w >= 0) {
-                            flowMatrix[u][w] = 0.5 * (flowMatrix[u][w] + flowMatrix[v][w]);
-                            flowMatrix[v][w] = flowMatrix[u][w];
-                        }
-                    }
+                    ForEachSubdivVertex(*subdivGraph, *subdivisionIdx, [&](int w, int) {
+                        flowMatrix[u][w] = 0.5 * (flowMatrix[u][w] + flowMatrix[v][w]);
+                        flowMatrix[v][w] = flowMatrix[u][w];
+                    });
                 }
             }
 
