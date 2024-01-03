@@ -115,22 +115,18 @@ namespace CutMatching {
     }
 
     // TODO cache the avg flow value. when edges get removed, update it.
-    // TODO use kahan error optionally
     // should be faster than recomputing this all the time
     // can we also update the projected potential?
     double Solver::AvgFlow(const std::vector<double>& flow) const {
-        // long double sum = 0.0;
-        long double sum = 0.0;
-        double kahanError = 0.0;
-        for (auto u : *subdivGraph) {
-            const int idx = (*subdivisionIdx)[u];
-            if (idx >= 0) {
-                const double y = flow[idx] - kahanError;
-                const double t = sum + y;
-                kahanError = t - sum - y;
-                sum = t;
-                // sum += flow[idx];
-            }
+        double sum = 0.0;
+        if (params.kahan_error) {
+            KahanAggregation<long double> aggr;
+            ForEachSubdivVertex(*subdivGraph, *subdivisionIdx, [&](int idx, int) { aggr.Add(flow[idx]); });
+            sum = aggr.result;
+        } else {
+            BasicAggregation<long double> aggr;
+            ForEachSubdivVertex(*subdivGraph, *subdivisionIdx, [&](int idx, int) { aggr.Add(flow[idx]); });
+            sum = aggr.result;
         }
         const int curSubdivisionCount = subdivGraph->size() - graph->size();
         return sum / (double) curSubdivisionCount;
@@ -138,20 +134,16 @@ namespace CutMatching {
 
     double Solver::ProjectedPotential(const std::vector<double>& flow) const {
         const double avg_flow = AvgFlow(flow);
-        // long double potential = 0.0;
-        double sum = 0.0, kahanError = 0.0;
-        for (auto u : *subdivGraph) {
-            const int idx = (*subdivisionIdx)[u];
-            if (idx >= 0) {
-                const double summand = square(flow[idx] - avg_flow);
-                const double y = summand - kahanError;
-                const double t = sum + y;
-                kahanError = t - sum - y;
-                sum = t;
-                // potential += square(flow[idx] - avg_flow);
-            }
+        double sum;
+        if (params.kahan_error) {
+            KahanAggregation<long double> aggr;
+            ForEachSubdivVertex(*subdivGraph, *subdivisionIdx, [&](int idx, int) { aggr.Add(square(flow[idx] - avg_flow)); });
+            sum = aggr.result;
+        } else {
+            BasicAggregation<long double> aggr;
+            ForEachSubdivVertex(*subdivGraph, *subdivisionIdx, [&](int idx, int) { aggr.Add(square(flow[idx] - avg_flow)); });
+            sum = aggr.result;
         }
-        // return potential;
         return sum;
     }
 
