@@ -1,6 +1,0 @@
-build --cxxopt=-std=c++1z
-
-build:debug --cxxopt=-std=c++1z
-build:debug --cxxopt=-O0
-build:debug --cxxopt=-fsanitize=address,undefined
-build:debug --linkopt -fsanitize=address,undefined
