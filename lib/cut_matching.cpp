@@ -61,17 +61,21 @@ namespace CutMatching {
         std::normal_distribution<> distr(0, 1);
 
         std::vector<double> result(numSplitNodes);
-        for (auto& r : result)
+        for (auto& r : result) {
             r = distr(*randomGen);
+        }
 
         double offset = std::accumulate(result.begin(), result.end(), 0.0) / double(numSplitNodes);
         double sumSq = 0;
-        for (auto& r : result)
-            r -= offset, sumSq += r * r;
+        for (auto& r : result) {
+            r -= offset;
+            sumSq += r * r;
+        }
 
         const double normalize = sqrt(sumSq);
-        for (auto& r : result)
+        for (auto& r : result) {
             r /= normalize;
+        }
 
         return result;
     }
@@ -83,16 +87,18 @@ namespace CutMatching {
 
         std::vector<long double> avgFlowVector(numSplitNodes);
 
-        for (int u : alive)
-            for (int v : alive)
+        for (int u : alive) {
+            for (int v : alive) {
                 avgFlowVector[v] += flowMatrix[u][v];
-        for (auto& f : avgFlowVector)
+            }
+        }
+
+        for (auto& f : avgFlowVector) {
             f /= (long double) alive.size();
+        }
 
         long double sum = 0, kahanError = 0;
         long double sum2 = 0.0, max_sq = 0.0;
-        double max_entry = std::numeric_limits<double>::lowest();
-        double min_entry = std::numeric_limits<double>::max();
         for (int u : alive) {
             for (int v : alive) {
                 const long double sq = square(flowMatrix[u][v] - avgFlowVector[v]);
@@ -103,12 +109,9 @@ namespace CutMatching {
 
                 sum2 += sq;
                 max_sq = std::max(max_sq, sq);
-                max_entry = std::max(max_entry, flowMatrix[u][v]);
-                min_entry = std::min(min_entry, flowMatrix[u][v]);
             }
         }
 
-        VLOG(3) << V(sum) << V(sum2) << V(max_sq) << V(max_entry) << V(min_entry);
         return (double) sum;
     }
 
