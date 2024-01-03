@@ -114,6 +114,7 @@ namespace CutMatching {
 
     class Solver {
     private:
+        const Parameters params;
         UnitFlow::Graph* graph;
         UnitFlow::Graph* subdivGraph;
 
@@ -155,15 +156,15 @@ namespace CutMatching {
         double ProjectedPotential(const std::vector<double>& flow) const;
         double AvgFlow(const std::vector<double>& flow) const;
 
-        std::pair<std::vector<int>, std::vector<int>> KRVCutStep(const std::vector<double>& flow, const Parameters& params) const;
-        std::pair<std::vector<int>, std::vector<int>> RSTCutStep(const std::vector<double>& flow, const Parameters& params) const;
+        std::pair<std::vector<int>, std::vector<int>> KRVCutStep(const std::vector<double>& flow) const;
+        std::pair<std::vector<int>, std::vector<int>> RSTCutStep(const std::vector<double>& flow) const;
 
         std::pair<size_t, double> SelectHighestPotentialFlowVector(const std::vector<std::vector<double>>& flows) const;
 
         /**
            Create a cut according to the cut player strategy given the current flow.
          */
-        std::pair<std::vector<int>, std::vector<int>> proposeCut(const std::vector<double>& flow, const Parameters& params) const;
+        std::pair<std::vector<int>, std::vector<int>> proposeCut(const std::vector<double>& flow) const;
 
         double ProjectedPotentialConvergenceThreshold() const;
 
