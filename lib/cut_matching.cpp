@@ -149,12 +149,7 @@ namespace CutMatching {
 
     std::pair<std::vector<int>, std::vector<int>> Solver::KRVCutStep(const std::vector<double>& flow) const {
         std::vector<std::pair<double, UnitFlow::Vertex>> perm;
-        for (auto u : *subdivGraph) {
-            const int idx = (*subdivisionIdx)[u];
-            if (idx >= 0) {
-                perm.emplace_back(flow[idx], u);
-            }
-        }
+        ForEachSubdivVertex(*subdivGraph, *subdivisionIdx, [&](int idx, int u) { perm.emplace_back(flow[idx], u); });
         size_t mid = perm.size() / 2;
         std::nth_element(perm.begin(), perm.begin() + mid, perm.end());
         std::vector<int> axLeft, axRight;
@@ -172,15 +167,13 @@ namespace CutMatching {
         double avgFlow = AvgFlow(flow);
         // Partition subdivision vertices into a left and right set.
         std::vector<int> axLeft, axRight;
-        for (auto u : *subdivGraph) {
-            const int idx = (*subdivisionIdx)[u];
-            if (idx >= 0) {
-                if (flow[idx] < avgFlow)
-                    axLeft.push_back(u);
-                else
-                    axRight.push_back(u);
+        ForEachSubdivVertex(*subdivGraph, *subdivisionIdx, [&](int idx, int u) {
+            if (flow[idx] < avgFlow) {
+                axLeft.push_back(u);
+            } else {
+                axRight.push_back(u);
             }
-        }
+        });
 
         // Sort by flow
         auto cmpFlow = [&flow, &subdivisionIdx = subdivisionIdx](int u, int v) { return flow[(*subdivisionIdx)[u]] < flow[(*subdivisionIdx)[v]]; };
