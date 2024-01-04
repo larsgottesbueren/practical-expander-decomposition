@@ -150,7 +150,7 @@ namespace CutMatching {
     std::pair<std::vector<int>, std::vector<int>> Solver::KRVCutStep(const std::vector<double>& flow) const {
         std::vector<std::pair<double, UnitFlow::Vertex>> perm;
         ForEachSubdivVertex(*subdivGraph, *subdivisionIdx, [&](int idx, int u) { perm.emplace_back(flow[idx], u); });
-        size_t mid = perm.size() / 2;
+        const size_t mid = perm.size() / 2;
         std::nth_element(perm.begin(), perm.begin() + mid, perm.end());
         std::vector<int> axLeft, axRight;
         for (size_t i = 0; i < mid; ++i) {
@@ -192,7 +192,9 @@ namespace CutMatching {
 
         // Compute potentials
         long double totalPotential = 0.0, leftPotential = 0.0;
-        ForEachSubdivVertex(*subdivGraph, *subdivisionIdx, [&](int idx, int) { totalPotential += square(flow[idx] - avgFlow); });
+        ForEachSubdivVertex(*subdivGraph, *subdivisionIdx, [&](int idx, int) {
+            totalPotential += square(flow[idx] - avgFlow);
+        });
         for (auto u : axLeft) {
             const int idx = (*subdivisionIdx)[u];
             assert(idx >= 0);
