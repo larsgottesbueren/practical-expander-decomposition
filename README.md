@@ -19,19 +19,15 @@ First generate a synthetic toy-graph consisting of 10 cliques of size 100, conne
 ./experiment/gen_graph.py clique-path -n=100 -k=10 > graph.txt
 ```
 
-Then run the program on the generated graph.
+Then run the program on the generated graph with ```phi = 0.001```.
 
 ``` shell
-./release/EDC < graph.txt
+./release/EDC graph.txt 0.001
 ```
 
-Use the LOG_LEVEL environment variable (0-4) to set the output verbosity
+Use the ```--log [0-4]``` flag to set the output verbosity (lower = less verbose)
 ``` shell
-export LOG_LEVEL=1
+./release/EDC --log 1 graph.txt 0.001
 ```
 
-or 
-
-``` shell
-LOG_LEVEL=1 ./release/EDC < graph.txt
-```
+and use the ```-h``` or ```--help``` flag to display a list of options.
