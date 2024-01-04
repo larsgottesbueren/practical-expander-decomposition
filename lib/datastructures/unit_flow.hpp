@@ -76,7 +76,7 @@ namespace UnitFlow {
 
         size_t flow_pushed_since = 0;
 
-        void SinglePushLowestLabel(int maxHeight);
+        bool SinglePushLowestLabel(int maxHeight);
 
     public:
         /**
@@ -119,10 +119,7 @@ namespace UnitFlow {
          */
         void reset();
 
-        double excess_fraction = 0.0;
-        bool past_excess_fraction_time_measure_started = false;
-        Duration pre_excess = Duration(0.0);
-        Duration post_excess = Duration(0.0);
+        double excess_fraction = std::numeric_limits<double>::max();
 
     private:
         std::vector<std::pair<Vertex, Vertex>> matchingDfs(const std::vector<Vertex>& sources);

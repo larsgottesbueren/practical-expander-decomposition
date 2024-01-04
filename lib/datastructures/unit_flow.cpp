@@ -14,20 +14,16 @@ namespace UnitFlow {
 
     Graph::Graph(int n, const std::vector<Edge>& es) : SubsetGraph::Graph<int, Edge>(n, es), absorbed(n), sink(n), height(n), nextEdgeIdx(n) {}
 
-    void Graph::SinglePushLowestLabel(int maxHeight) {
-        past_excess_fraction_time_measure_started = false;
-        Timer timer;
-        timer.Start();
-
+    bool Graph::SinglePushLowestLabel(int maxHeight) {
         const int maxH = std::min(maxHeight, size() * 2 + 1);
         size_t flow_routed = 0;
-
-
         std::vector<std::queue<Vertex>> q(maxH + 1);
 
-        for (auto u : *this)
-            if (excess(u) > 0)
+        for (auto u : *this) {
+            if (excess(u) > 0) {
                 q[0].push(u);
+            }
+        }
 
         int level = 0;
 
@@ -42,40 +38,33 @@ namespace UnitFlow {
                 q[level].pop();
                 continue;
             }
-
             assert(excess(u) > 0 && "Vertex popped from queue should have excess flow.");
 
             auto& e = getEdge(u, nextEdgeIdx[u]);
-
             assert(e.flow + reverse(e).flow == 0 && "Flow across edge and its reverse should cancel.");
-
             if (e.residual() > 0 && height[u] == height[e.to] + 1) {
                 // Push flow across 'e'
                 assert(excess(e.to) == 0 && "Pushing to vertex with non-zero excess");
-                UnitFlow::Flow delta = std::min({ excess(u), e.residual(), (UnitFlow::Flow) degree(e.to) });
-
+                const Flow delta = std::min({ excess(u), e.residual(), (Flow) degree(e.to) });
                 assert(delta > 0);
                 flow_pushed_since += delta;
 
                 e.flow += delta;
                 reverse(e).flow -= delta;
-
                 absorbed[u] -= delta;
                 absorbed[e.to] += delta;
 
                 if (sink[e.to] > 0) {
                     flow_routed += delta;
                     if (flow_routed >= excess_fraction) {
-                        if (!past_excess_fraction_time_measure_started) {
-                            pre_excess += timer.Restart();
-                            past_excess_fraction_time_measure_started = true;
-                        }
+                        return true;
                     }
                 }
 
                 assert(excess(u) >= 0 && "Excess after pushing cannot be negative");
-                if (height[u] >= maxH || excess(u) == 0)
+                if (height[u] >= maxH || excess(u) == 0) {
                     q[level].pop();
+                }
 
                 if (height[e.to] < maxH && excess(e.to) > 0) {
                     q[height[e.to]].push(e.to);
@@ -95,15 +84,11 @@ namespace UnitFlow {
             }
         }
 
-        if (past_excess_fraction_time_measure_started) {
-            post_excess += timer.Stop();
-        } else {
-            pre_excess += timer.Stop();
-        }
+        return false;
     }
 
     std::vector<Vertex> Graph::compute(const int maxHeight) {
-        SinglePushLowestLabel(maxHeight);
+        bool reached_flow_fraction = SinglePushLowestLabel(maxHeight);
 
         for (auto u : *this) {
             for (auto e = beginEdge(u); e != endEdge(u); ++e) {
@@ -113,7 +98,7 @@ namespace UnitFlow {
             }
         }
 
-        std::vector<UnitFlow::Vertex> hasExcess;
+        std::vector<Vertex> hasExcess;
         for (auto u : *this) {
             if (excess(u) > 0) {
                 hasExcess.push_back(u);

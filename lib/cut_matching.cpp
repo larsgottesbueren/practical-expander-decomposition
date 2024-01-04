@@ -379,17 +379,17 @@ namespace CutMatching {
 
             const int h = (int) ceil(1.0 / phi / std::log10(numSplitNodes));
 
-            double excess_fraction = [&]() -> double {
-                const size_t max_flow = std::min(axLeft.size(), axRight.size());
-                double f = std::log10(numSplitNodes);
-                if (f < 1.0) {
-                    return max_flow; // we have to finish routing all of the flow
-                }
-                double fraction = 1.0 - (1. / iterationsToRun);
-                // double fraction = 1.0 - (1. / (f*f));
-                return fraction * max_flow;
-            }();
-            subdivGraph->excess_fraction = excess_fraction;
+            if (params.stop_flow_at_fraction) {
+                subdivGraph->excess_fraction = [&]() -> double {
+                    const size_t max_flow = std::min(axLeft.size(), axRight.size());
+                    double f = std::log10(numSplitNodes);
+                    if (f < 1.0) {
+                        return max_flow; // we have to finish routing all of the flow
+                    }
+                    double fraction = 1.0 - (1. / iterationsToRun);
+                    return fraction * max_flow;
+                }();
+            }
 
             VLOG(3) << "Computing flow with |S| = " << axLeft.size() << " |T| = " << axRight.size() << " and max height " << h << ".";
             const auto hasExcess = subdivGraph->compute(h);
