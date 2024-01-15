@@ -7,11 +7,15 @@ import csv
 import argparse
 import glob
 import os
+import copy
 
 bin_path = "../../release/EDC"
 graph_path = "../graphs/real/"
 
-phi_values = [0.001, 0.01]
+phi_values = [
+    0.001, 
+    0.01
+    ]
 
 options = {
     'flow-vectors': [1, 5, 10, 20],
@@ -26,27 +30,49 @@ options = {
 
 def edc_call(graph, phi, options):
     args = [bin_path]
-    for key, val in options:
+    for key, val in options.items():
+        if key == 'name':
+            continue
         if type(val) == bool:  # peculiarity of tlx (bool options can only be set to true)
             if val:
-                options.append('--' + key)
+                args.append('--' + key)
         else:
-            options.append('--' + key + ' ' + str(val))
-    args.extend([graph, phi])
-    result = subprocess.run(args, text=True, check=True, timeout=480, stdout=subprocess.PIPE)
+            args.append('--' + key)
+            args.append(str(val))
+    args.extend(['--log', '0'])
+    args.extend([graph, str(phi)])
+    if os.path.basename(graph) != "nasa2146.graph":
+        return
+    result = subprocess.run(args, text=True, check=False, capture_output=True, timeout=480)
     if result.returncode != 0:
         print(f'Failed cut: {result.stdout}')
         return None
     else:
         lines = result.stdout.strip().split('\n')
-
         result = {}
         result['graph'] = os.path.basename(graph)
         result['phi'] = phi
 
-        ## TODO parse runtimes from stdout
+        for l in lines:
+            s = l.split('\t\t')
+            if len(s) == 3:
+                # timer
+                if s[0] != "Category":
+                    result[s[0]] = float(s[1])
+            elif "Total measured time" in l:
+                s = l.replace('---', '')
+                s = s.split(' ')
+                result['measured time'] = float(s[-2])
+            elif "Time " in l:
+                s = l.split(' ')
+                result[s[1]] = float(s[2].replace('s', ''))
+            else:
+                s = l.split(' ')
+                result['cut'] = int(s[0])
+                result['partitions'] = int(s[1])
 
         result.update(options) #copy the options into the result
+        print(result)
         return result
 
 
@@ -54,6 +80,58 @@ def enum_options():
     keys, values = zip(*options.items())
     return [dict(zip(keys, v)) for v in itertools.product(*values)]
 
+def incremental_configs():
+    base_config = {
+        'flow-vectors': 1,
+        'krv-first': False,
+        'use-cut-heuristics': False,
+        'flow-fraction': False,
+        'adaptive': False,
+        'kahan-error': True,
+        'seed' : 1,
+        'name' : 'Arv'
+    }
+    config = copy.copy(base_config)
+    configs = [base_config]
+
+    config['use-cut-heuristics'] = True
+    config['name'] = '+Cut'
+    configs.append(copy.copy(config))
+
+    config['adaptive'] = True
+    config['flow-vectors'] = 20
+    config['name'] = '+Cut+Ada'
+    configs.append(copy.copy(config))
+
+    krv = copy.copy(config)
+    krv['krv-first'] = True
+    krv['name'] = '+Cut+Ada+KRV'
+    configs.append(krv)
+
+    frac = copy.copy(config)
+    frac['flow-fraction'] = True
+    frac['name'] = '+Cut+Ada+Frac'
+    configs.append(frac)
+
+    kahan = copy.copy(config)
+    kahan['kahan-error'] = False
+    kahan['name'] = '+Cut+Ada-Kahan'
+    configs.append(kahan)
+    
+    our_config = {
+        'flow-vectors': 20,
+        'krv-first': False,
+        'use-cut-heuristics': True,
+        'flow-fraction': False,
+        'adaptive': True,
+        'kahan-error': True,
+        'seed' : 1,
+        'name' : 'Ours'
+    }
+    for c in configs:
+        print(c)
+    exit()
+    return configs
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -62,11 +140,14 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     graph_files = glob.glob(graph_path + '*.graph')
-    configs = enum_options()
+    #configs = enum_options()
+    configs = incremental_configs()
 
     jobs = itertools.product(graph_files, phi_values, configs)
     with mp.Pool(processes=args.threads) as pool:
         results = pool.starmap(edc_call, jobs, chunksize=1)
+ 
+    exit()
 
     with open(args.output, 'w') as f:
         writer = csv.DictWriter(f, fieldnames=results[0].keys())

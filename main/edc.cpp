@@ -105,8 +105,9 @@ int main(int argc, char* argv[]) {
     auto conductances = solver.getConductance();
 
     Timings::GlobalTimings().Print();
-    std::cout << "--- Total time " << total_time << " --- " << std::endl;
-    std::cout << "--- Time for balanced cuts " << solver.time_balanced_cut << " time for expanders " << solver.time_expander << " ---" << std::endl;
+    std::cout << "Time Total " << total_time << std::endl;
+    std::cout << "Time BalancedCuts " << solver.time_balanced_cut << std::endl;
+    std::cout << "Time Expanders " << solver.time_expander << std::endl;
 
     // std::cout << "Time pre excess " << solver.subdivisionFlowGraph->pre_excess << " time post excess " << solver.subdivisionFlowGraph->post_excess <<
     // std::endl;
