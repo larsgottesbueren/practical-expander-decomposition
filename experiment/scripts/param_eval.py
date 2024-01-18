@@ -130,7 +130,7 @@ def incremental_configs():
     }
     for c in configs:
         print(c)
-    exit()
+    
     return configs
 
 if __name__ == '__main__':
@@ -147,8 +147,6 @@ if __name__ == '__main__':
     with mp.Pool(processes=args.threads) as pool:
         results = pool.starmap(edc_call, jobs, chunksize=1)
  
-    exit()
-
     with open(args.output, 'w') as f:
         writer = csv.DictWriter(f, fieldnames=results[0].keys())
         writer.writeheader()
