@@ -8,12 +8,13 @@ import argparse
 import glob
 import os
 import copy
+import tqdm
 
 bin_path = "../../release/EDC"
 graph_path = "../graphs/real/"
 
 phi_values = [
-    0.001, 
+    0.001,
     0.01
     ]
 
@@ -41,8 +42,6 @@ def edc_call(graph, phi, options):
             args.append(str(val))
     args.extend(['--log', '0'])
     args.extend([graph, str(phi)])
-    if os.path.basename(graph) != "nasa2146.graph":
-        return
     result = subprocess.run(args, text=True, check=False, capture_output=True, timeout=480)
     if result.returncode != 0:
         print(f'Failed cut: {result.stdout}')
