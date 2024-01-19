@@ -71,7 +71,6 @@ def edc_call(graph, phi, options):
                 result['partitions'] = int(s[1])
 
         result.update(options) #copy the options into the result
-        print(result)
         return result
 
 
