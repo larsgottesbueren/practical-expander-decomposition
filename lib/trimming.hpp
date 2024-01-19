@@ -19,4 +19,4 @@ namespace Trimming {
 
         void compute();
     };
-}; // namespace Trimming
+} // namespace Trimming
