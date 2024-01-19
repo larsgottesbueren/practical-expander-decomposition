@@ -115,7 +115,7 @@ def incremental_configs():
     kahan['kahan-error'] = False
     kahan['name'] = '+Cut+Ada-Kahan'
     configs.append(kahan)
-    
+
     our_config = {
         'flow-vectors': 20,
         'krv-first': False,
@@ -128,7 +128,7 @@ def incremental_configs():
     }
     for c in configs:
         print(c)
-    
+
     return configs
 
 if __name__ == '__main__':
@@ -143,8 +143,8 @@ if __name__ == '__main__':
 
     jobs = itertools.product(graph_files, phi_values, configs)
     with mp.Pool(processes=args.threads) as pool:
-        results = pool.starmap(edc_call, jobs, chunksize=1)
- 
+        results = pool.starmap(edc_call, tqdm.tqdm(jobs, total=len(jobs)), chunksize=1)
+
     with open(args.output, 'w') as f:
         writer = csv.DictWriter(f, fieldnames=results[0].keys())
         writer.writeheader()
