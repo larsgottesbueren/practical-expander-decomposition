@@ -44,7 +44,7 @@ def edc_call(graph, phi, options):
     args.extend([graph, str(phi)])
     result = subprocess.run(args, text=True, check=False, capture_output=True, timeout=1800)
     if result.returncode != 0:
-        print(f'Failed cut: {result.stdout}')
+        print('Failed run: ', graph, phi, options, 'stdout = ', result.stdout)
         return None
     else:
         lines = result.stdout.strip().split('\n')
@@ -109,7 +109,7 @@ def incremental_configs():
     frac = copy.copy(config)
     frac['flow-fraction'] = True
     frac['name'] = '+Cut+Ada+Frac'
-    configs.append(frac)
+    # configs.append(frac) # leave out frac for now
 
     kahan = copy.copy(config)
     kahan['kahan-error'] = False
