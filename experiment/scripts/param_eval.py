@@ -141,7 +141,7 @@ if __name__ == '__main__':
     #configs = enum_options()
     configs = incremental_configs()
 
-    jobs = itertools.product(graph_files, phi_values, configs)
+    jobs = list(itertools.product(graph_files, phi_values, configs)) # list is necessary for len(jobs)
     with mp.Pool(processes=args.threads) as pool:
         results = pool.starmap(edc_call, tqdm.tqdm(jobs, total=len(jobs)), chunksize=1)
 
