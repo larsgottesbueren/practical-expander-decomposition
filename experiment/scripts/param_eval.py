@@ -42,7 +42,7 @@ def edc_call(graph, phi, options):
             args.append(str(val))
     args.extend(['--log', '0'])
     args.extend([graph, str(phi)])
-    result = subprocess.run(args, text=True, check=False, capture_output=True, timeout=480)
+    result = subprocess.run(args, text=True, check=False, capture_output=True, timeout=1800)
     if result.returncode != 0:
         print(f'Failed cut: {result.stdout}')
         return None
