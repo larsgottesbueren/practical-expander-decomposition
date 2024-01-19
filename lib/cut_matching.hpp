@@ -201,4 +201,4 @@ namespace CutMatching {
         Result computeInternal(Parameters params);
         Result compute(Parameters params);
     };
-}; // namespace CutMatching
+} // namespace CutMatching

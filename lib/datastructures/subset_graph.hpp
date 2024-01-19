@@ -469,4 +469,4 @@ namespace SubsetGraph {
         }
     };
 
-}; // namespace SubsetGraph
+} // namespace SubsetGraph
