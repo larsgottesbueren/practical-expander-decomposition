@@ -16,7 +16,7 @@ graph_path = "../graphs/real/"
 phi_values = [
     0.001,
     0.01
-    ]
+]
 
 options = {
     'flow-vectors': [1, 5, 10, 20],
@@ -25,7 +25,7 @@ options = {
     'flow-fraction': [False, True],
     'adaptive': [False, True],
     'kahan-error': [False, True],
-    'seed' : [1,2,3,4,5]
+    'seed': [1, 2, 3, 4, 5]
 }
 
 
@@ -48,9 +48,7 @@ def edc_call(graph, phi, options):
         return None
     else:
         lines = result.stdout.strip().split('\n')
-        result = {}
-        result['graph'] = os.path.basename(graph)
-        result['phi'] = phi
+        result = {'graph': os.path.basename(graph), 'phi': phi}
 
         for l in lines:
             s = l.split('\t\t')
@@ -70,13 +68,14 @@ def edc_call(graph, phi, options):
                 result['cut'] = int(s[0])
                 result['partitions'] = int(s[1])
 
-        result.update(options) #copy the options into the result
+        result.update(options)  # copy the options into the result
         return result
 
 
 def enum_options():
     keys, values = zip(*options.items())
     return [dict(zip(keys, v)) for v in itertools.product(*values)]
+
 
 def incremental_configs():
     base_config = {
@@ -86,25 +85,25 @@ def incremental_configs():
         'flow-fraction': False,
         'adaptive': False,
         'kahan-error': True,
-        'seed' : 1,
-        'name' : 'Arv'
+        'seed': 1,
+        'name': 'Arv'
     }
     config = copy.copy(base_config)
     configs = [base_config]
 
     config['use-cut-heuristics'] = True
     config['name'] = '+Cut'
-    #configs.append(copy.copy(config))
+    # configs.append(copy.copy(config))
 
     config['adaptive'] = True
     config['flow-vectors'] = 20
     config['name'] = '+Cut+Ada'
-    #configs.append(copy.copy(config))
+    # configs.append(copy.copy(config))
 
     krv = copy.copy(config)
     krv['krv-first'] = True
     krv['name'] = '+Cut+Ada+KRV'
-    #configs.append(krv)
+    # configs.append(krv)
 
     frac = copy.copy(config)
     frac['flow-fraction'] = True
@@ -114,7 +113,7 @@ def incremental_configs():
     kahan = copy.copy(config)
     kahan['kahan-error'] = False
     kahan['name'] = '+Cut+Ada-Kahan'
-    #configs.append(kahan)
+    # configs.append(kahan)
 
     our_config = {
         'flow-vectors': 20,
@@ -123,13 +122,14 @@ def incremental_configs():
         'flow-fraction': False,
         'adaptive': True,
         'kahan-error': True,
-        'seed' : 1,
-        'name' : 'Ours'
+        'seed': 1,
+        'name': 'Ours'
     }
     for c in configs:
         print(c)
 
     return configs
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -138,14 +138,14 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     graph_files = glob.glob(graph_path + '*.graph')
-    #configs = enum_options()
+    # configs = enum_options()
     configs = incremental_configs()
 
-    jobs = list(itertools.product(graph_files, phi_values, configs)) # list is necessary for len(jobs)
+    jobs = list(itertools.product(graph_files, phi_values, configs))  # list is necessary for len(jobs)
     with mp.Pool(processes=args.threads) as pool:
         results = pool.starmap(edc_call, tqdm.tqdm(jobs, total=len(jobs)), chunksize=1)
 
     with open(args.output, 'w') as f:
         writer = csv.DictWriter(f, fieldnames=results[0].keys())
         writer.writeheader()
-        writer.writerows(results)   # TODO beware of failed runs
+        writer.writerows(results)  # TODO beware of failed runs
