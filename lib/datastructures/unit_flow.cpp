@@ -27,6 +27,9 @@ namespace UnitFlow {
 
         int level = 0;
 
+        int steps = 0;
+        int pushes = 0;
+
         while (level <= maxH) {
             if (q[level].empty()) {
                 level++;
@@ -39,6 +42,8 @@ namespace UnitFlow {
                 continue;
             }
             assert(excess(u) > 0 && "Vertex popped from queue should have excess flow.");
+
+            steps++;
 
             auto& e = getEdge(u, nextEdgeIdx[u]);
             assert(e.flow + reverse(e).flow == 0 && "Flow across edge and its reverse should cancel.");
@@ -53,6 +58,8 @@ namespace UnitFlow {
                 reverse(e).flow -= delta;
                 absorbed[u] -= delta;
                 absorbed[e.to] += delta;
+
+                pushes++;
 
                 if (sink[e.to] > 0) {
                     flow_routed += delta;
