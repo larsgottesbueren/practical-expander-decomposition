@@ -1,8 +1,8 @@
 # Expander Decomposition & Clustering (EDC)
 
-This is an implementation of [Expander decomposition and pruning: Faster,
-stronger, and simpler.](https://arxiv.org/pdf/1812.08958.pdf) by Thatchaphol
-Saranurak and Di Wang.
+This is an implementation of [Expander decomposition and pruning: Faster, stronger, and simpler.](https://arxiv.org/pdf/1812.08958.pdf) by Thatchaphol Saranurak and Di Wang.
+Originally developed by [Isaac Arvestad](https://github.com/isaacarvestad).
+This repository adds speedup techniques, such as sparse cut heuristics, a dynamic stopping criterion for cut-matching and partial flow routing. 
 
 ## Build
 
