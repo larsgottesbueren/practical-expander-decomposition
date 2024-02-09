@@ -71,7 +71,7 @@ namespace ExpanderDecomposition {
         /**
            Compute expander decomposition for subset of vertices 'xs'.
          */
-        void compute();
+        void compute(int depth = 0);
 
         /**
            Create a partition with the given vertices.

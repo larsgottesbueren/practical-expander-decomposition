@@ -51,7 +51,7 @@ namespace ExpanderDecomposition {
         compute();
     }
 
-    void Solver::compute() {
+    void Solver::compute(int depth) {
         VLOG(1) << "Attempting to find balanced cut with " << flowGraph->size() << " vertices.";
         if (flowGraph->size() == 0) {
             VLOG(1) << "Exiting early, partition was empty.";
@@ -76,7 +76,7 @@ namespace ExpanderDecomposition {
                 flowGraph->subgraph(comp.begin(), comp.end());
                 subdivisionFlowGraph->subgraph(subComp.begin(), subComp.end());
 
-                compute();
+                compute(depth + 1);
 
                 flowGraph->restoreSubgraph();
                 subdivisionFlowGraph->restoreSubgraph();
@@ -134,13 +134,13 @@ namespace ExpanderDecomposition {
 
                     flowGraph->subgraph(a.begin(), a.end());
                     subdivisionFlowGraph->subgraph(subA.begin(), subA.end());
-                    compute();
+                    compute(depth + 1);
                     flowGraph->restoreSubgraph();
                     subdivisionFlowGraph->restoreSubgraph();
 
                     flowGraph->subgraph(r.begin(), r.end());
                     subdivisionFlowGraph->subgraph(subR.begin(), subR.end());
-                    compute();
+                    compute(depth + 1);
                     flowGraph->restoreSubgraph();
                     subdivisionFlowGraph->restoreSubgraph();
                     time_balanced_cut += cm_dur;
@@ -167,7 +167,7 @@ namespace ExpanderDecomposition {
                     auto subR = subdivisionFlowGraph->subdivisionVertices(r.begin(), r.end());
                     flowGraph->subgraph(r.begin(), r.end());
                     subdivisionFlowGraph->subgraph(subR.begin(), subR.end());
-                    compute();
+                    compute(depth + 1);
                     flowGraph->restoreSubgraph();
                     subdivisionFlowGraph->restoreSubgraph();
                     break;
