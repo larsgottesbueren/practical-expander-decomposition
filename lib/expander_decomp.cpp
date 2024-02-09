@@ -119,6 +119,8 @@ namespace ExpanderDecomposition {
                 cm_dur = cm_timer.Stop();
             }
 
+            VLOG(1) << V(a.size()) << V(r.size());
+
             switch (cut_matching_result.type) {
                 case CutMatching::Result::Balanced: {
                     assert(!a.empty() && "Cut should be balanced but A was empty.");
