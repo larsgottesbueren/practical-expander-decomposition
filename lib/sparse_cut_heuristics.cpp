@@ -172,7 +172,7 @@ void LocalSearch::MoveNode(Vertex u) {
 }
 
 
-LocalSearch::Result LocalSearch::Compute2(std::vector<LocalSearch::Vertex>& seed_cluster) {
+LocalSearch::Result LocalSearch::Compute2(const std::vector<LocalSearch::Vertex>& seed_cluster) {
     // clean up old datastructures
     affinity_to_cluster.assign(affinity_to_cluster.size(), 0);
     in_cluster.assign(in_cluster.size(), false);
@@ -214,10 +214,10 @@ LocalSearch::Result LocalSearch::Compute2(std::vector<LocalSearch::Vertex>& seed
             break;
         }
 
-        double prev_conductance = Conductance(curr_cluster_cut, curr_cluster_vol);
+        const double prev_conductance = Conductance(curr_cluster_cut, curr_cluster_vol);
         MoveNode<false>(best_move_node); // changes in_cluster --> capture before
-        double current_conductance = Conductance(curr_cluster_cut, curr_cluster_vol);
-        double recalculated_gain = prev_conductance - current_conductance;
+        const double current_conductance = Conductance(curr_cluster_cut, curr_cluster_vol);
+        const double recalculated_gain = prev_conductance - current_conductance;
         assert(DoubleEquals(recalculated_gain, best_gain));
         ++total_moves;
 
@@ -300,7 +300,7 @@ void LocalSearch::InitializeDatastructures(const std::vector<LocalSearch::Vertex
     }
 }
 
-LocalSearch::Result LocalSearch::Compute(std::vector<LocalSearch::Vertex>& seed_cluster) {
+LocalSearch::Result LocalSearch::Compute(const std::vector<LocalSearch::Vertex>& seed_cluster) {
     InitializeDatastructures(seed_cluster);
 
     std::vector<Vertex> fruitless_moves;
@@ -314,7 +314,7 @@ LocalSearch::Result LocalSearch::Compute(std::vector<LocalSearch::Vertex>& seed_
             tabu_reinsertions.push(u);
             continue;
         }
-        double conductance_gain = ConductanceGain(u);
+        const double conductance_gain = ConductanceGain(u);
         if (conductance_gain < pq.topKey()) {
             // freshen up the PQ and try again
             pq.insertOrAdjustKey(u, conductance_gain);
@@ -323,7 +323,7 @@ LocalSearch::Result LocalSearch::Compute(std::vector<LocalSearch::Vertex>& seed_
 
         double old_conductance = Conductance(curr_cluster_cut, curr_cluster_vol);
         MoveNode<true>(u);
-        double new_conductance = Conductance(curr_cluster_cut, curr_cluster_vol);
+        const double new_conductance = Conductance(curr_cluster_cut, curr_cluster_vol);
 
         last_moved_step[u] = current_step++;
         while (!tabu_reinsertions.empty() && !IsMoveTabu(tabu_reinsertions.front())) {
@@ -341,7 +341,7 @@ LocalSearch::Result LocalSearch::Compute(std::vector<LocalSearch::Vertex>& seed_
     }
 
     // revert fruitless moves
-    for (Vertex u : fruitless_moves) {
+    for (const Vertex u : fruitless_moves) {
         MoveNode<false>(u);
     }
 
@@ -368,9 +368,9 @@ bool SparseCutHeuristics::Compute(UnitFlow::Graph& graph, double conductance_goa
     for (int r = 0; r < num_trials; ++r) {
         // TODO try different PPR parameters
 
-        int seed_vertex_index = seed_distr(prng);
-        Vertex seed_vertex = *(graph.cbegin() + seed_vertex_index);
-        auto nibble_cut = nibble.ComputeCut(seed_vertex);
+        const int seed_vertex_index = seed_distr(prng);
+        const Vertex seed_vertex = *(graph.cbegin() + seed_vertex_index);
+        const auto nibble_cut = nibble.ComputeCut(seed_vertex);
         VLOG(2) << "Nibble cut phi " << nibble_cut.conductance;
         if (nibble_cut.conductance < best_conductance &&
             std::min(nibble_cut.volume, total_volume - nibble_cut.volume) >= balance_goal) {
