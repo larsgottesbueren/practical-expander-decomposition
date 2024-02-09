@@ -93,17 +93,17 @@ def incremental_configs():
 
     config['use-cut-heuristics'] = True
     config['name'] = '+Cut'
-    # configs.append(copy.copy(config))
+    configs.append(copy.copy(config))
 
     config['adaptive'] = True
     config['flow-vectors'] = 20
     config['name'] = '+Cut+Ada'
-    # configs.append(copy.copy(config))
+    configs.append(copy.copy(config))
 
     krv = copy.copy(config)
     krv['krv-first'] = True
     krv['name'] = '+Cut+Ada+KRV'
-    # configs.append(krv)
+    configs.append(krv)
 
     frac = copy.copy(config)
     frac['flow-fraction'] = True
@@ -113,7 +113,7 @@ def incremental_configs():
     kahan = copy.copy(config)
     kahan['kahan-error'] = False
     kahan['name'] = '+Cut+Ada-Kahan'
-    # configs.append(kahan)
+    configs.append(kahan)
 
     our_config = {
         'flow-vectors': 20,
@@ -127,6 +127,8 @@ def incremental_configs():
     }
     for c in configs:
         print(c)
+
+    configs.append(our_config)
 
     return configs
 
