@@ -425,6 +425,8 @@ namespace SubsetGraph {
 
             for (auto it = begin(); it != end(); ++it)
                 visited[*it] = false;
+
+            checkGraphIntegrity();
         }
 
         /**
@@ -434,8 +436,10 @@ namespace SubsetGraph {
          */
         void restoreRemoves() {
             vertexBound.top().middle = vertexBound.top().end;
-            for (auto it = cbegin(); it != cend(); ++it)
+            for (auto it = cbegin(); it != cend(); ++it) {
                 edgeBounds[*it].top().middle = edgeBounds[*it].top().end;
+            }
+            checkGraphIntegrity();
         }
 
         /**
@@ -452,6 +456,22 @@ namespace SubsetGraph {
             }
             vertexBound.pop();
             assert(!vertexBound.empty() && "The top most vertex bound is required to represent entire graph.");
+            checkGraphIntegrity();
+        }
+
+        void checkGraphIntegrity() const {
+#ifndef NDEBUG
+            std::vector<int> in_degree(edgeBounds.size(), 0);
+            for (auto it = cbegin(); it != cend(); ++it) {
+                V u = *it;
+                for (auto e = cbeginEdge(u); e != cendEdge(u); ++e) {
+                    in_degree[e->to] += 1;
+                }
+            }
+            for (auto it = cbegin(); it != cend(); ++it) {
+                assert(in_degree[*it] == degree(*it));
+            }
+#endif
         }
 
         /**
