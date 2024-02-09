@@ -393,13 +393,13 @@ bool SparseCutHeuristics::Compute(UnitFlow::Graph& graph, double conductance_goa
     return best_conductance <= conductance_goal;
 }
 
-std::pair<std::vector<int>, std::vector<int>> SparseCutHeuristics::ExtractCutSides() {
+std::pair<std::vector<int>, std::vector<int>> SparseCutHeuristics::ExtractCutSides(UnitFlow::Graph& graph) {
     std::vector<int> a, r;
-    for (size_t x = 0; x < in_cluster.size(); ++x) {
-        if (in_cluster[x]) {
-            a.push_back(x);
+    for (Vertex u : graph) {
+        if (in_cluster[u]) {
+            a.push_back(u);
         } else {
-            r.push_back(x);
+            r.push_back(u);
         }
     }
     return std::make_pair(std::move(a), std::move(r));

@@ -100,9 +100,10 @@ namespace ExpanderDecomposition {
             Duration cm_dur(0.0);
             std::vector<int> a, r;
             bool restore_removes = true;
+
             if (heuristic_sparse_cut_found) {
                 cut_matching_result.type = CutMatching::Result::Balanced;
-                std::tie(a, r) = sparse_cut_heuristics.ExtractCutSides();
+                std::tie(a, r) = sparse_cut_heuristics.ExtractCutSides(*flowGraph);
                 restore_removes = false;
             } else {
                 Timer cm_timer;

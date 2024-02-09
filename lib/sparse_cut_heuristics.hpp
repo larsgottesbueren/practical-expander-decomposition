@@ -164,7 +164,7 @@ public:
 
     bool Compute(UnitFlow::Graph& graph, double conductance_goal, double balance_goal);
 
-    std::pair<std::vector<int>, std::vector<int>> ExtractCutSides();
+    std::pair<std::vector<int>, std::vector<int>> ExtractCutSides(UnitFlow::Graph& graph);
 
 private:
     int num_trials = 10;
