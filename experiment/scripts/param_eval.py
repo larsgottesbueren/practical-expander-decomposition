@@ -91,6 +91,12 @@ def incremental_configs():
     config = copy.copy(base_config)
     configs = [base_config]
 
+    ada = copy.copy(config)
+    ada['name'] = '+Ada'
+    ada['adaptive'] = True
+    ada['flow-vectors'] = 20
+    configs.append(ada)
+
     config['use-cut-heuristics'] = True
     config['name'] = '+Cut'
     configs.append(copy.copy(config))
@@ -125,9 +131,6 @@ def incremental_configs():
         'seed': 1,
         'name': 'Ours'
     }
-    for c in configs:
-        print(c)
-
     configs.append(our_config)
 
     return configs
