@@ -66,6 +66,8 @@ namespace CutMatching {
          * than the full multi-commodity flow matrix.
          */
         bool tune_num_flow_vectors = false;
+
+        bool break_at_empty_terminals = true;
     };
 
     /**

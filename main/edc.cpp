@@ -45,6 +45,25 @@ std::unique_ptr<Undirected::Graph> readGraph(const std::string& path) {
     return std::make_unique<Undirected::Graph>(n, es);
 }
 
+CutMatching::Parameters ARVConfig() {
+    CutMatching::Parameters params = {
+        .tConst = 22,
+        .tFactor = 5.0,
+        .minIterations = 0,
+        .minBalance = 0.45,
+        .samplePotential = false,
+        .balancedCutStrategy = true,
+        .use_cut_heuristics = false,
+        .use_potential_based_dynamic_stopping_criterion = false,
+        .stop_flow_at_fraction = false,
+        .krv_step_first = false,
+        .num_flow_vectors = 1,
+        .tune_num_flow_vectors = false,
+        .break_at_empty_terminals = false,
+    };
+    return params;
+}
+
 int main(int argc, char* argv[]) {
     CutMatching::Parameters params = {
         .tConst = 22,
@@ -87,9 +106,15 @@ int main(int argc, char* argv[]) {
     cp.add_bool("sample-potential", params.samplePotential, "Sample potentials [for debugging]");
     cp.add_bool("tune-flow-vectors", params.tune_num_flow_vectors, "Tune the number of flow vectors needed for good convergence speed [for debugging]");
 
+    bool arv_base_config = false;
+    cp.add_bool("base-config", arv_base_config, "Configure parameters to behave like the original implementation");
 
     if (!cp.process(argc, argv)) {
         std::exit(-1);
+    }
+
+    if (arv_base_config) {
+        params = ARVConfig();
     }
 
     auto g = readGraph(graph_file);
