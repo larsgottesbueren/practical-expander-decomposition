@@ -131,6 +131,7 @@ def incremental_configs():
         'adaptive': True,
         'kahan-error': True,
         'seed': 1,
+        'base-config' : False,
         'name': 'Ours'
     }
     configs.append(our_config)
