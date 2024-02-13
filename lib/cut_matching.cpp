@@ -365,7 +365,7 @@ namespace CutMatching {
 
             VLOG(3) << "Number of sources: " << axLeft.size() << " sinks: " << axRight.size();
 
-            if (axLeft.empty() || axRight.empty()) {
+            if (params.break_at_empty_terminals && (axLeft.empty() || axRight.empty())) {
                 break;
             }
 
