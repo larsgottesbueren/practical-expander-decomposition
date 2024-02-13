@@ -86,9 +86,11 @@ def incremental_configs():
         'adaptive': False,
         'kahan-error': True,
         'seed': 1,
-        'name': 'Arv'
+        'name': 'Arv',
+        'base-config' : False   # yes...
     }
     config = copy.copy(base_config)
+    base_config['base-config'] = True
     configs = [base_config]
 
     ada = copy.copy(config)
