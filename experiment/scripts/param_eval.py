@@ -141,7 +141,7 @@ def incremental_configs():
 def add_more_seeds(configs):
     res = []
     for c in configs:
-        for seed in range(1, 6):
+        for seed in range(1, 11):
             c['seed'] = seed
             res.append(copy.copy(c))
     return res
