@@ -135,6 +135,14 @@ def incremental_configs():
 
     return configs
 
+def add_more_seeds(configs):
+    res = []
+    for c in configs:
+        for seed in range(1, 6):
+            c['seed'] = seed
+            res.append(copy.copy(c))
+    return res
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -145,6 +153,8 @@ if __name__ == '__main__':
     graph_files = glob.glob(graph_path + '*.graph')
     # configs = enum_options()
     configs = incremental_configs()
+
+    configs = add_more_seeds(configs)
 
     jobs = list(itertools.product(graph_files, phi_values, configs))  # list is necessary for len(jobs)
     with mp.Pool(processes=args.threads) as pool:
