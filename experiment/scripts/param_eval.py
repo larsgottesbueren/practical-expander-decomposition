@@ -134,7 +134,7 @@ def incremental_configs():
         'base-config' : False,
         'name': 'Ours'
     }
-    configs.append(our_config)
+    #configs.append(our_config)
 
     return configs
 
