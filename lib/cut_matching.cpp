@@ -392,11 +392,11 @@ namespace CutMatching {
             }
 
             VLOG(3) << "Computing flow with |S| = " << axLeft.size() << " |T| = " << axRight.size() << " and max height " << h << ".";
-            const auto hasExcess = subdivGraph->compute(h);
+            const auto [reached_flow_fraction, has_excess_flow] = subdivGraph->compute(h);
 
             Timings::GlobalTimings().AddTiming(Timing::FlowMatch, timer.Restart());
 
-            if (hasExcess.empty()) {
+            if (!has_excess_flow) {
                 VLOG(3) << "\tAll flow routed.";
             } else {
                 const auto [cutLeft, cutRight] = subdivGraph->levelCut(h);

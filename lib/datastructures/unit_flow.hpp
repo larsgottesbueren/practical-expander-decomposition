@@ -101,11 +101,10 @@ namespace UnitFlow {
         Flow excess(Vertex u) const { return std::max((Flow) 0, absorbed[u] - sink[u]); }
 
         /**
-           Compute max flow with push relabel and max height h. Return those vertices
-           with excess flow left over. If an empty vector is returned then all flow
-           was possible to route.
+           Compute max flow with push relabel and max height h. Return whether the fractional flow bound was reached (only applies if that setting
+           is enabled) and whether there are nodes with excess flow.
          */
-        std::vector<Vertex> compute(const int maxHeight);
+        std::pair<bool, bool> compute(const int maxHeight);
 
         /**
            Compute a level cut. See Saranurak and Wang A.1.

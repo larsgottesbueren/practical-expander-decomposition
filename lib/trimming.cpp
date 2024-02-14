@@ -26,9 +26,8 @@ namespace Trimming {
         const int h = ceil(40 * std::log(2 * m + 1) / phi);
 
         while (true) {
-            const auto hasExcess = graph->compute(h);
-            VLOG(3) << "Found excess of size: " << hasExcess.size();
-            if (hasExcess.empty())
+            const bool has_excess_flow = graph->compute(h).second;
+            if (!has_excess_flow)
                 break;
 
             const auto [levelCut, _] = graph->levelCut(h);

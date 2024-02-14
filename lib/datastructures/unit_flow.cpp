@@ -94,7 +94,7 @@ namespace UnitFlow {
         return false;
     }
 
-    std::vector<Vertex> Graph::compute(const int maxHeight) {
+    std::pair<bool, bool> Graph::compute(const int maxHeight) {
         bool reached_flow_fraction = SinglePushLowestLabel(maxHeight);
 
         for (auto u : *this) {
@@ -105,13 +105,14 @@ namespace UnitFlow {
             }
         }
 
-        std::vector<Vertex> hasExcess;
+        bool has_excess = false;
         for (auto u : *this) {
             if (excess(u) > 0) {
-                hasExcess.push_back(u);
+                has_excess = true;
+                break;
             }
         }
-        return hasExcess;
+        return std::make_pair(reached_flow_fraction, has_excess);
     }
 
     std::pair<std::vector<Vertex>, std::vector<Vertex>> Graph::levelCut(const int h) {
