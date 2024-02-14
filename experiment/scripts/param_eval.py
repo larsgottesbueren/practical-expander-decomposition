@@ -108,10 +108,10 @@ def incremental_configs():
     config['name'] = '+Cut+Ada'
     configs.append(copy.copy(config))
 
-    krv = copy.copy(config)
-    krv['krv-first'] = True
-    krv['name'] = '+Cut+Ada+KRV'
-    configs.append(krv)
+    #krv = copy.copy(config)
+    #krv['krv-first'] = True
+    #krv['name'] = '+Cut+Ada+KRV'
+    #configs.append(krv)
 
     frac = copy.copy(config)
     frac['flow-fraction'] = True
