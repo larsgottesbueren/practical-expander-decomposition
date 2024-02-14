@@ -15,7 +15,7 @@ graph_path = "../graphs/real/"
 
 phi_values = [
     0.001,
-    0.01
+    # 0.01
 ]
 
 options = {
