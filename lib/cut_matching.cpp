@@ -445,6 +445,7 @@ namespace CutMatching {
 
         if (graph->size() != 0 && graph->removedSize() != 0 &&
             subdivGraph->globalVolume(subdivGraph->cbeginRemoved(), subdivGraph->cendRemoved()) > lowerVolumeBalance)
+            // TODO with fractional flow routing, we also have to check conductance of the cut here!
             // We have: graph.volume(R) > m / (10 * T)
             result.type = Result::Balanced;
         else if (graph->removedSize() == 0)
