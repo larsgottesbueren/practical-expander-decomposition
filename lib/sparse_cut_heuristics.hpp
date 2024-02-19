@@ -172,6 +172,4 @@ private:
     LocalSearch local_search;
 
     std::vector<bool> in_cluster;
-    // TODO add MQI / Trim
-    // TODO add kaminpar
 };
