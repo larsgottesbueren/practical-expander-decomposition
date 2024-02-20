@@ -126,9 +126,6 @@ int main(int argc, char* argv[]) {
     ExpanderDecomposition::Solver solver(std::move(g), phi, randomGen.get(), params);
     auto total_time = timer.Stop();
 
-    auto partitions = solver.getPartition();
-    auto conductances = solver.getConductance();
-
     Timings::GlobalTimings().Print();
     std::cout << "Time Total " << total_time.count() << std::endl;
     std::cout << "Time BalancedCuts " << solver.time_balanced_cut.count() << std::endl;
@@ -140,9 +137,11 @@ int main(int argc, char* argv[]) {
         std::cout << "Num flow vectors" << solver.num_flow_vectors_needed << std::endl;
     }
 
-    std::cout << solver.getEdgesCut() << " " << partitions.size() << std::endl;
+    std::cout << solver.getEdgesCut() << " " << solver.numPartitions << std::endl;
 
 #if false
+    auto partitions = solver.getPartition();
+    auto conductances = solver.getConductance();
     for (int i = 0; i < int(partitions.size()); ++i) {
         std::cout << partitions[i].size() << " " << conductances[i];
         for (auto p : partitions[i])
