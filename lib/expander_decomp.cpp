@@ -216,17 +216,11 @@ namespace ExpanderDecomposition {
 
     int Solver::getEdgesCut() const {
         int count = 0;
-        auto partitions = getPartition();
-        for (const auto& p : partitions) {
-            assert(!p.empty() && "Partitions should not be empty.");
-            flowGraph->subgraph(p.begin(), p.end());
-
-            for (auto u : *flowGraph)
-                count += flowGraph->globalDegree(u) - flowGraph->degree(u);
-
-            flowGraph->restoreSubgraph();
+        for (auto u : *flowGraph) {
+            for (auto e = flowGraph->cbeginEdge(u); e != flowGraph->cendEdge(u); ++e) {
+                count += static_cast<int>(partitionOf[u] != partitionOf[e->to]);
+            }
         }
-
         return count / 2;
     }
 
