@@ -41,33 +41,33 @@ for phi in df.phi.unique():
   if phi == 0.01:
     continue
 
-  for algo in df.name.unique():
-    if algo != "Arv":
-      continue
-    fig, ax = plt.subplots()
-    print(algo)
-    runtime_shares.stacked_bars(ax=ax, df=df[(df.seed == 1) & (df.name == algo) & (df.phi == phi)].copy(), 
-      fields = ['FlowMatch', 'MatchDFS', 'ProposeCut', 'CutHeuristics', 'Components', 'Miscellaneous', 'FlowTrim'], 
-      sort_field = 'FlowMatch', tfield="Total")
-    fig.savefig('runtime_breakdown_' + algo + '.pdf', pad_inches=0.01, bbox_inches='tight')
+  if False:
+    for algo in df.name.unique():
+      if algo != "Arv":
+        continue
+      fig, ax = plt.subplots()
+      print(algo)
+      runtime_shares.stacked_bars(ax=ax, df=df[(df.seed == 1) & (df.name == algo) & (df.phi == phi)].copy(), 
+        fields = ['FlowMatch', 'MatchDFS', 'ProposeCut', 'CutHeuristics', 'Components', 'Miscellaneous', 'FlowTrim'], 
+        sort_field = 'FlowMatch', tfield="Total")
+      fig.savefig('runtime_breakdown_' + algo + '.pdf', pad_inches=0.01, bbox_inches='tight')
 
-  exit()
-  print("phi =", phi)
-  mdf = aggregate_runtimes(df[df.phi == phi])
-  #mdf = df[df.seed == 1]
+
+  #mdf = aggregate_runtimes(df[df.phi == phi])
+  mdf = df[df.seed == 1]
   rdf = runtime.relative_times(mdf)
-  #print(rdf[rdf['relative_time'] > 0.95][['graph', 'Total', 'base_time', 'CutHeuristics', 'FlowMatch', 'name', 'partitions', 'cut', 'base_cut']])
+  print(rdf[rdf['relative_time'] < 1.05][['graph', 'Total', 'base_time', 'CutHeuristics', 'FlowMatch', 'name', 'partitions', 'cut', 'base_cut']])
   
   #rdf = rdf[rdf['base_time'] <= 100]
   
   algos = list(rdf.name.unique())
   colors = commons.construct_new_color_mapping(algos)
+  if False:
+    fig, ax = plt.subplots()
+    runtime.xy_plot(ax=ax, rdf=rdf, algos=algos, colors=colors)
+    fig.savefig('xy.pdf', pad_inches=0.01, bbox_inches='tight')
 
-  fig, ax = plt.subplots()
-  runtime.xy_plot(ax=ax, rdf=rdf, algos=algos, colors=colors)
-  fig.savefig('xy.pdf', pad_inches=0.01, bbox_inches='tight')
-
-  
-  fig, ax = plt.subplots()
-  runtime.rel_time_plot(ax=ax, rdf=rdf, algos=algos, colors=colors)
-  fig.savefig('speedup.pdf', pad_inches=0.01, bbox_inches='tight')
+  if False:
+    fig, ax = plt.subplots()
+    runtime.rel_time_plot(ax=ax, rdf=rdf, algos=algos, colors=colors)
+    fig.savefig('speedup.pdf', pad_inches=0.01, bbox_inches='tight')

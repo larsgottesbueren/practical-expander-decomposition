@@ -19,7 +19,7 @@ def relative_times(df, field = 'Total', baseline='Arv'):
     return baseline_df.loc[baseline_key]['cut']
   
   remaining_df['base_time'] = remaining_df.apply(base_time, axis='columns')
-  #remaining_df['base_cut'] = remaining_df.apply(base_cut, axis='columns')
+  remaining_df['base_cut'] = remaining_df.apply(base_cut, axis='columns')
   #remaining_df['relative_time'] = remaining_df[field] / remaining_df['base_time']
   remaining_df['relative_time'] = remaining_df['base_time'] / remaining_df[field]
   return remaining_df

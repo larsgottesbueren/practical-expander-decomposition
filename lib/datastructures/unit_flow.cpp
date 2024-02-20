@@ -121,7 +121,7 @@ namespace UnitFlow {
             levels[height[u]].push_back(u);
 
         int volume = 0;
-        const int total_volume = this->volume(); // TODO volume() or globalVolume()?
+        const int total_volume = this->volume(); // TODO volume() or globalVolume()? Note: globalVolume() only looks at nodes in the active subgraph
         // int bestZ = INT_MAX;
         double bestConductance = 1.0;
         int bestLevel = h;
