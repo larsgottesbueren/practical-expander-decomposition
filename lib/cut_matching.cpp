@@ -257,19 +257,19 @@ namespace CutMatching {
 
     void Solver::RemoveCutSide(const std::vector<UnitFlow::Vertex>& cutLeft, const std::vector<UnitFlow::Vertex>& cutRight,
                                std::vector<UnitFlow::Vertex>& axLeft, std::vector<UnitFlow::Vertex>& axRight) {
-        if (cutLeft.empty() && cutRight.empty()) {
+        if (cutLeft.empty() || cutRight.empty()) {
             return;
         }
         
-        auto* smaller = subdivGraph->globalVolume(cutLeft.begin(), cutLeft.end()) < subdivGraph->globalVolume(cutRight.begin(), cutRight.end()) ? &cutLeft : &cutRight;
-        std::unordered_set<int> removed(smaller->begin(), smaller->end());
+        auto* smaller_side = subdivGraph->globalVolume(cutLeft.begin(), cutLeft.end()) < subdivGraph->globalVolume(cutRight.begin(), cutRight.end()) ? &cutLeft : &cutRight;
+        std::unordered_set<int> removed(smaller_side->begin(), smaller_side->end());
         VLOG(3) << "\tRemoving " << removed.size() << " vertices.";
 
         auto isRemoved = [&removed](int u) { return removed.find(u) != removed.end(); };
         axLeft.erase(std::remove_if(axLeft.begin(), axLeft.end(), isRemoved), axLeft.end());
         axRight.erase(std::remove_if(axRight.begin(), axRight.end(), isRemoved), axRight.end());
 
-        for (auto u : removed) {
+        for (auto u : *smaller_side) {
             if ((*subdivisionIdx)[u] == -1) {
                 graph->remove(u);
             }
