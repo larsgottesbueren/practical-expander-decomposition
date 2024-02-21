@@ -8,17 +8,18 @@
 
 #include "datastructures/sums.hpp"
 
-template<typename F>
-void ForEachSubdivVertex(const UnitFlow::Graph& subdivGraph, const std::vector<int>& subdivisionIdx, F&& f) {
-    for (auto it = subdivGraph.cbegin(); it != subdivGraph.cend(); ++it) {
-        const int idx = subdivisionIdx[*it];
-        if (idx >= 0) {
-            f(idx, *it);
+namespace CutMatching {
+
+    template<typename F>
+    void ForEachSubdivVertex(const UnitFlow::Graph& subdivGraph, const std::vector<int>& subdivisionIdx, F&& f) {
+        for (auto it = subdivGraph.cbegin(); it != subdivGraph.cend(); ++it) {
+            const int idx = subdivisionIdx[*it];
+            if (idx >= 0) {
+                f(idx, *it);
+            }
         }
     }
-}
 
-namespace CutMatching {
     void Solver::Initialize(Parameters params) {
         // Set edge capacities in subdivision flow graph.
         const UnitFlow::Flow capacity = std::ceil(1.0 / phi / T); // TODO SW'19 says its log^2(m) not T (no hidden constants) page 29 top
