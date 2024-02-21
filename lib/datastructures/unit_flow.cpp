@@ -124,7 +124,7 @@ namespace UnitFlow {
         const int total_volume = this->volume(); // TODO volume() or globalVolume()? Note: globalVolume() only looks at nodes in the active subgraph
         // int bestZ = INT_MAX;
         double bestConductance = 1.0;
-        int bestLevel = h;
+        int bestLevel = h + 1;
         long cut = 0;
         for (int level = h; level > 0; --level) {
             for (auto u : levels[level]) {
@@ -142,13 +142,18 @@ namespace UnitFlow {
         VLOG(3) << V(bestConductance);
 
         std::vector<int> left, right;
-        for (int level = h; level >= bestLevel; --level)
-            for (auto u : levels[level])
-                left.push_back(u);
-        for (int level = 0; level < bestLevel; ++level)
-            for (auto u : levels[level])
-                right.push_back(u);
-
+        if (bestLevel != h + 1) {
+            for (int level = h; level >= bestLevel; --level) {
+                for (auto u : levels[level]) {
+                    left.push_back(u);
+                }
+            }
+            for (int level = 0; level < bestLevel; ++level) {
+                for (auto u : levels[level]) {
+                    right.push_back(u);
+                }
+            }
+        }
         return std::make_pair(left, right);
     }
 
