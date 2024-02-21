@@ -113,6 +113,11 @@ int main(int argc, char* argv[]) {
         std::exit(-1);
     }
 
+    if (params.tune_num_flow_vectors && !params.samplePotential) {
+        std::cerr << "Set --tune-flow-vectors but not --sample-potential. Sampling potentials is a prerequisite for tuning the number of flow vectors" << std::endl;
+        std::exit(-1);
+    }
+
     if (arv_base_config) {
         params = ARVConfig();
     }
