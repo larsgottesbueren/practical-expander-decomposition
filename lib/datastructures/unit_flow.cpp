@@ -134,8 +134,9 @@ namespace UnitFlow {
                 }
             }
             double conductance = double(cut) / double(std::min(volume, total_volume - volume));
-            if (conductance < bestConductance)
+            if (cut > 0 && conductance < bestConductance) {
                 bestConductance = conductance, bestLevel = level;
+            }
         }
 
         VLOG(3) << V(bestConductance);
