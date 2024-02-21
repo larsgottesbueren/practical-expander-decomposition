@@ -257,17 +257,12 @@ namespace CutMatching {
 
     void Solver::RemoveCutSide(const std::vector<UnitFlow::Vertex>& cutLeft, const std::vector<UnitFlow::Vertex>& cutRight,
                                std::vector<UnitFlow::Vertex>& axLeft, std::vector<UnitFlow::Vertex>& axRight) {
-        std::unordered_set<int> removed;
-        if (subdivGraph->globalVolume(cutLeft.begin(), cutLeft.end()) < subdivGraph->globalVolume(cutRight.begin(), cutRight.end())) {
-            for (auto u : cutLeft) {
-                removed.insert(u);
-            }
-        } else {
-            for (auto u : cutRight) {
-                removed.insert(u);
-            }
+        if (cutLeft.empty() && cutRight.empty()) {
+            return;
         }
-
+        
+        auto* smaller = subdivGraph->globalVolume(cutLeft.begin(), cutLeft.end()) < subdivGraph->globalVolume(cutRight.begin(), cutRight.end()) ? &cutLeft : &cutRight;
+        std::unordered_set<int> removed(smaller->begin(), smaller->end());
         VLOG(3) << "\tRemoving " << removed.size() << " vertices.";
 
         auto isRemoved = [&removed](int u) { return removed.find(u) != removed.end(); };
