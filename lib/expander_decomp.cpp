@@ -52,12 +52,11 @@ namespace ExpanderDecomposition {
     }
 
     void Solver::compute(int depth) {
-        VLOG(1) << "Attempting to find balanced cut with " << flowGraph->size() << " vertices.";
         if (flowGraph->size() == 0) {
-            VLOG(1) << "Exiting early, partition was empty.";
+            VLOG(2) << "Exiting early, partition was empty.";
             return;
         } else if (flowGraph->size() == 1) {
-            VLOG(1) << "Creating single vertex partition.";
+            VLOG(2) << "Creating single vertex partition.";
             finalizePartition(flowGraph->begin(), flowGraph->end(), 1);
             return;
         }
@@ -68,7 +67,7 @@ namespace ExpanderDecomposition {
         Timings::GlobalTimings().AddTiming(Timing::ConnectedComponents, timer.Stop());
 
         if (components.size() > 1) {
-            VLOG(1) << "Found " << components.size() << " connected components.";
+            VLOG(2) << "Found " << components.size() << " connected components.";
 
             for (auto& comp : components) {
                 auto subComp = subdivisionFlowGraph->subdivisionVertices(comp.begin(), comp.end());
@@ -119,8 +118,6 @@ namespace ExpanderDecomposition {
                 std::copy(flowGraph->cbeginRemoved(), flowGraph->cendRemoved(), std::back_inserter(r));
                 cm_dur = cm_timer.Stop();
             }
-
-            VLOG(1) << V(a.size()) << V(r.size());
 
             switch (cut_matching_result.type) {
                 case CutMatching::Result::Balanced: {

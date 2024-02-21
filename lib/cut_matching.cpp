@@ -494,7 +494,7 @@ namespace CutMatching {
             if (result.iterationsUntilValidExpansion2 != std::numeric_limits<int>::max() &&
                 result.iterationsUntilValidExpansion <= result.iterationsUntilValidExpansion2) {
                 result.num_flow_vectors_needed = params.num_flow_vectors;
-                VLOG(2) << V(params.num_flow_vectors) << " were needed to converge similarly";
+                VLOG(1) << V(params.num_flow_vectors) << " were needed to converge similarly";
                 return result;
             }
 
@@ -503,12 +503,11 @@ namespace CutMatching {
             subdivGraph->restoreRemoves();
 
             if (params.num_flow_vectors >= T) {
-                std::cout << "Increase T" << std::endl;
                 T++;
                 T_increases++;
 
-                if (T_increases > 50) {
-                    std::cout << "50 increases, still nothing." << std::endl;
+                if (T_increases > 300) {
+                    std::cout << "300 T increases, still nothing." << std::endl;
                     std::exit(0);
                 }
             }
