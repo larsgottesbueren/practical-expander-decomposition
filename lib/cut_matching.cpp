@@ -473,6 +473,7 @@ namespace CutMatching {
 
     Result Solver::compute(Parameters params) {
         if (!params.tune_num_flow_vectors) {
+            // The default case!
             return computeInternal(params);
         }
 
