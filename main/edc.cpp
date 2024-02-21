@@ -114,7 +114,8 @@ int main(int argc, char* argv[]) {
     }
 
     if (params.tune_num_flow_vectors && !params.samplePotential) {
-        std::cerr << "Set --tune-flow-vectors but not --sample-potential. Sampling potentials is a prerequisite for tuning the number of flow vectors" << std::endl;
+        std::cerr << "Set --tune-flow-vectors but not --sample-potential. Sampling potentials is a prerequisite for tuning the number of flow vectors"
+                  << std::endl;
         std::exit(-1);
     }
 

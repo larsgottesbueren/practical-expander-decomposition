@@ -13,7 +13,7 @@ T square(const T t) {
 
 template<typename T>
 int signum(T t) {
-    return (T(0) < t) - (t < T(0)); 
+    return (T(0) < t) - (t < T(0));
 }
 
 

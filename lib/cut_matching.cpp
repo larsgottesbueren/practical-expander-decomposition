@@ -193,9 +193,7 @@ namespace CutMatching {
 
         // Compute potentials
         long double totalPotential = 0.0, leftPotential = 0.0;
-        ForEachSubdivVertex(*subdivGraph, *subdivisionIdx, [&](int idx, int) {
-            totalPotential += square(flow[idx] - avgFlow);
-        });
+        ForEachSubdivVertex(*subdivGraph, *subdivisionIdx, [&](int idx, int) { totalPotential += square(flow[idx] - avgFlow); });
         for (auto u : axLeft) {
             const int idx = (*subdivisionIdx)[u];
             assert(idx >= 0);
@@ -261,8 +259,9 @@ namespace CutMatching {
         if (cutLeft.empty() || cutRight.empty()) {
             return;
         }
-        
-        auto* smaller_side = subdivGraph->globalVolume(cutLeft.begin(), cutLeft.end()) < subdivGraph->globalVolume(cutRight.begin(), cutRight.end()) ? &cutLeft : &cutRight;
+
+        auto* smaller_side =
+                subdivGraph->globalVolume(cutLeft.begin(), cutLeft.end()) < subdivGraph->globalVolume(cutRight.begin(), cutRight.end()) ? &cutLeft : &cutRight;
         std::unordered_set<int> removed(smaller_side->begin(), smaller_side->end());
         VLOG(3) << "\tRemoving " << removed.size() << " vertices.";
 
