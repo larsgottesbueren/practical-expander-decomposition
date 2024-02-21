@@ -125,15 +125,15 @@ namespace UnitFlow {
         // int bestZ = INT_MAX;
         double bestConductance = 1.0;
         int bestLevel = h;
+        long cut = 0;
         for (int level = h; level > 0; --level) {
-            int z = 0;
             for (auto u : levels[level]) {
                 volume += degree(u); // TODO degree() or globalDegree()?
-                for (auto e = beginEdge(u); e != endEdge(u); ++e)
-                    if (height[u] == height[e->to] + 1)
-                        z++; // TODO this is not actually the edge cut in the graph. there can be saturated edges that are steep
+                for (auto e = beginEdge(u); e != endEdge(u); ++e) {
+                    cut += signum(level - height[e->to]);
+                }
             }
-            double conductance = double(z) / double(std::min(volume, total_volume - volume));
+            double conductance = double(cut) / double(std::min(volume, total_volume - volume));
             if (conductance < bestConductance)
                 bestConductance = conductance, bestLevel = level;
         }

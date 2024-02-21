@@ -11,6 +11,11 @@ T square(const T t) {
     return t * t;
 }
 
+template<typename T>
+int signum(T t) {
+    return (T(0) < t) - (t < T(0)); 
+}
+
 
 class Logger {
 public:
