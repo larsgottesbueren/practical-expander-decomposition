@@ -31,16 +31,7 @@ def aggregate_runtimes(df, field = 'Total', seed_aggregator = 'median'):
   df = df.groupby(runtime.keys)[field].agg(aggregate_func).reset_index()
   return df
 
-
-
 df = pd.read_csv('results.parallel.csv')
-df = df[df.name != 'Arv']
-df2 = pd.read_csv('results.arv.parallel.csv')
-df2['CutHeuristics'] = 0
-df = pd.concat([df, df2])
-
-
-#df = pd.read_csv('results.parallel.csv')
 
 for phi in df.phi.unique():
   print("phi=", phi)

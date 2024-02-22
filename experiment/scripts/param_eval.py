@@ -85,6 +85,7 @@ def incremental_configs():
         'flow-fraction': False,
         'adaptive': False,
         'kahan-error': True,
+        'flow-vectors' : 1,
         'seed': 1,
         'name': 'Arv',
         'base-config' : False   # yes...
