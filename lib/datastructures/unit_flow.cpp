@@ -121,14 +121,13 @@ namespace UnitFlow {
             levels[height[u]].push_back(u);
 
         int volume = 0;
-        const int total_volume = this->volume(); // TODO volume() or globalVolume()? Note: globalVolume() only looks at nodes in the active subgraph
-        // int bestZ = INT_MAX;
+        const int total_volume = this->globalVolume(); // TODO volume() or globalVolume()? Note: globalVolume() only looks at nodes in the active subgraph
         double bestConductance = 1.0;
         int bestLevel = h + 1;
-        long cut = 0;
+        int cut = 0;
         for (int level = h; level > 0; --level) {
             for (auto u : levels[level]) {
-                volume += degree(u); // TODO degree() or globalDegree()?
+                volume += globalDegree(u); // TODO degree() or globalDegree()?
                 for (auto e = beginEdge(u); e != endEdge(u); ++e) {
                     cut += signum(level - height[e->to]);
                 }
@@ -139,7 +138,7 @@ namespace UnitFlow {
             }
         }
 
-        VLOG(3) << V(bestConductance);
+        VLOG(4) << V(bestConductance);
 
         std::vector<int> left, right;
         if (bestLevel != h + 1) {

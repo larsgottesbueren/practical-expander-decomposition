@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
         .use_potential_based_dynamic_stopping_criterion = false,
         .stop_flow_at_fraction = false,
         .krv_step_first = false,
-        .num_flow_vectors = 20,
+        .num_flow_vectors = 1,
         .tune_num_flow_vectors = false,
     };
     double phi = 0.001;

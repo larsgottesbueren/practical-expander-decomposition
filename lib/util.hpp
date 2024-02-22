@@ -16,7 +16,6 @@ int signum(T t) {
     return (T(0) < t) - (t < T(0));
 }
 
-
 class Logger {
 public:
     explicit Logger(int log_level, const bool newline = true) : _log_level(log_level), _newline(newline), _oss() {}
@@ -35,7 +34,6 @@ public:
         }
         return *this;
     }
-
 
     Logger& operator<<(decltype(std::left)& output) {
         if (_log_level <= LOG_LEVEL) {

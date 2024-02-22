@@ -310,7 +310,6 @@ namespace CutMatching {
         Initialize(params);
 
         if (numSplitNodes <= 1) {
-            VLOG(3) << "Cut matching exited early with " << numSplitNodes << " subdivision vertices.";
             return Result{};
         }
 
@@ -331,7 +330,7 @@ namespace CutMatching {
         const int iterationsToRun = std::max(params.minIterations, T);
         for (; iterations < iterationsToRun && subdivGraph->globalVolume(subdivGraph->cbeginRemoved(), subdivGraph->cendRemoved()) <= targetVolumeBalance;
              ++iterations) {
-            VLOG(2) << "Iteration " << iterations << " out of " << iterationsToRun << ".";
+            VLOG(3) << "Iteration " << iterations << " out of " << iterationsToRun << ".";
 
             if (params.samplePotential) {
                 double p = samplePotential();
@@ -357,8 +356,6 @@ namespace CutMatching {
             timer.Start();
             auto [axLeft, axRight] = proposeCut(flow_vectors[flow_vector_id]);
             Timings::GlobalTimings().AddTiming(Timing::ProposeCut, timer.Restart());
-
-            VLOG(3) << "Number of sources: " << axLeft.size() << " sinks: " << axRight.size();
 
             if (params.break_at_empty_terminals && (axLeft.empty() || axRight.empty())) {
                 break;
@@ -386,14 +383,11 @@ namespace CutMatching {
                 }();
             }
 
-            VLOG(3) << "Computing flow with |S| = " << axLeft.size() << " |T| = " << axRight.size() << " and max height " << h << ".";
             const auto [reached_flow_fraction, has_excess_flow] = subdivGraph->compute(h);
 
             Timings::GlobalTimings().AddTiming(Timing::FlowMatch, timer.Restart());
 
-            if (!has_excess_flow) {
-                VLOG(3) << "\tAll flow routed.";
-            } else {
+            if (has_excess_flow) {
                 const auto [cutLeft, cutRight] = subdivGraph->levelCut(h);
                 VLOG(3) << "\tHas level cut with (" << cutLeft.size() << ", " << cutRight.size() << ") vertices.";
                 RemoveCutSide(cutLeft, cutRight, axLeft, axRight);
@@ -401,7 +395,6 @@ namespace CutMatching {
 
             Timings::GlobalTimings().AddTiming(Timing::Misc, timer.Restart());
 
-            VLOG(3) << "Computing matching with |S| = " << axLeft.size() << " |T| = " << axRight.size() << ".";
             auto matching = subdivGraph->matching(axLeft);
             for (auto& p : matching) {
                 int u = (*subdivisionIdx)[p.first];
@@ -425,12 +418,7 @@ namespace CutMatching {
             }
 
             Timings::GlobalTimings().AddTiming(Timing::Match, timer.Stop());
-
-            VLOG(3) << "Found matching of size " << matching.size() << ".";
         }
-
-        VLOG(2) << "Iterations until potential reached convergence limit " << V(result.iterationsUntilValidExpansion2)
-                << V(result.iterationsUntilValidExpansion) << V(iterations);
 
         result.iterations = iterations;
         result.congestion = 1;
@@ -452,17 +440,17 @@ namespace CutMatching {
 
         switch (result.type) {
             case Result::Balanced: {
-                VLOG(2) << "Cut matching ran " << iterations << " iterations and resulted in balanced cut with size (" << graph->size() << ", "
+                VLOG(3) << "Cut matching ran " << iterations << " iterations and resulted in balanced cut with size (" << graph->size() << ", "
                         << graph->removedSize() << ") and volume (" << graph->globalVolume(graph->cbegin(), graph->cend()) << ", "
                         << graph->globalVolume(graph->cbeginRemoved(), graph->cendRemoved()) << ").";
                 break;
             }
             case Result::Expander: {
-                VLOG(2) << "Cut matching ran " << iterations << " iterations and resulted in expander.";
+                VLOG(3) << "Cut matching ran " << iterations << " iterations and resulted in expander.";
                 break;
             }
             case Result::NearExpander: {
-                VLOG(2) << "Cut matching ran " << iterations << " iterations and resulted in near expander of size " << graph->size() << ".";
+                VLOG(3) << "Cut matching ran " << iterations << " iterations and resulted in near expander of size " << graph->size() << ".";
                 break;
             }
         }
