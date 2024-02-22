@@ -79,7 +79,7 @@ def enum_options():
 
 def incremental_configs():
     base_config = {
-        'flow-vectors': 1,
+        'flow-vectors': 20,
         'krv-first': False,
         'use-cut-heuristics': False,
         'flow-fraction': False,
@@ -96,7 +96,6 @@ def incremental_configs():
     ada = copy.copy(config)
     ada['name'] = '+Ada'
     ada['adaptive'] = True
-    ada['flow-vectors'] = 20
     configs.append(ada)
 
     config['use-cut-heuristics'] = True
@@ -104,7 +103,6 @@ def incremental_configs():
     configs.append(copy.copy(config))
 
     config['adaptive'] = True
-    config['flow-vectors'] = 20
     config['name'] = '+Cut+Ada'
     configs.append(copy.copy(config))
 
