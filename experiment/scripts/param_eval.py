@@ -79,7 +79,7 @@ def enum_options():
 
 def incremental_configs():
     base_config = {
-        'flow-vectors': 20,
+        'flow-vectors': 1,
         'krv-first': False,
         'use-cut-heuristics': False,
         'flow-fraction': False,
@@ -119,7 +119,7 @@ def incremental_configs():
     kahan = copy.copy(config)
     kahan['kahan-error'] = False
     kahan['name'] = '+Cut+Ada-Kahan'
-    configs.append(kahan)
+    #configs.append(kahan)
 
     our_config = {
         'flow-vectors': 20,
