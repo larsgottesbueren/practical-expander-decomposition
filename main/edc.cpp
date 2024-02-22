@@ -45,7 +45,7 @@ std::unique_ptr<Undirected::Graph> readGraph(const std::string& path) {
     return std::make_unique<Undirected::Graph>(n, es);
 }
 
-CutMatching::Parameters ARVConfig() {
+CutMatching::Parameters ArvConfig() {
     CutMatching::Parameters params = {
         .tConst = 22,
         .tFactor = 5.0,
@@ -57,7 +57,7 @@ CutMatching::Parameters ARVConfig() {
         .use_potential_based_dynamic_stopping_criterion = false,
         .stop_flow_at_fraction = false,
         .krv_step_first = false,
-        .num_flow_vectors = 1,
+        .num_flow_vectors = 15,
         .tune_num_flow_vectors = false,
         .break_at_empty_terminals = false,
     };
@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
         .use_potential_based_dynamic_stopping_criterion = false,
         .stop_flow_at_fraction = false,
         .krv_step_first = false,
-        .num_flow_vectors = 1,
+        .num_flow_vectors = 15,
         .tune_num_flow_vectors = false,
     };
     double phi = 0.001;
@@ -120,7 +120,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (arv_base_config) {
-        params = ARVConfig();
+        params = ArvConfig();
     }
 
     auto g = readGraph(graph_file);
