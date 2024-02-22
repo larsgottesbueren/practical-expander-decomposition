@@ -5,7 +5,7 @@ import scipy.stats.mstats
 import commons
 
 def reorder(df, sort_field):
-  df.sort_values(by=[sort_field + "_fraction"], inplace=True)
+  df.sort_values(by=[sort_field], inplace=True)
 
 def compute_fractions(df, fields, tfield):
   for f in fields:
@@ -13,7 +13,10 @@ def compute_fractions(df, fields, tfield):
 
 def stacked_bars(ax, df, fields, sort_field, tfield="Total"):
   compute_fractions(df, fields, tfield)
-  reorder(df, sort_field=sort_field)
+  if sort_field in fields:
+    reorder(df, sort_field=sort_field + '_fraction')
+  else:
+    reorder(df, sort_field=sort_field)
   totals = [sum(x) for x in zip(*[df[f] for f in fields])]
   num_instances = len(df)
   x_values = [i for i in range(1, num_instances + 1)]

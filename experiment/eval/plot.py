@@ -7,6 +7,7 @@ import copy
 import scipy.stats
 import numpy as np
 import commons
+import itertools
 
 import runtime, runtime_shares
 
@@ -31,15 +32,15 @@ def aggregate_runtimes(df, field = 'Total', seed_aggregator = 'median'):
   return df
 
 
-'''
-df = pd.read_csv('results.sequential.csv')
+
+df = pd.read_csv('results.parallel.csv')
 df = df[df.name != 'Arv']
-df2 = pd.read_csv('results.arv.sequential.csv')
+df2 = pd.read_csv('results.arv.parallel.csv')
 df2['CutHeuristics'] = 0
 df = pd.concat([df, df2])
-'''
 
-df = pd.read_csv('results.phi=0.005.parallel.csv')
+
+#df = pd.read_csv('results.parallel.csv')
 
 for phi in df.phi.unique():
   print("phi=", phi)
@@ -52,18 +53,32 @@ for phi in df.phi.unique():
       print(algo)
       runtime_shares.stacked_bars(ax=ax, df=df[(df.seed == 1) & (df.name == algo) & (df.phi == phi)].copy(), 
         fields = ['FlowMatch', 'MatchDFS', 'ProposeCut', 'CutHeuristics', 'Components', 'Miscellaneous', 'FlowTrim'], 
-        sort_field = 'FlowMatch', tfield="Total")
+        sort_field = 'Total', 
+        tfield="Total")
       fig.savefig('runtime_breakdown_' + algo + '.pdf', pad_inches=0.01, bbox_inches='tight')
+    exit()
 
 
-  #mdf = aggregate_runtimes(df[df.phi == phi])
-  mdf = df[df.seed == 1]
+  
+  mdf = aggregate_runtimes(df, seed_aggregator='median')
+  
+  #mdf = df[df.seed == 9]
   rdf = runtime.relative_times(mdf)
+  #print(rdf.iloc[rdf['base_time'].argmax()])
   #print(rdf[rdf['relative_time'] < 1.05][['graph', 'Total', 'base_time', 'CutHeuristics', 'FlowMatch', 'name', 'partitions', 'cut', 'base_cut']])
   
   #rdf = rdf[rdf['base_time'] <= 100]
   
   algos = list(rdf.name.unique())
+
+  for algo in itertools.chain(algos, ['Arv']):
+    print(algo)
+    print(mdf[mdf.name == algo].iloc[mdf[mdf.name == algo]['Total'].argmax()])
+    print(df[df.name == algo].iloc[df[df.name == algo]['Total'].argmax()])
+    print('---------------------------')
+    print('---------------------------')
+    print('---------------------------')
+    
   colors = commons.construct_new_color_mapping(algos)
   if True:
     fig, ax = plt.subplots()
