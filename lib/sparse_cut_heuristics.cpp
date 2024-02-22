@@ -13,11 +13,6 @@ void PersonalizedPageRank::Compute(Vertex seed) {
     non_zeroes.clear();
     queue.clear();
 
-    for (size_t i = 0; i < residual.size(); ++i) {
-        if (residual[i] != 0.0 || page_rank[i] != 0.0)
-            throw std::runtime_error("residual or pagerank vector not clean");
-    }
-
     // add new seed
     queue.push_back(seed);
     residual[seed] = 1.0;
@@ -25,10 +20,6 @@ void PersonalizedPageRank::Compute(Vertex seed) {
     // push loop
     for (size_t i = 0; i < queue.size(); i++) {
         const Vertex u = queue[i];
-        if (!graph->alive(u)) {
-            VLOG(1) << u << seed;
-            throw std::runtime_error("Node unalive");
-        }
         const double res_u = residual[u];
         const double mass_preserved = (1.0 - params.alpha) * res_u / 2;
         const double mass_pushed_to_neighbors = mass_preserved / graph->degree(u); // TODO beware. do we need the volume in the surrounding graph?
@@ -56,9 +47,6 @@ void PersonalizedPageRank::Compute(Vertex seed) {
 std::vector<PersonalizedPageRank::PageRankAndNode> PersonalizedPageRank::ExtractSparsePageRankValues() {
     std::vector<PageRankAndNode> result;
     for (Vertex u : queue) {
-        if (!graph->alive(u)) {
-            throw std::runtime_error("Node unalive -- extract");
-        }
         if (page_rank[u] > 0.0) {
             result.emplace_back(page_rank[u], u);
         }
@@ -87,10 +75,6 @@ void Nibble::SetGraph(UnitFlow::Graph& graph_) {
 }
 
 Nibble::Cut Nibble::ComputeCut(Vertex seed) {
-    for (size_t i = 0; i < in_cut.size(); ++i) {
-        if (in_cut[i])
-            throw std::runtime_error("in_cut in Nibble unclean");
-    }
     ppr.Compute(seed);
     auto ppr_distr = ppr.ExtractSparsePageRankValues();
     for (auto& pru : ppr_distr) {
@@ -271,10 +255,6 @@ void LocalSearch::InitializeDatastructures(const std::vector<LocalSearch::Vertex
     while (!tabu_reinsertions.empty())
         tabu_reinsertions.pop();
     last_moved_step.assign(last_moved_step.size(), std::numeric_limits<int>::min());
-
-    if (!std::ranges::all_of(affinity_to_cluster, [](const auto& x) { return x == 0; }) || !std::ranges::all_of(in_cluster, [](const bool x) { return !x; })) {
-        throw std::runtime_error("data structures not cleaned");
-    }
 
     for (Vertex u : seed_cluster) {
         in_cluster[u] = true;
