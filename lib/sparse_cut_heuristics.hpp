@@ -143,7 +143,7 @@ private:
     double curr_cluster_vol = 0.0;
     double curr_cluster_cut = 0.0;
 
-    size_t max_fruitless_moves = 200;
+    size_t max_fruitless_moves = 300;
 
     std::queue<Vertex> tabu_reinsertions;
     std::vector<int> last_moved_step;
