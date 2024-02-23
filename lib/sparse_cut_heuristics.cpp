@@ -67,7 +67,7 @@ void Nibble::SetGraph(UnitFlow::Graph& graph_) {
     if (in_cut.size() < size_t(graph->size())) {
         in_cut.resize(graph->size());
     }
-    total_vol = graph->volume();
+    total_vol = graph->globalVolume();
 }
 
 Nibble::Cut Nibble::ComputeCut(Vertex seed) {
@@ -116,7 +116,7 @@ Nibble::Cut Nibble::ComputeCut(Vertex seed) {
     for (int i = 0; i <= best_cut_index; ++i) {
         Vertex u = ppr_distr[i].u;
         result.cut_side.push_back(u);
-        result.volume += graph->degree(u);
+        result.volume += graph->globalDegree(u);
     }
     result.cut = best_conductance * std::min(result.volume, total_vol - result.volume);
 
@@ -131,15 +131,15 @@ void LocalSearch::SetGraph(UnitFlow::Graph& graph_) {
         pq.resize(graph->size());
         last_moved_step.resize(graph->size(), std::numeric_limits<int>::min());
     }
-    total_vol = graph->volume();
+    total_vol = graph->globalVolume();
 }
 
 template<bool update_pq>
 void LocalSearch::MoveNode(Vertex u) {
     int multiplier = in_cluster[u] ? -1 : 1;
     in_cluster[u] = !in_cluster[u];
-    curr_cluster_vol += multiplier * graph->degree(u);
-    curr_cluster_cut += multiplier * (graph->degree(u) - 2 * affinity_to_cluster[u]);
+    curr_cluster_vol += multiplier * graph->globalDegree(u);
+    curr_cluster_cut += multiplier * (graph->globalDegree(u) - 2 * affinity_to_cluster[u]);
     for (auto e = graph->beginEdge(u); e != graph->endEdge(u); ++e) {
         Vertex v = e->to;
         assert(v != u);
