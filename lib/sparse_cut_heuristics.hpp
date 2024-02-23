@@ -66,7 +66,6 @@ public:
 
     void SetGraph(UnitFlow::Graph& graph_);
     Result Compute(const std::vector<Vertex>& seed_cluster);
-    Result Compute2(const std::vector<Vertex>& seed_cluster);
 
 private:
     void InitializeDatastructures(const std::vector<Vertex>& seed_cluster);
