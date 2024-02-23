@@ -102,7 +102,7 @@ private:
         size_t cluster_cut = 0;
         for (Vertex u : *graph) {
             if (in_cluster[u])
-                cluster_vol += graph->degree(u);
+                cluster_vol += graph->globalDegree(u);
             for (auto edge = graph->beginEdge(u); edge != graph->endEdge(u); ++edge) {
                 cluster_cut += static_cast<int>(in_cluster[edge->to] != in_cluster[u]);
             }
@@ -119,18 +119,18 @@ private:
     double AddVertexConductanceGain(Vertex u) const {
         assert(!in_cluster[u]);
         double removed_cut_edges = affinity_to_cluster[u];
-        double new_cut_edges = graph->degree(u) - removed_cut_edges;
+        double new_cut_edges = graph->globalDegree(u) - removed_cut_edges;
         double new_cut = curr_cluster_cut + new_cut_edges - removed_cut_edges;
-        double new_vol = curr_cluster_vol + graph->degree(u);
+        double new_vol = curr_cluster_vol + graph->globalDegree(u);
         return ConductanceGain(new_cut, new_vol);
     }
 
     double RemoveVertexConductanceGain(Vertex u) const {
         assert(in_cluster[u]);
         double new_cut_edges = affinity_to_cluster[u];
-        double removed_cut_edges = graph->degree(u) - new_cut_edges;
+        double removed_cut_edges = graph->globalDegree(u) - new_cut_edges;
         double new_cut = curr_cluster_cut + new_cut_edges - removed_cut_edges;
-        double new_vol = curr_cluster_vol - graph->degree(u);
+        double new_vol = curr_cluster_vol - graph->globalDegree(u);
         return ConductanceGain(new_cut, new_vol);
     }
 
