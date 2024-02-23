@@ -186,7 +186,7 @@ void LocalSearch::InitializeDatastructures(const std::vector<LocalSearch::Vertex
     curr_cluster_cut = 0;
     for (Vertex u : seed_cluster) {
         curr_cluster_cut += graph->degree(u) - affinity_to_cluster[u];
-        curr_cluster_vol += graph->degree(u);
+        curr_cluster_vol += graph->globalDegree(u);
     }
 
     for (Vertex u : seed_cluster) {

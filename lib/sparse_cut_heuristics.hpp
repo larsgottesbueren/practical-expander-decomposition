@@ -118,7 +118,7 @@ private:
     double AddVertexConductanceGain(Vertex u) const {
         assert(!in_cluster[u]);
         double removed_cut_edges = affinity_to_cluster[u];
-        double new_cut_edges = graph->globalDegree(u) - removed_cut_edges;
+        double new_cut_edges = graph->degree(u) - removed_cut_edges;
         double new_cut = curr_cluster_cut + new_cut_edges - removed_cut_edges;
         double new_vol = curr_cluster_vol + graph->globalDegree(u);
         return ConductanceGain(new_cut, new_vol);
@@ -127,7 +127,7 @@ private:
     double RemoveVertexConductanceGain(Vertex u) const {
         assert(in_cluster[u]);
         double new_cut_edges = affinity_to_cluster[u];
-        double removed_cut_edges = graph->globalDegree(u) - new_cut_edges;
+        double removed_cut_edges = graph->degree(u) - new_cut_edges;
         double new_cut = curr_cluster_cut + new_cut_edges - removed_cut_edges;
         double new_vol = curr_cluster_vol - graph->globalDegree(u);
         return ConductanceGain(new_cut, new_vol);
@@ -169,6 +169,5 @@ private:
     int num_trials = 10;
     Nibble nibble;
     LocalSearch local_search;
-
     std::vector<bool> in_cluster;
 };
