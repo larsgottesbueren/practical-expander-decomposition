@@ -31,7 +31,7 @@ def aggregate_runtimes(df, field = 'Total', seed_aggregator = 'median'):
   df = df.groupby(runtime.keys)[field].agg(aggregate_func).reset_index()
   return df
 
-df = pd.read_csv('results.parallel.csv')
+df = pd.read_csv('results.flow-vecs=1.parallel.csv')
 
 for phi in df.phi.unique():
   print("phi=", phi)

@@ -1,17 +1,13 @@
 #include "sparse_cut_heuristics.hpp"
 
 void PersonalizedPageRank::Compute(Vertex seed) {
-
-    // residual.assign(residual.size(), 0.0);
-    // page_rank.assign(page_rank.size(), 0.0);
-
     // clear old queue
     for (Vertex u : non_zeroes) {
         residual[u] = 0.0;
         page_rank[u] = 0.0;
     }
     non_zeroes.clear();
-    queue.clear();
+    queue.clear();  // TODO try deque instead of vector in performance tuning
 
     // add new seed
     queue.push_back(seed);
@@ -22,7 +18,7 @@ void PersonalizedPageRank::Compute(Vertex seed) {
         const Vertex u = queue[i];
         const double res_u = residual[u];
         const double mass_preserved = (1.0 - params.alpha) * res_u / 2;
-        const double mass_pushed_to_neighbors = mass_preserved / graph->degree(u); // TODO beware. do we need the volume in the surrounding graph?
+        const double mass_pushed_to_neighbors = mass_preserved / graph->degree(u);
 
         for (auto e = graph->beginEdge(u); e != graph->endEdge(u); ++e) {
             const Vertex v = e->to;
@@ -78,7 +74,7 @@ Nibble::Cut Nibble::ComputeCut(Vertex seed) {
     ppr.Compute(seed);
     auto ppr_distr = ppr.ExtractSparsePageRankValues();
     for (auto& pru : ppr_distr) {
-        pru.pr = pru.pr / graph->degree(pru.u);
+        pru.pr = pru.pr / graph->globalDegree(pru.u);
     }
     std::sort(ppr_distr.begin(), ppr_distr.end(), [](const auto& l, const auto& r) { return l.pr > r.pr; });
 
@@ -89,7 +85,7 @@ Nibble::Cut Nibble::ComputeCut(Vertex seed) {
 
     for (int i = 0; i < int(ppr_distr.size()); ++i) {
         const Vertex u = ppr_distr[i].u;
-        vol += graph->degree(u);
+        vol += graph->globalDegree(u);
 
         for (auto e = graph->beginEdge(u); e != graph->endEdge(u); ++e) {
             Vertex v = e->to;
