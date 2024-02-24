@@ -148,7 +148,9 @@ void LocalSearch::MoveNode(Vertex u) {
             PQUpdate(v);
         }
     }
-    // assert(CheckDatastructures());
+    if (graph->size() != in_cluster.size()) {
+        assert(CheckDatastructures());
+    }
 }
 
 void LocalSearch::InitializeDatastructures(const std::vector<LocalSearch::Vertex>& seed_cluster) {

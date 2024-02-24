@@ -314,6 +314,7 @@ namespace CutMatching {
         }
 
         const int totalVolume = subdivGraph->globalVolume();
+        // TODO minor discrepancy with implementation in expander_decomp.cpp --> taking it on subdivGraph ???
         const int lowerVolumeBalance = totalVolume / 2 / 10 / T;
 
         // TODO minBalance is way too high?? Should revisit.
