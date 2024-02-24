@@ -171,47 +171,46 @@ namespace UnitFlow {
 
     std::vector<std::pair<Vertex, Vertex>> Graph::matchingDfs(const std::vector<Vertex>& sources) {
         std::vector<std::pair<Vertex, Vertex>> matches;
-
-        auto search = [&](Vertex start) {
-            std::vector<Edge*> path;
-            std::function<Vertex(Vertex)> dfs = [&](Vertex u) {
-                visited[u] = start + 1;
-
-                if (absorbed[u] > 0 && sink[u] > 0) {
-                    absorbed[u]--, sink[u]--;
-                    return u;
+        std::vector<decltype(beginEdge(0))> path;
+        for (Vertex start : sources) {
+            const int visited_label = start + 1;
+            visited[start] = visited_label;
+            path.push_back(beginEdge(start));
+            Vertex target = -1;
+            while (target == -1 && !path.empty()) {
+                auto& e = path.back();
+                Vertex u = e->from;
+                for ( ; e != endEdge(u); ++e) {
+                    Vertex v = e->to;
+                    if (e->flow > 0 && visited[v] != visited_label) {
+                        if (absorbed[v] > 0 && sink[v] > 0) {
+                            target = v;
+                        }
+                        visited[v] = visited_label;
+                        path.push_back(beginEdge(v));
+                        break;
+                    }
                 }
-
-                for (auto e = beginEdge(u); e != endEdge(u); ++e) {
-                    int v = e->to;
-                    if (e->flow <= 0 || visited[v] == start + 1)
-                        continue;
-
-                    path.push_back(&*e);
-                    int m = dfs(v);
-                    if (m != -1)
-                        return m;
+                if (e == endEdge(u)) {
                     path.pop_back();
                 }
+            }
 
-                return -1;
-            };
-
-            int m = dfs(start);
-            if (m != -1)
-                for (auto e : path)
+            if (target != -1) {
+                path.pop_back();    // don't route flow on outgoing edge of target
+                absorbed[target]--;
+                sink[target]--;
+                for (auto e : path) {
                     e->flow--;
-            return m;
-        };
-
-        for (auto u : sources) {
-            int m = search(u);
-            if (m != -1)
-                matches.push_back({ u, m });
+                }
+                matches.emplace_back(start, target);
+            }
+            path.clear();
         }
 
-        for (auto it = cbegin(); it != cend(); ++it)
-            visited[*it] = false;
+        for (auto it = cbegin(); it != cend(); ++it) {
+            visited[*it] = 0;
+        }
 
         return matches;
     }
