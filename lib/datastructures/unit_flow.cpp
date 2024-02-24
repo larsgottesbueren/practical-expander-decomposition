@@ -172,10 +172,13 @@ namespace UnitFlow {
     std::vector<std::pair<Vertex, Vertex>> Graph::matchingDfs(const std::vector<Vertex>& sources) {
         std::vector<std::pair<Vertex, Vertex>> matches;
 
+        size_t max_depth = 0;
         auto search = [&](Vertex start) {
             std::vector<Edge*> path;
+            const int visited_label = start + 1;
+            // TODO need iterative DFS here!
             std::function<Vertex(Vertex)> dfs = [&](Vertex u) {
-                visited[u] = start + 1;
+                visited[u] = visited_label;
 
                 if (absorbed[u] > 0 && sink[u] > 0) {
                     absorbed[u]--, sink[u]--;
@@ -184,7 +187,7 @@ namespace UnitFlow {
 
                 for (auto e = beginEdge(u); e != endEdge(u); ++e) {
                     int v = e->to;
-                    if (e->flow <= 0 || visited[v] == start + 1)
+                    if (e->flow <= 0 || visited[v] == visited_label)
                         continue;
 
                     path.push_back(&*e);
@@ -198,20 +201,21 @@ namespace UnitFlow {
             };
 
             int m = dfs(start);
+            max_depth = std::max(max_depth, path.size());
             if (m != -1)
-                for (auto e : path)
+                for (Edge* e : path)
                     e->flow--;
             return m;
         };
 
-        for (auto u : sources) {
+        for (Vertex u : sources) {
             int m = search(u);
             if (m != -1)
                 matches.push_back({ u, m });
         }
 
         for (auto it = cbegin(); it != cend(); ++it)
-            visited[*it] = false;
+            visited[*it] = 0;
 
         return matches;
     }
