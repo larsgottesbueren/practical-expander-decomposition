@@ -139,7 +139,7 @@ void LocalSearch::MoveNode(Vertex u) {
     int multiplier = in_cluster[u] ? -1 : 1;
     in_cluster[u] = !in_cluster[u];
     curr_cluster_vol += multiplier * graph->globalDegree(u);
-    curr_cluster_cut += multiplier * (graph->globalDegree(u) - 2 * affinity_to_cluster[u]);
+    curr_cluster_cut += multiplier * (graph->degree(u) - 2 * affinity_to_cluster[u]);
     for (auto e = graph->beginEdge(u); e != graph->endEdge(u); ++e) {
         Vertex v = e->to;
         assert(v != u);
