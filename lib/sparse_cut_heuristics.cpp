@@ -1,4 +1,5 @@
 #include "sparse_cut_heuristics.hpp"
+#include "metis/metis.h"
 
 void PersonalizedPageRank::Compute(Vertex seed) {
     // clear old data

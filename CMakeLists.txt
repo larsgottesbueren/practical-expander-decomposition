@@ -22,3 +22,4 @@ target_sources(EDC PRIVATE
 		)
 
 target_link_libraries(EDC tlx)
+target_link_libraries(EDC ${CMAKE_SOURCE_DIR}/lib/metis/libmetis.a)
