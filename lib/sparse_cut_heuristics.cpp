@@ -46,8 +46,6 @@ std::vector<PersonalizedPageRank::PageRankAndNode> PersonalizedPageRank::Extract
         if (page_rank[u] > 0.0) {
             result.emplace_back(page_rank[u], u);
         }
-        residual[u] = 0.0;
-        page_rank[u] = 0.0;
     }
     queue.clear();
     return result;
