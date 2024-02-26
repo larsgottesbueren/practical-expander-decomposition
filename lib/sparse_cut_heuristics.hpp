@@ -2,6 +2,7 @@
 
 #include <random>
 #include <vector>
+#include <deque>
 
 #include "datastructures/priority_queue.hpp"
 #include "datastructures/undirected_graph.hpp"
@@ -30,7 +31,7 @@ private:
     UnitFlow::Graph* graph;
     std::vector<double> page_rank;
     std::vector<double> residual;
-    std::vector<Vertex> queue;
+    std::deque<Vertex> queue;
     std::vector<Vertex> non_zeroes;
 };
 

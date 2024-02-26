@@ -1,21 +1,22 @@
 #include "sparse_cut_heuristics.hpp"
 
 void PersonalizedPageRank::Compute(Vertex seed) {
-    // clear old queue
+    // clear old data
     for (Vertex u : non_zeroes) {
         residual[u] = 0.0;
         page_rank[u] = 0.0;
     }
     non_zeroes.clear();
-    queue.clear();  // TODO try deque instead of vector in performance tuning
 
     // add new seed
     queue.push_back(seed);
+    non_zeroes.push_back(seed);
     residual[seed] = 1.0;
 
     // push loop
-    for (size_t i = 0; i < queue.size(); i++) {
-        const Vertex u = queue[i];
+    while (!queue.empty()) {
+        const Vertex u = queue.front();
+        queue.pop_front();
         const double res_u = residual[u];
         const double mass_preserved = (1.0 - params.alpha) * res_u / 2;
         const double mass_pushed_to_neighbors = mass_preserved / graph->degree(u);
@@ -42,14 +43,11 @@ void PersonalizedPageRank::Compute(Vertex seed) {
 
 std::vector<PersonalizedPageRank::PageRankAndNode> PersonalizedPageRank::ExtractSparsePageRankValues() {
     std::vector<PageRankAndNode> result;
-    for (Vertex u : queue) {
+    for (Vertex u : non_zeroes) {
         if (page_rank[u] > 0.0) {
             result.emplace_back(page_rank[u], u);
         }
-        // residual[u] = 0.0;
-        page_rank[u] = 0.0;
     }
-    queue.clear();
     return result;
 }
 
