@@ -67,9 +67,11 @@ public:
 
     void SetGraph(UnitFlow::Graph& graph_);
     Result Compute(const std::vector<Vertex>& seed_cluster);
-
+    void ResetDatastructures();
+    
 private:
     void InitializeDatastructures(const std::vector<Vertex>& seed_cluster);
+
 
     template<bool update_pq>
     void MoveNode(Vertex u);

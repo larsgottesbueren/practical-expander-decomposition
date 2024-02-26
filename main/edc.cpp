@@ -130,6 +130,7 @@ int main(int argc, char* argv[]) {
     Timer timer;
     timer.Start();
     ExpanderDecomposition::Solver solver(std::move(g), phi, randomGen.get(), params);
+    solver.compute();
     auto total_time = timer.Stop();
 
     Timings::GlobalTimings().Print();

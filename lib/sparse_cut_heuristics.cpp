@@ -153,13 +153,11 @@ void LocalSearch::MoveNode(Vertex u) {
 }
 
 void LocalSearch::InitializeDatastructures(const std::vector<LocalSearch::Vertex>& seed_cluster) {
-    // TODO make the runtime of this sensitive again to the size of the local search (or at least the current subgraph size)
-    affinity_to_cluster.assign(affinity_to_cluster.size(), 0);
+    current_step = 0;
     in_cluster.assign(in_cluster.size(), false);
     pq.clear();
     while (!tabu_reinsertions.empty())
         tabu_reinsertions.pop();
-    last_moved_step.assign(last_moved_step.size(), std::numeric_limits<int>::min());
 
     for (Vertex u : seed_cluster) {
         in_cluster[u] = true;
@@ -182,6 +180,14 @@ void LocalSearch::InitializeDatastructures(const std::vector<LocalSearch::Vertex
                 pq.insert(v, AddVertexConductanceGain(v));
             }
         }
+    }
+}
+
+void LocalSearch::ResetDatastructures() {
+    for (Vertex u : *graph) {
+        affinity_to_cluster[u] = 0;
+        last_moved_step[u] = std::numeric_limits<int>::min();
+        in_cluster[u] = false;
     }
 }
 
@@ -238,7 +244,6 @@ LocalSearch::Result LocalSearch::Compute(const std::vector<LocalSearch::Vertex>&
     };
 }
 
-
 bool SparseCutHeuristics::Compute(UnitFlow::Graph& graph, double conductance_goal, double balance_goal) {
     VLOG(1) << "Sparse cut heuristics. conductance goal = " << conductance_goal << " balance goal = " << balance_goal;
     nibble.SetGraph(graph);
@@ -270,8 +275,12 @@ bool SparseCutHeuristics::Compute(UnitFlow::Graph& graph, double conductance_goa
         VLOG(2) << "Local search cut phi " << ls_cut.conductance << V(ls_cut.cut) << V(ls_cut.volume);
         if (ls_cut.conductance < best_conductance && std::min(ls_cut.volume, total_volume - ls_cut.volume) >= balance_goal) {
             in_cluster = *ls_cut.in_cluster;
+            for (Vertex u : graph) {
+                in_cluster[u] = (*ls_cut.in_cluster)[u];
+            }
             best_conductance = ls_cut.conductance;
         }
+        local_search.ResetDatastructures();
     }
     VLOG(1) << "Sparsest cut " << best_conductance << "/" << conductance_goal;
     return best_conductance <= conductance_goal;

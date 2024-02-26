@@ -47,8 +47,6 @@ namespace ExpanderDecomposition {
         graph.reset(nullptr);
 
         sparse_cut_heuristics.Allocate(*flowGraph);
-
-        compute();
     }
 
     void Solver::compute(int depth) {
