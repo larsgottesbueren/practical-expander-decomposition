@@ -155,22 +155,6 @@ void LocalSearch::MoveNode(Vertex u) {
 
 void LocalSearch::InitializeDatastructures(const std::vector<LocalSearch::Vertex>& seed_cluster) {
     // TODO make the runtime of this sensitive again to the size of the local search (or at least the current subgraph size)
-#if false
-  // clean up old datastructures
-  for (size_t i = 0; i < pq.size(); ++i) {
-    Vertex u = pq.at(i);
-    affinity_to_cluster[u] = 0;
-    in_cluster[u] = false;
-  }
-  pq.clear();
-  while (!tabu_reinsertions.empty()) {
-    Vertex u = tabu_reinsertions.front();
-    affinity_to_cluster[u] = 0;
-    in_cluster[u] = false;
-    tabu_reinsertions.pop();
-  }
-#endif
-
     affinity_to_cluster.assign(affinity_to_cluster.size(), 0);
     in_cluster.assign(in_cluster.size(), false);
     pq.clear();
