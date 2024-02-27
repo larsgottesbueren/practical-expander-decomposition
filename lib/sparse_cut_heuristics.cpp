@@ -244,6 +244,36 @@ LocalSearch::Result LocalSearch::Compute(const std::vector<LocalSearch::Vertex>&
     };
 }
 
+BalancedPartitioner::Result BalancedPartitioner::Compute(UnitFlow::Graph& graph) {
+    // remap node IDs
+    Vertex remapped_id = 0;
+    for (Vertex u : graph) {
+        node_id_remap[u] = remapped_id++;
+    }
+    // fill CSR
+    csr.adj.clear();
+    csr.xadj.clear();
+    csr.xadj.push_back(0);
+    csr.vwgt.clear();
+    for (Vertex u : graph) {
+        for (auto e = graph.beginEdge(u); e != graph.endEdge(u); ++e) {
+            csr.xadj.push_back(node_id_remap[e->to]);
+        }
+        csr.adj.push_back(csr.xadj.size());
+        csr.vwgt.push_back(graph.globalDegree(u));
+    }
+
+    // call Metis
+
+
+    // reset stuff
+    for (Vertex u : graph) {
+        node_id_remap[u] = -1;
+    }
+
+}
+
+
 bool SparseCutHeuristics::Compute(UnitFlow::Graph& graph, double conductance_goal, double balance_goal) {
     VLOG(1) << "Sparse cut heuristics. conductance goal = " << conductance_goal << " balance goal = " << balance_goal;
     nibble.SetGraph(graph);

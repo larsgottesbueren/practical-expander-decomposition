@@ -154,6 +154,30 @@ private:
     int current_step = 0;
 };
 
+class BalancedPartitioner {
+public:
+    struct Result {
+        double cut;
+        double volume;
+        double conductance;
+        std::vector<int32_t>* partition;
+    };
+
+    Result Compute(UnitFlow::Graph& graph);
+
+private:
+    using Vertex = UnitFlow::Vertex;
+    struct CSR {
+        std::vector<int32_t> xadj;
+        std::vector<int32_t> adj;
+        std::vector<int32_t> vwgt;
+    };
+
+    CSR csr;
+    std::vector<int32_t> partition;
+    std::vector<UnitFlow::Vertex> node_id_remap;
+};
+
 class SparseCutHeuristics {
 public:
     using Vertex = UnitFlow::Vertex;
