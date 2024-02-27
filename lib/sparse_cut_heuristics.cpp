@@ -306,19 +306,21 @@ BalancedPartitioner::Result BalancedPartitioner::Compute(UnitFlow::Graph& graph)
 }
 
 
-bool SparseCutHeuristics::Compute(UnitFlow::Graph& graph, double conductance_goal, double balance_goal) {
+bool SparseCutHeuristics::Compute(UnitFlow::Graph& graph, double conductance_goal, double balance_goal, bool use_balanced_partitions) {
     VLOG(1) << "Sparse cut heuristics. conductance goal = " << conductance_goal << " balance goal = " << balance_goal;
     
-    
-    auto bp_cut = balanced_partitioner.Compute(graph);
-    VLOG(2) << V(bp_cut.cut) << V(bp_cut.conductance) << V(bp_cut.volume1) << V(bp_cut.volume2);
-    if (bp_cut.conductance < conductance_goal && std::min(bp_cut.volume1, bp_cut.volume2) >= balance_goal) {
-        for (Vertex u : graph) {
-            in_cluster[u] = (*bp_cut.partition)[u] == 0;
+    if (use_balanced_partitions) {
+        auto bp_cut = balanced_partitioner.Compute(graph);
+        VLOG(2) << V(bp_cut.cut) << V(bp_cut.conductance) << V(bp_cut.volume1) << V(bp_cut.volume2);
+        if (bp_cut.conductance < conductance_goal && std::min(bp_cut.volume1, bp_cut.volume2) >= balance_goal) {
+            for (Vertex u : graph) {
+                in_cluster[u] = (*bp_cut.partition)[u] == 0;
+            }
+            //  TODO too stronk
+            return true;
         }
-        //  TODO too stronk
-        return true;
     }
+    
     
     double best_conductance = std::numeric_limits<double>::max();
     nibble.SetGraph(graph);

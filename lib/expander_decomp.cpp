@@ -89,7 +89,7 @@ namespace ExpanderDecomposition {
             if (cutMatchingParams.use_cut_heuristics) {
                 cut_timer.Start();
                 double conductance_goal = phi * square(std::log10(flowGraph->globalVolume())) * 1.7;
-                heuristic_sparse_cut_found = sparse_cut_heuristics.Compute(*flowGraph, conductance_goal, vol_balance_lb);
+                heuristic_sparse_cut_found = sparse_cut_heuristics.Compute(*flowGraph, conductance_goal, vol_balance_lb, cutMatchingParams.use_balanced_partitions);
                 Timings::GlobalTimings().AddTiming(Timing::CutHeuristics, cut_timer.Stop());
             }
 

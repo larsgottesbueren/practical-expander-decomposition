@@ -51,6 +51,8 @@ namespace CutMatching {
 
         bool use_cut_heuristics = true;
 
+        bool use_balanced_partitions = false;
+
         bool use_potential_based_dynamic_stopping_criterion = false;
 
         bool stop_flow_at_fraction = false;

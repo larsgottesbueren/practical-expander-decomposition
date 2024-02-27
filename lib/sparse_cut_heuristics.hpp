@@ -188,7 +188,7 @@ public:
         in_cluster.assign(graph.size(), false);
     }
 
-    bool Compute(UnitFlow::Graph& graph, double conductance_goal, double balance_goal);
+    bool Compute(UnitFlow::Graph& graph, double conductance_goal, double balance_goal, bool use_balanced_partitions);
 
     std::pair<std::vector<int>, std::vector<int>> ExtractCutSides(UnitFlow::Graph& graph);
 
