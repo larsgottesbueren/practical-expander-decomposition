@@ -276,14 +276,15 @@ BalancedPartitioner::Result BalancedPartitioner::Compute(UnitFlow::Graph& graph)
     int32_t* vsize = nullptr;
     int32_t* adjwgt = nullptr;
     int32_t nparts = 2;
-    std::array<float, 2> tpwgts = {0.5f, 0.5f};
+    std::array<float, 2> tpwgts = { 0.5f, 0.5f };
     float ubvec = 1.2f;
     int32_t objval = 0;
     int32_t options[METIS_NOPTIONS];
     METIS_SetDefaultOptions(options);
     options[METIS_OPTION_NO2HOP] = 0;
-    METIS_PartGraphRecursive(&nvtxs, &ncon, csr.xadj.data(), csr.adj.data(), csr.vwgt.data(), vsize, adjwgt, &nparts, tpwgts.data(), &ubvec, options, &objval, partition.data());
-    
+    METIS_PartGraphRecursive(&nvtxs, &ncon, csr.xadj.data(), csr.adj.data(), csr.vwgt.data(), vsize, adjwgt, &nparts, tpwgts.data(), &ubvec, options, &objval,
+                             partition.data());
+
     // reset node id remap, compute volume, translate partition assignment
     size_t i = 0;
     double vol1 = 0, vol2 = 0;
@@ -291,23 +292,21 @@ BalancedPartitioner::Result BalancedPartitioner::Compute(UnitFlow::Graph& graph)
         partition2[u] = partition[i];
         vol1 += csr.vwgt[i] * partition[i];
         vol2 += csr.vwgt[i] * (1 - partition[i]);
-        ++i; 
+        ++i;
         node_id_remap[u] = -1;
     }
 
-    return Result {
-        .cut = static_cast<double>(objval),
-        .volume1 = vol1,
-        .volume2 = vol2,
-        .conductance = static_cast<double>(objval) / std::min(vol1, vol2),
-        .partition = &partition2
-    };
+    return Result{ .cut = static_cast<double>(objval),
+                   .volume1 = vol1,
+                   .volume2 = vol2,
+                   .conductance = static_cast<double>(objval) / std::min(vol1, vol2),
+                   .partition = &partition2 };
 }
 
 
 bool SparseCutHeuristics::Compute(UnitFlow::Graph& graph, double conductance_goal, double balance_goal, bool use_balanced_partitions) {
     VLOG(1) << "Sparse cut heuristics. conductance goal = " << conductance_goal << " balance goal = " << balance_goal;
-    
+
     if (use_balanced_partitions) {
         auto bp_cut = balanced_partitioner.Compute(graph);
         VLOG(2) << V(bp_cut.cut) << V(bp_cut.conductance) << V(bp_cut.volume1) << V(bp_cut.volume2);
@@ -319,12 +318,12 @@ bool SparseCutHeuristics::Compute(UnitFlow::Graph& graph, double conductance_goa
             return true;
         }
     }
-    
-    
+
+
     double best_conductance = std::numeric_limits<double>::max();
     nibble.SetGraph(graph);
     local_search.SetGraph(graph);
-    
+
     auto total_volume = graph.globalVolume();
     int prng_seed = 555;
     std::mt19937 prng(prng_seed);

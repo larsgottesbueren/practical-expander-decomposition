@@ -1,8 +1,8 @@
 #pragma once
 
+#include <deque>
 #include <random>
 #include <vector>
-#include <deque>
 
 #include "datastructures/priority_queue.hpp"
 #include "datastructures/undirected_graph.hpp"
@@ -68,7 +68,7 @@ public:
     void SetGraph(UnitFlow::Graph& graph_);
     Result Compute(const std::vector<Vertex>& seed_cluster);
     void ResetDatastructures();
-    
+
 private:
     void InitializeDatastructures(const std::vector<Vertex>& seed_cluster);
 

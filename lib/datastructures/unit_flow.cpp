@@ -180,7 +180,7 @@ namespace UnitFlow {
             while (target == -1 && !path.empty()) {
                 auto& e = path.back();
                 Vertex u = e->from;
-                for ( ; e != endEdge(u); ++e) {
+                for (; e != endEdge(u); ++e) {
                     Vertex v = e->to;
                     if (e->flow > 0 && visited[v] != visited_label) {
                         if (absorbed[v] > 0 && sink[v] > 0) {
@@ -197,7 +197,7 @@ namespace UnitFlow {
             }
 
             if (target != -1) {
-                path.pop_back();    // don't route flow on outgoing edge of target
+                path.pop_back(); // don't route flow on outgoing edge of target
                 absorbed[target]--;
                 sink[target]--;
                 for (auto e : path) {

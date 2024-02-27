@@ -395,7 +395,10 @@ namespace CutMatching {
                 const auto [cutLeft, cutRight] = subdivGraph->levelCut(h);
                 VLOG(3) << "\tHas level cut with (" << cutLeft.size() << ", " << cutRight.size() << ") vertices.";
                 if (params.stop_flow_at_fraction && reached_flow_fraction) {
-                    auto* smaller_side = subdivGraph->globalVolume(cutLeft.begin(), cutLeft.end()) < subdivGraph->globalVolume(cutRight.begin(), cutRight.end()) ? &cutLeft : &cutRight;
+                    auto* smaller_side = subdivGraph->globalVolume(cutLeft.begin(), cutLeft.end()) < subdivGraph->globalVolume(cutRight.begin(), cutRight.end())
+                                                 ? &cutLeft
+                                                 : &cutRight;
+                    // TODO the vector could become pretty large. haven't seen this happen yet, just noting down.
                     removed_from_fractional_flow.insert(removed_from_fractional_flow.end(), smaller_side->begin(), smaller_side->end());
                 } else {
                     RemoveCutSide(cutLeft, cutRight, axLeft, axRight);
@@ -438,8 +441,7 @@ namespace CutMatching {
         if (graph->size() != 0 && graph->removedSize() != 0 &&
             subdivGraph->globalVolume(subdivGraph->cbeginRemoved(), subdivGraph->cendRemoved()) > lowerVolumeBalance)
             // TODO with fractional flow routing, we also have to check conductance of the cut here!
-            // We have: graph.volume(R) > m / (10 * T)
-            result.type = Result::Balanced;
+            result.type = Result::Balanced; // We have: graph.volume(R) > m / (10 * T)
         else if (graph->removedSize() == 0)
             result.type = Result::Expander;
         else if (graph->size() == 0)
