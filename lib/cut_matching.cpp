@@ -327,6 +327,8 @@ namespace CutMatching {
             flow_vectors.push_back(randomUnitVector());
         }
 
+        std::vector<UnitFlow::Vertex> removed_from_fractional_flow;
+
         int iterations = 0;
         const int iterationsToRun = std::max(params.minIterations, T);
         for (; iterations < iterationsToRun && subdivGraph->globalVolume(subdivGraph->cbeginRemoved(), subdivGraph->cendRemoved()) <= targetVolumeBalance;
@@ -392,7 +394,12 @@ namespace CutMatching {
             if (has_excess_flow) {
                 const auto [cutLeft, cutRight] = subdivGraph->levelCut(h);
                 VLOG(3) << "\tHas level cut with (" << cutLeft.size() << ", " << cutRight.size() << ") vertices.";
-                RemoveCutSide(cutLeft, cutRight, axLeft, axRight);
+                if (reached_flow_fraction) {
+                    auto* smaller_side = subdivGraph->globalVolume(cutLeft.begin(), cutLeft.end()) < subdivGraph->globalVolume(cutRight.begin(), cutRight.end()) ? &cutLeft : &cutRight;
+                    removed_from_fractional_flow.insert(removed_from_fractional_flow.end(), smaller_side->begin(), smaller_side->end());
+                } else {
+                    RemoveCutSide(cutLeft, cutRight, axLeft, axRight);
+                }
             }
 
             Timings::GlobalTimings().AddTiming(Timing::Misc, timer.Restart());
