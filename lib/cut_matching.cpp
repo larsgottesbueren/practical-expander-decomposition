@@ -440,11 +440,11 @@ namespace CutMatching {
 
         if (graph->size() != 0 && graph->removedSize() != 0 &&
             subdivGraph->globalVolume(subdivGraph->cbeginRemoved(), subdivGraph->cendRemoved()) > lowerVolumeBalance) {
-                 // TODO with fractional flow routing, we also have to check conductance of the cut here!
+            // TODO with fractional flow routing, we also have to check conductance of the cut here!
             result.type = Result::Balanced; // We have: graph.volume(R) > m / (10 * T)
             VLOG(3) << "Cut matching ran " << iterations << " iterations and resulted in balanced cut with size (" << graph->size() << ", "
-                        << graph->removedSize() << ") and volume (" << graph->globalVolume(graph->cbegin(), graph->cend()) << ", "
-                        << graph->globalVolume(graph->cbeginRemoved(), graph->cendRemoved()) << ").";
+                    << graph->removedSize() << ") and volume (" << graph->globalVolume(graph->cbegin(), graph->cend()) << ", "
+                    << graph->globalVolume(graph->cbeginRemoved(), graph->cendRemoved()) << ").";
         } else if (graph->removedSize() == 0 || graph->size() == 0) {
             result.type = Result::Expander;
             if (graph->size() == 0) {
@@ -455,7 +455,7 @@ namespace CutMatching {
             result.type = Result::NearExpander;
             VLOG(3) << "Cut matching ran " << iterations << " iterations and resulted in near expander of size " << graph->size() << ".";
         }
-            
+
         return result;
     }
 
