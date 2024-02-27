@@ -245,6 +245,11 @@ LocalSearch::Result LocalSearch::Compute(const std::vector<LocalSearch::Vertex>&
 }
 
 BalancedPartitioner::Result BalancedPartitioner::Compute(UnitFlow::Graph& graph) {
+    if (graph.size() >= node_id_remap.size()) {
+        node_id_remap.resize(graph.size());
+        partition.resize(graph.size());
+    }
+
     // remap node IDs
     Vertex remapped_id = 0;
     for (Vertex u : graph) {
