@@ -439,33 +439,23 @@ namespace CutMatching {
                 result.congestion = std::max(result.congestion, e->congestion);
 
         if (graph->size() != 0 && graph->removedSize() != 0 &&
-            subdivGraph->globalVolume(subdivGraph->cbeginRemoved(), subdivGraph->cendRemoved()) > lowerVolumeBalance)
-            // TODO with fractional flow routing, we also have to check conductance of the cut here!
+            subdivGraph->globalVolume(subdivGraph->cbeginRemoved(), subdivGraph->cendRemoved()) > lowerVolumeBalance) {
+                 // TODO with fractional flow routing, we also have to check conductance of the cut here!
             result.type = Result::Balanced; // We have: graph.volume(R) > m / (10 * T)
-        else if (graph->removedSize() == 0)
-            result.type = Result::Expander;
-        else if (graph->size() == 0)
-            graph->restoreRemoves(), result.type = Result::Expander;
-        else
-            result.type = Result::NearExpander;
-
-        switch (result.type) {
-            case Result::Balanced: {
-                VLOG(3) << "Cut matching ran " << iterations << " iterations and resulted in balanced cut with size (" << graph->size() << ", "
+            VLOG(3) << "Cut matching ran " << iterations << " iterations and resulted in balanced cut with size (" << graph->size() << ", "
                         << graph->removedSize() << ") and volume (" << graph->globalVolume(graph->cbegin(), graph->cend()) << ", "
                         << graph->globalVolume(graph->cbeginRemoved(), graph->cendRemoved()) << ").";
-                break;
+        } else if (graph->removedSize() == 0 || graph->size() == 0) {
+            result.type = Result::Expander;
+            if (graph->size() == 0) {
+                graph->restoreRemoves();
             }
-            case Result::Expander: {
-                VLOG(3) << "Cut matching ran " << iterations << " iterations and resulted in expander.";
-                break;
-            }
-            case Result::NearExpander: {
-                VLOG(3) << "Cut matching ran " << iterations << " iterations and resulted in near expander of size " << graph->size() << ".";
-                break;
-            }
+            VLOG(3) << "Cut matching ran " << iterations << " iterations and resulted in expander.";
+        } else {
+            result.type = Result::NearExpander;
+            VLOG(3) << "Cut matching ran " << iterations << " iterations and resulted in near expander of size " << graph->size() << ".";
         }
-
+            
         return result;
     }
 
