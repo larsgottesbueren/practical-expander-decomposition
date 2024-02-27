@@ -147,7 +147,7 @@ void LocalSearch::MoveNode(Vertex u) {
             PQUpdate(v);
         }
     }
-    if (graph->size() != in_cluster.size()) {
+    if (static_cast<size_t>(graph->size()) != in_cluster.size()) {
         assert(CheckDatastructures());
     }
 }
@@ -212,7 +212,6 @@ LocalSearch::Result LocalSearch::Compute(const std::vector<LocalSearch::Vertex>&
             continue;
         }
 
-        double old_conductance = Conductance(curr_cluster_cut, curr_cluster_vol);
         MoveNode<true>(u);
         const double new_conductance = Conductance(curr_cluster_cut, curr_cluster_vol);
 
@@ -246,7 +245,7 @@ LocalSearch::Result LocalSearch::Compute(const std::vector<LocalSearch::Vertex>&
 
 BalancedPartitioner::Result BalancedPartitioner::Compute(UnitFlow::Graph& graph) {
     // alloc
-    if (graph.size() >= node_id_remap.size()) {
+    if (static_cast<size_t>(graph.size()) >= node_id_remap.size()) {
         node_id_remap.resize(graph.size());
         partition.resize(graph.size());
         partition2.resize(graph.size());
