@@ -355,7 +355,8 @@ namespace CutMatching {
 
             Timer timer;
             timer.Start();
-            auto [axLeft, axRight] = proposeCut(flow_vectors[flow_vector_id]);
+            std::vector<int> axLeft, axRight;
+            std::tie(axLeft, axRight) = proposeCut(flow_vectors[flow_vector_id]);
             Timings::GlobalTimings().AddTiming(Timing::ProposeCut, timer.Restart());
 
             if (params.break_at_empty_terminals && (axLeft.empty() || axRight.empty())) {
