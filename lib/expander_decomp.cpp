@@ -79,13 +79,10 @@ namespace ExpanderDecomposition {
                 subdivisionFlowGraph->restoreSubgraph();
             }
         } else {
-
-            bool heuristic_sparse_cut_found = false;
-
             Timer cut_timer;
             size_t cut_matching_rounds = cutMatchingParams.tConst + ceil(cutMatchingParams.tFactor * square(std::log10(flowGraph->globalVolume())));
             double vol_balance_lb = flowGraph->globalVolume() / 10.0 / cut_matching_rounds;
-
+            bool heuristic_sparse_cut_found = false;
             if (cutMatchingParams.use_cut_heuristics) {
                 cut_timer.Start();
                 double conductance_goal = phi * square(std::log10(flowGraph->globalVolume())) * 1.7;

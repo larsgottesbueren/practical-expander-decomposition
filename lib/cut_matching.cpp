@@ -317,7 +317,6 @@ namespace CutMatching {
         // TODO minor discrepancy with implementation in expander_decomp.cpp --> taking it on subdivGraph ???
         const int lowerVolumeBalance = totalVolume / 2 / 10 / T;
 
-        // TODO minBalance is way too high?? Should revisit.
         const int targetVolumeBalance = std::max(lowerVolumeBalance, int(params.minBalance * totalVolume));
 
         Result result;
@@ -438,17 +437,21 @@ namespace CutMatching {
             for (auto e = subdivGraph->beginEdge(u); e != subdivGraph->endEdge(u); ++e)
                 result.congestion = std::max(result.congestion, e->congestion);
 
-        if (graph->size() != 0 && graph->removedSize() != 0 &&
-            subdivGraph->globalVolume(subdivGraph->cbeginRemoved(), subdivGraph->cendRemoved()) > lowerVolumeBalance) {
-            // TODO with fractional flow routing, we also have to check conductance of the cut here!
+        bool balanced_cut = graph->size() != 0 && graph->removedSize() != 0 &&
+                            subdivGraph->globalVolume(subdivGraph->cbeginRemoved(), subdivGraph->cendRemoved()) > lowerVolumeBalance;
+        if (!balanced_cut && !removed_from_fractional_flow.empty()) {
+            // check if the cut from fractional flow routing gives good conductance and is balanced
+        }
+
+        if (balanced_cut) {
             result.type = Result::Balanced; // We have: graph.volume(R) > m / (10 * T)
             VLOG(3) << "Cut matching ran " << iterations << " iterations and resulted in balanced cut with size (" << graph->size() << ", "
                     << graph->removedSize() << ") and volume (" << graph->globalVolume(graph->cbegin(), graph->cend()) << ", "
                     << graph->globalVolume(graph->cbeginRemoved(), graph->cendRemoved()) << ").";
-        } else if (graph->removedSize() == 0 || graph->size() == 0) {
+        } else if (removed_from_fractional_flow.empty() && (graph->removedSize() == 0 || graph->size() == 0)) {
             result.type = Result::Expander;
             if (graph->size() == 0) {
-                graph->restoreRemoves();
+                graph->restoreRemoves(); // the surrounding code expects that the remaining part is stored as the current graph
             }
             VLOG(3) << "Cut matching ran " << iterations << " iterations and resulted in expander.";
         } else {
