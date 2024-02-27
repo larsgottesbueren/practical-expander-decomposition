@@ -158,7 +158,7 @@ class BalancedPartitioner {
 public:
     struct Result {
         double cut;
-        double volume;
+        double volume1, volume2;
         double conductance;
         std::vector<int32_t>* partition;
     };

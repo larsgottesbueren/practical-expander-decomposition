@@ -298,7 +298,8 @@ BalancedPartitioner::Result BalancedPartitioner::Compute(UnitFlow::Graph& graph)
 
     return Result {
         .cut = static_cast<double>(objval),
-        .volume = vol1,
+        .volume1 = vol1,
+        .volume2 = vol2,
         .conductance = static_cast<double>(objval) / std::min(vol1, vol2),
         .partition = &partition2
     };
@@ -307,20 +308,25 @@ BalancedPartitioner::Result BalancedPartitioner::Compute(UnitFlow::Graph& graph)
 
 bool SparseCutHeuristics::Compute(UnitFlow::Graph& graph, double conductance_goal, double balance_goal) {
     VLOG(1) << "Sparse cut heuristics. conductance goal = " << conductance_goal << " balance goal = " << balance_goal;
+    
+    
+    auto bp_cut = balanced_partitioner.Compute(graph);
+    VLOG(2) << V(bp_cut.cut) << V(bp_cut.conductance) << V(bp_cut.volume1) << V(bp_cut.volume2);
+    if (bp_cut.conductance < conductance_goal && std::min(bp_cut.volume1, bp_cut.volume2) >= balance_goal) {
+        for (Vertex u : graph) {
+            in_cluster[u] = (*bp_cut.partition)[u] == 0;
+        }
+        return true;
+    }
+    
+    double best_conductance = std::numeric_limits<double>::max();
     nibble.SetGraph(graph);
     local_search.SetGraph(graph);
-    auto total_volume = graph.volume();
-    VLOG(3) << V(total_volume);
-
-    double best_conductance = std::numeric_limits<double>::max();
-
+    
+    auto total_volume = graph.globalVolume();
     int prng_seed = 555;
     std::mt19937 prng(prng_seed);
     std::uniform_int_distribution<> seed_distr(0, graph.size() - 1);
-
-    auto bp_cut = balanced_partitioner.Compute(graph);
-    VLOG(2) << V(bp_cut.cut) << V(bp_cut.conductance) << V(bp_cut.volume);
-
     for (int r = 0; r < num_trials; ++r) {
         // TODO try different PPR parameters
 
