@@ -245,9 +245,11 @@ LocalSearch::Result LocalSearch::Compute(const std::vector<LocalSearch::Vertex>&
 }
 
 BalancedPartitioner::Result BalancedPartitioner::Compute(UnitFlow::Graph& graph) {
+    // alloc
     if (graph.size() >= node_id_remap.size()) {
         node_id_remap.resize(graph.size());
         partition.resize(graph.size());
+        partition2.resize(graph.size());
     }
 
     // remap node IDs
@@ -255,6 +257,7 @@ BalancedPartitioner::Result BalancedPartitioner::Compute(UnitFlow::Graph& graph)
     for (Vertex u : graph) {
         node_id_remap[u] = remapped_id++;
     }
+
     // fill CSR
     csr.adj.clear();
     csr.xadj.clear();
@@ -269,13 +272,33 @@ BalancedPartitioner::Result BalancedPartitioner::Compute(UnitFlow::Graph& graph)
     }
 
     // call Metis
+    int32_t nvtxs = csr.vwgt.size();
+    int32_t ncon = 1;
+    int32_t* vsize = nullptr;
+    int32_t* adjwgt = nullptr;
+    int32_t nparts = 2;
+    std::array<float, 2> tpwgts = {0.5f, 0.5f};
+    float ubvec = 1.2f;
+    int32_t objval = 0;
+    METIS_PartGraphRecursive(&nvtxs, &ncon, csr.xadj.data(), csr.adj.data(), csr.vwgt.data(), vsize, adjwgt, &nparts, tpwgts.data(), &ubvec, options, &objval, partition.data());
 
-
-    // reset stuff
+    // reset node id remap, compute volume, translate partition assignment
+    size_t i = 0;
+    double vol1 = 0, vol2 = 0;
     for (Vertex u : graph) {
+        partition2[u] = partition[i];
+        vol1 += csr.vwgt[i] * partition[i];
+        vol2 += csr.vwgt[i] * (1 - partition[i]);
+        ++i; 
         node_id_remap[u] = -1;
     }
 
+    return Result {
+        .cut = static_cast<double>(objval),
+        .volume = vol1,
+        .conductance = static_cast<double>(objval) / std::min(vol1, vol2),
+        .partition = &partition2
+    };
 }
 
 

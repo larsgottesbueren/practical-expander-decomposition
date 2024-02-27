@@ -174,7 +174,7 @@ private:
     };
 
     CSR csr;
-    std::vector<int32_t> partition;
+    std::vector<int32_t> partition, partition2;
     std::vector<UnitFlow::Vertex> node_id_remap;
 };
 
