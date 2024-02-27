@@ -280,6 +280,9 @@ BalancedPartitioner::Result BalancedPartitioner::Compute(UnitFlow::Graph& graph)
     std::array<float, 2> tpwgts = {0.5f, 0.5f};
     float ubvec = 1.2f;
     int32_t objval = 0;
+    int32_t options[METIS_NOPTIONS];
+    METIS_SetDefaultOptions(options);
+    std::cout << options[METIS_OPTION_OBJTYPE] << " " << options[METIS_OPTION_NO2HOP] << std::endl;
     METIS_PartGraphRecursive(&nvtxs, &ncon, csr.xadj.data(), csr.adj.data(), csr.vwgt.data(), vsize, adjwgt, &nparts, tpwgts.data(), &ubvec, options, &objval, partition.data());
 
     // reset node id remap, compute volume, translate partition assignment
