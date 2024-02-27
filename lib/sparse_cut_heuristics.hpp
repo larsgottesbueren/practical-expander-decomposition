@@ -196,5 +196,6 @@ private:
     int num_trials = 10;
     Nibble nibble;
     LocalSearch local_search;
+    BalancedPartitioner balanced_partitioner;
     std::vector<bool> in_cluster;
 };

@@ -317,6 +317,10 @@ bool SparseCutHeuristics::Compute(UnitFlow::Graph& graph, double conductance_goa
     int prng_seed = 555;
     std::mt19937 prng(prng_seed);
     std::uniform_int_distribution<> seed_distr(0, graph.size() - 1);
+
+    auto bp_cut = balanced_partitioner.Compute(graph);
+    VLOG(2) << V(bp_cut.cut) << V(bp_cut.conductance) << V(bp_cut.volume);
+
     for (int r = 0; r < num_trials; ++r) {
         // TODO try different PPR parameters
 
