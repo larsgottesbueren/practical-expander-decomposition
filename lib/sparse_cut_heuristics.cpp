@@ -316,6 +316,7 @@ bool SparseCutHeuristics::Compute(UnitFlow::Graph& graph, double conductance_goa
         for (Vertex u : graph) {
             in_cluster[u] = (*bp_cut.partition)[u] == 0;
         }
+        //  TODO too stronk
         return true;
     }
     
