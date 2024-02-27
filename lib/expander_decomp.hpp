@@ -79,7 +79,7 @@ namespace ExpanderDecomposition {
         template<typename It>
         void finalizePartition(It begin, It end, long long c) {
             congestionOf.push_back(c);
-            assert(congestionOf.size() == numPartitions + 1);
+            assert(congestionOf.size() == static_cast<size_t>(numPartitions + 1));
 
             for (auto it = begin; it != end; ++it)
                 partitionOf[*it] = numPartitions;
