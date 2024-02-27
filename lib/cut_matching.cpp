@@ -394,7 +394,7 @@ namespace CutMatching {
             if (has_excess_flow) {
                 const auto [cutLeft, cutRight] = subdivGraph->levelCut(h);
                 VLOG(3) << "\tHas level cut with (" << cutLeft.size() << ", " << cutRight.size() << ") vertices.";
-                if (reached_flow_fraction) {
+                if (params.stop_float_at_fraction && reached_flow_fraction) {
                     auto* smaller_side = subdivGraph->globalVolume(cutLeft.begin(), cutLeft.end()) < subdivGraph->globalVolume(cutRight.begin(), cutRight.end()) ? &cutLeft : &cutRight;
                     removed_from_fractional_flow.insert(removed_from_fractional_flow.end(), smaller_side->begin(), smaller_side->end());
                 } else {
