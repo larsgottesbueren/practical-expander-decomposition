@@ -265,9 +265,9 @@ BalancedPartitioner::Result BalancedPartitioner::Compute(UnitFlow::Graph& graph)
     csr.vwgt.clear();
     for (Vertex u : graph) {
         for (auto e = graph.beginEdge(u); e != graph.endEdge(u); ++e) {
-            csr.xadj.push_back(node_id_remap[e->to]);
+            csr.adj.push_back(node_id_remap[e->to]);
         }
-        csr.adj.push_back(csr.xadj.size());
+        csr.xadj.push_back(csr.adj.size());
         csr.vwgt.push_back(graph.globalDegree(u));
     }
 
@@ -283,8 +283,9 @@ BalancedPartitioner::Result BalancedPartitioner::Compute(UnitFlow::Graph& graph)
     int32_t options[METIS_NOPTIONS];
     METIS_SetDefaultOptions(options);
     std::cout << options[METIS_OPTION_OBJTYPE] << " " << options[METIS_OPTION_NO2HOP] << std::endl;
+    VLOG(2) << V(nvtxs) << V(ncon) << V(csr.adj.size()) << V(csr.xadj.size()) << V(vsize) << V(csr.vwgt.size());
     METIS_PartGraphRecursive(&nvtxs, &ncon, csr.xadj.data(), csr.adj.data(), csr.vwgt.data(), vsize, adjwgt, &nparts, tpwgts.data(), &ubvec, options, &objval, partition.data());
-
+    std::cout << "back" << std::endl;
     // reset node id remap, compute volume, translate partition assignment
     size_t i = 0;
     double vol1 = 0, vol2 = 0;
