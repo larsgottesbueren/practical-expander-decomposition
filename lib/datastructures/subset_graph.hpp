@@ -216,6 +216,8 @@ namespace SubsetGraph {
             return edges[e.to][e.revIdx];
         }
 
+        std::vector<int>& BorrowVisitedArray() { return visited; }
+
         /**
            Given a subset of vertices, return the same vertices where all of their
            valid neighbors are included as well.
