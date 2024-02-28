@@ -74,7 +74,7 @@ struct Timer {
     }
     bool running = false;
     Timepoint start;
-    Duration total_duration;
+    Duration total_duration = Duration(0.0);
 
     Timepoint Start() {
         if (running)

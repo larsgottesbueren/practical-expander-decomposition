@@ -329,11 +329,13 @@ namespace CutMatching {
         // During cut-matching, we're only using the visited array of the subdiv graph --> can borrow this one
         // NOTE This has to be changed when we adapt the code to not use the subdiv graph
         std::vector<int>& virtual_cut = graph->BorrowVisitedArray();    // for fractional flow routing
-        bool any_virtually_cut = false;
+        size_t num_virtual_cut = 0;
 
         int iterations = 0;
         const int iterationsToRun = std::max(params.minIterations, T);
-        for (; iterations < iterationsToRun && subdivGraph->globalVolume(subdivGraph->cbeginRemoved(), subdivGraph->cendRemoved()) <= targetVolumeBalance;
+        for (; iterations < iterationsToRun 
+                && subdivGraph->globalVolume(subdivGraph->cbeginRemoved(), subdivGraph->cendRemoved()) <= targetVolumeBalance
+                && num_virtual_cut < graph->size();
              ++iterations) {
             VLOG(3) << "Iteration " << iterations << " out of " << iterationsToRun << ".";
 
@@ -391,6 +393,10 @@ namespace CutMatching {
 
             const auto [reached_flow_fraction, has_excess_flow] = subdivGraph->compute(h);
 
+            if (params.stop_flow_at_fraction) {
+                subdivGraph->excess_fraction = std::numeric_limits<double>::max();
+            }
+
             Timings::GlobalTimings().AddTiming(Timing::FlowMatch, timer.Restart());
 
             if (has_excess_flow) {
@@ -400,10 +406,11 @@ namespace CutMatching {
                     auto* smaller_side = subdivGraph->globalVolume(cutLeft.begin(), cutLeft.end()) < subdivGraph->globalVolume(cutRight.begin(), cutRight.end())
                                                  ? &cutLeft
                                                  : &cutRight;
+                    VLOG(3) << "Reached flow fraction " << V(subdivGraph->excess_fraction) << V(smaller_side->size());
                     for (UnitFlow::Vertex u : *smaller_side) {
                         if ((*subdivisionIdx)[u] == -1) {
-                            virtual_cut[u] = true;
-                            any_virtually_cut = true;
+                            num_virtual_cut += 1 - virtual_cut[u];
+                            virtual_cut[u] = 1;
                         }
                     }
                 } else {
@@ -447,7 +454,7 @@ namespace CutMatching {
         bool balanced_cut = graph->size() != 0 && graph->removedSize() != 0 &&
                             subdivGraph->globalVolume(subdivGraph->cbeginRemoved(), subdivGraph->cendRemoved()) > lowerVolumeBalance;
         
-        if (!balanced_cut && any_virtually_cut) {
+        if (!balanced_cut && num_virtual_cut) {
             // check if the cut from fractional flow routing gives good conductance and is balanced. If so, take the cut, otherwise go to near expander
             
             // first save which nodes were removed and restore the previous graph
@@ -490,7 +497,7 @@ namespace CutMatching {
             }
         }
 
-        if (any_virtually_cut) {
+        if (num_virtual_cut > 0) {
             for (auto u : *graph) {
                 virtual_cut[u] = 0;
             }
@@ -501,7 +508,7 @@ namespace CutMatching {
             VLOG(3) << "Cut matching ran " << iterations << " iterations and resulted in balanced cut with size (" << graph->size() << ", "
                     << graph->removedSize() << ") and volume (" << graph->globalVolume(graph->cbegin(), graph->cend()) << ", "
                     << graph->globalVolume(graph->cbeginRemoved(), graph->cendRemoved()) << ").";
-        } else if (!any_virtually_cut && (graph->removedSize() == 0 || graph->size() == 0)) {
+        } else if (num_virtual_cut == 0 && (graph->removedSize() == 0 || graph->size() == 0)) {
             result.type = Result::Expander;
             if (graph->size() == 0) {
                 graph->restoreRemoves(); // the surrounding code expects that the remaining part is stored as the current graph
