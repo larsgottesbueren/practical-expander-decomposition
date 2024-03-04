@@ -7,7 +7,7 @@ This repository adds speedup techniques, such as sparse cut heuristics, a dynami
 ## Build
 
 ``` shell
-git submodule --update --init
+git submodule update --init
 mkdir release && cd release && cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j4
 ```
