@@ -13,7 +13,7 @@ namespace Trimming {
         graph->reset();
 
         for (auto u : *graph) {
-            const int removedEdges = graph->globalDegree(u) - graph->degree(u);
+            const int removedEdges = graph->globalDegree(u) - graph->degree(u); // TODO this is not the cut between A and R. especially deeper in the recursion. to test on the top level it suffices...
             graph->addSource(u, (UnitFlow::Flow) std::ceil(removedEdges * 2.0 / phi));
             for (auto e = graph->beginEdge(u); e != graph->endEdge(u); ++e)
                 e->capacity = (UnitFlow::Flow) std::ceil(2.0 / phi);
@@ -30,7 +30,7 @@ namespace Trimming {
             if (!has_excess_flow)
                 break;
 
-            const auto [levelCut, _] = graph->levelCut(h);
+            const auto [levelCut, _] = graph->levelCut(h);  // TODO we want the min cut, not a level cut??
             VLOG(3) << "Found level cut of size: " << levelCut.size();
             if (levelCut.empty())
                 break;
