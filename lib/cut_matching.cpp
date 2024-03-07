@@ -379,7 +379,7 @@ namespace CutMatching {
                 }();
             }   
 
-            const auto [reached_flow_fraction, has_excess_flow] = subdivGraph->compute(h);
+            const auto [reached_flow_fraction, has_excess_flow] = subdivGraph->computeFlow(h);
 
             if (params.stop_flow_at_fraction) {
                 subdivGraph->excess_fraction = std::numeric_limits<double>::max();

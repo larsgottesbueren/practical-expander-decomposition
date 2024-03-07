@@ -26,7 +26,7 @@ namespace Trimming {
         const int h = ceil(40 * std::log(2 * m + 1) / phi);
 
         while (true) {
-            const bool has_excess_flow = graph->compute(h).second;
+            const bool has_excess_flow = graph->computeFlow(h).second;
             if (!has_excess_flow)
                 break;
 

@@ -94,7 +94,7 @@ namespace UnitFlow {
         return false;
     }
 
-    std::pair<bool, bool> Graph::compute(const int maxHeight) {
+    std::pair<bool, bool> Graph::computeFlow(const int maxHeight) {
         bool reached_flow_fraction = SinglePushLowestLabel(maxHeight);
 
         for (auto u : *this) {
