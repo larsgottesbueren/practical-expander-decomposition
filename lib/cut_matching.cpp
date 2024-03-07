@@ -36,8 +36,6 @@ namespace CutMatching {
             }
         }
 
-        num_matched_steps.assign(count, 0);
-
         // If potential is sampled, set the flow matrix to the identity matrix.
         if (params.samplePotential) {
             flowMatrix.resize(count);
@@ -314,7 +312,7 @@ namespace CutMatching {
         }
 
         const int totalVolume = subdivGraph->globalVolume();
-        // TODO minor discrepancy with implementation in expander_decomp.cpp --> taking it on subdivGraph ???
+        // TODO minor discrepancy with implementation in expander_decomp.cpp --> taking it on subdivGraph ? should be exactly 2x?
         const int lowerVolumeBalance = totalVolume / 2 / 10 / T;
 
         const int targetVolumeBalance = std::max(lowerVolumeBalance, int(params.minBalance * totalVolume));
@@ -385,7 +383,7 @@ namespace CutMatching {
                     const double fraction = 1.0 - (1. / iterationsToRun);
                     return fraction * max_flow;
                 }();
-            }
+            }   
 
             const auto [reached_flow_fraction, has_excess_flow] = subdivGraph->compute(h);
 
@@ -420,9 +418,6 @@ namespace CutMatching {
             for (auto& p : matching) {
                 int u = (*subdivisionIdx)[p.first];
                 int v = (*subdivisionIdx)[p.second];
-
-                num_matched_steps[u]++;
-                num_matched_steps[v]++;
 
                 for (auto& flow : flow_vectors) {
                     const double avg = 0.5 * (flow[u] + flow[v]);

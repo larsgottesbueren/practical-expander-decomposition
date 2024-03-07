@@ -143,8 +143,6 @@ namespace CutMatching {
          */
         std::vector<std::vector<double>> flowMatrix;
 
-        std::vector<int> num_matched_steps;
-
         /**
            Construct a semi-random vector for the currently alive subdivision vertices
            with length 'numSplitNodes' normalized by the number of alive subdivision
