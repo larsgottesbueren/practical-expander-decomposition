@@ -77,7 +77,7 @@ namespace CutMatching {
        or a near expander.
      */
     struct Result {
-        enum Type { Balanced, Expander, NearExpander };
+        enum Type { Balanced, Expander, NearExpander, NearExpanderFakeEdges };
         /**
            Type of cut-matching result.
          */
@@ -103,6 +103,8 @@ namespace CutMatching {
         long long congestion = 1;
 
         int num_flow_vectors_needed = -1;
+
+        std::vector<std::pair<UnitFlow::Vertex, UnitFlow::Vertex>> fake_matching_edges;
     };
 
     struct FlowVector {

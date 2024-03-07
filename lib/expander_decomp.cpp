@@ -168,6 +168,9 @@ namespace ExpanderDecomposition {
                     subdivisionFlowGraph->restoreSubgraph();
                     break;
                 }
+                case CutMatching::Result::NearExpanderFakeEdges : {
+                    break;
+                }
                 case CutMatching::Result::Expander: {
                     assert(!a.empty() && "Expander should not be empty graph.");
                     assert(r.empty() && "Expander should not remove vertices.");
