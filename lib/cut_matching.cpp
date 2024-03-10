@@ -326,8 +326,7 @@ namespace CutMatching {
 
         int iterations = 0;
         const int iterationsToRun = std::max(params.minIterations, T);
-        for (; iterations < iterationsToRun 
-                && subdivGraph->globalVolume(subdivGraph->cbeginRemoved(), subdivGraph->cendRemoved()) <= targetVolumeBalance;
+        for (; iterations < iterationsToRun && subdivGraph->globalVolume(subdivGraph->cbeginRemoved(), subdivGraph->cendRemoved()) <= targetVolumeBalance;
              ++iterations) {
             VLOG(3) << "Iteration " << iterations << " out of " << iterationsToRun << ".";
 
@@ -377,7 +376,7 @@ namespace CutMatching {
                     const double fraction = 1.0 - (1. / iterationsToRun);
                     return fraction * max_flow;
                 }();
-            }   
+            }
 
             const auto [reached_flow_fraction, has_excess_flow] = subdivGraph->computeFlow(h);
 
@@ -396,11 +395,10 @@ namespace CutMatching {
             Timings::GlobalTimings().AddTiming(Timing::Misc, timer.Restart());
 
             auto matching = subdivGraph->matching(axLeft);
-            
+
             if (reached_flow_fraction && has_excess_flow) {
                 // Add extra fake edges to the matching between yet unmatched endpoints in axLeft and axRight
                 // result.fake_matching_edges
-
             }
 
             for (auto& p : matching) {
@@ -448,7 +446,8 @@ namespace CutMatching {
             result.type = Result::NearExpanderFakeEdges;
             graph->restoreRemoves();
             subdivGraph->restoreRemoves();
-            VLOG(3) << "Cut matching ran " << iterations << " iterations and resulted in a near expander with " << result.fake_matching_edges.size() << " fake edges";
+            VLOG(3) << "Cut matching ran " << iterations << " iterations and resulted in a near expander with " << result.fake_matching_edges.size()
+                    << " fake edges";
         } else {
             result.type = Result::NearExpander;
             VLOG(3) << "Cut matching ran " << iterations << " iterations and resulted in near expander of size " << graph->size() << ".";

@@ -147,8 +147,7 @@ namespace ExpanderDecomposition {
                     assert(!r.empty() && "Near expander should have non-empty R.");
 
                     timer.Start();
-                    Trimming::Solver trimming(flowGraph.get(), phi);
-                    trimming.compute();
+                    Trimming::SaranurakWangTrimming(flowGraph.get(), phi);
                     Timings::GlobalTimings().AddTiming(Timing::FlowTrim, timer.Stop());
 
                     assert(flowGraph->size() > 0 && "Should not trim all vertices from graph.");
@@ -168,7 +167,7 @@ namespace ExpanderDecomposition {
                     subdivisionFlowGraph->restoreSubgraph();
                     break;
                 }
-                case CutMatching::Result::NearExpanderFakeEdges : {
+                case CutMatching::Result::NearExpanderFakeEdges: {
                     break;
                 }
                 case CutMatching::Result::Expander: {
