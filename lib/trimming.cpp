@@ -89,11 +89,13 @@ namespace Trimming {
                 break;
             }
 
+#if false
             for (auto u : cut) {
                 for (auto e = subdiv_graph.beginEdge(u); e != subdiv_graph.endEdge(u); ++e) {
                     subdiv_graph.addSource(e->to, capacity);
                 }
             }
+#endif
 
             for (auto u : cut) {
                 subdiv_graph.remove(u);
