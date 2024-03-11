@@ -53,7 +53,7 @@ namespace Trimming {
         const int height = ceil(40 * std::log(2 * m + 1) / phi);
         const int capacity = (UnitFlow::Flow) std::ceil(2.0 / phi);
 
-        // TODO can we use the normal graph somehow?
+        // TODO can we use the normal graph somehow? does the witness graph come into play?
         graph.restoreRemoves(); // restore removes made during cut-matching
         subdiv_graph.restoreRemoves(); // restore removes made during cut-matching
 
@@ -67,7 +67,7 @@ namespace Trimming {
             }
         }
         for (const auto& [a, b] : fake_matching_edges) {
-            // TODO is deduplication correct?
+            // TODO deduplication should be wrong?
             if (!subdiv_graph.isSource(a)) {
                 // If T > 2 * 2/phi then the flow already gets congested at the source
                 subdiv_graph.addSource(a, cut_matching_iterations);
