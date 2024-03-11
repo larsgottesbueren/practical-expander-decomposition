@@ -35,13 +35,13 @@ namespace Trimming {
             if (levelCut.empty())
                 break;
 
-            for (auto u : levelCut)
-                graph->remove(u);
-
-            // TODO this doesn't do anything...the vertex was just removed, so it has no edges left
+            // NOTE I swapped this with the vertex removal. This is a bug in the baseline implementation.
             for (auto u : levelCut)
                 for (auto e = graph->beginEdge(u); e != graph->endEdge(u); ++e)
                     graph->addSource(e->to, (UnitFlow::Flow) std::ceil(2.0 / phi));
+
+            for (auto u : levelCut)
+                graph->remove(u);
         }
 
         VLOG(2) << "After trimming partition has " << graph->size() << " vertices.";
