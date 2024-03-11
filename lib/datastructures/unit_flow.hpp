@@ -90,6 +90,8 @@ namespace UnitFlow {
          */
         void addSource(Vertex u, Flow amount) { absorbed[u] += amount; }
 
+        bool isSource(Vertex u) const { return absorbed[u] > 0; }
+
         /**
            Increase the amount of flow a vertex is able to absorb on its own.
          */
