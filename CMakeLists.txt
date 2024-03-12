@@ -11,6 +11,7 @@ set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -lm")
 add_subdirectory(external/tlx)
 
 include_directories("lib")
+include_directories("external/metis")
 
 add_executable(EDC main/edc.cpp)
 target_sources(EDC PRIVATE
@@ -22,4 +23,4 @@ target_sources(EDC PRIVATE
 		)
 
 target_link_libraries(EDC tlx)
-target_link_libraries(EDC ${CMAKE_SOURCE_DIR}/lib/metis/libmetis.a)
+target_link_libraries(EDC ${CMAKE_SOURCE_DIR}/external/metis/libmetis.a)
