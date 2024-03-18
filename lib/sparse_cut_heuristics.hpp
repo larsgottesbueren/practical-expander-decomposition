@@ -164,6 +164,7 @@ public:
     };
 
     Result Compute(UnitFlow::Graph& graph);
+    void Allocate(size_t num_nodes);
 
 private:
     using Vertex = UnitFlow::Vertex;
@@ -186,6 +187,7 @@ public:
         nibble.SetGraph(graph);
         local_search.SetGraph(graph);
         in_cluster.assign(graph.size(), false);
+        balanced_partitioner.Allocate(graph.size());
     }
 
     bool Compute(UnitFlow::Graph& graph, double conductance_goal, double balance_goal, bool use_balanced_partitions);

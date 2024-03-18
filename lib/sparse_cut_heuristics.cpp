@@ -243,14 +243,13 @@ LocalSearch::Result LocalSearch::Compute(const std::vector<LocalSearch::Vertex>&
     };
 }
 
-BalancedPartitioner::Result BalancedPartitioner::Compute(UnitFlow::Graph& graph) {
-    // alloc
-    if (static_cast<size_t>(graph.size()) >= node_id_remap.size()) {
-        node_id_remap.resize(graph.size());
-        partition.resize(graph.size());
-        partition2.resize(graph.size());
-    }
+void BalancedPartitioner::Allocate(size_t num_nodes) {
+    node_id_remap.resize(num_nodes);
+    partition.resize(num_nodes);
+    partition2.resize(num_nodes);
+}
 
+BalancedPartitioner::Result BalancedPartitioner::Compute(UnitFlow::Graph& graph) {
     // remap node IDs
     Vertex remapped_id = 0;
     for (Vertex u : graph) {
