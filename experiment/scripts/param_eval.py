@@ -42,34 +42,35 @@ def edc_call(graph, phi, options):
             args.append(str(val))
     args.extend(['--log', '0'])
     args.extend([graph, str(phi)])
-    result = subprocess.run(args, text=True, check=False, capture_output=True, timeout=1800)
-    if result.returncode != 0:
-        print('Failed run: ', graph, phi, options, 'stdout = ', result.stdout)
+    try:
+        result = subprocess.run(args, text=True, check=False, capture_output=True, timeout=1800)
+    except:
+        print('Time out / Failed run: ', graph, phi, options)
         return None
-    else:
-        lines = result.stdout.strip().split('\n')
-        result = {'graph': os.path.basename(graph), 'phi': phi}
 
-        for l in lines:
-            s = l.split('\t\t')
-            if len(s) == 3:
-                # timer
-                if s[0] != "Category":
-                    result[s[0]] = float(s[1])
-            elif "Total measured time" in l:
-                s = l.replace('---', '')
-                s = s.split(' ')
-                result['measured time'] = float(s[-2])
-            elif "Time " in l:
-                s = l.split(' ')
-                result[s[1]] = float(s[2].replace('s', ''))
-            else:
-                s = l.split(' ')
-                result['cut'] = int(s[0])
-                result['partitions'] = int(s[1])
+    lines = result.stdout.strip().split('\n')
+    result = {'graph': os.path.basename(graph), 'phi': phi}
 
-        result.update(options)  # copy the options into the result
-        return result
+    for l in lines:
+        s = l.split('\t\t')
+        if len(s) == 3:
+            # timer
+            if s[0] != "Category":
+                result[s[0]] = float(s[1])
+        elif "Total measured time" in l:
+            s = l.replace('---', '')
+            s = s.split(' ')
+            result['measured time'] = float(s[-2])
+        elif "Time " in l:
+            s = l.split(' ')
+            result[s[1]] = float(s[2].replace('s', ''))
+        else:
+            s = l.split(' ')
+            result['cut'] = int(s[0])
+            result['partitions'] = int(s[1])
+
+    result.update(options)  # copy the options into the result
+    return result
 
 
 def enum_options():
@@ -144,7 +145,6 @@ def add_more_seeds(configs):
             c['seed'] = seed
             res.append(copy.copy(c))
     return res
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
