@@ -42,14 +42,21 @@ def edc_call(graph, phi, options, timelimit=1800):
             args.append(str(val))
     args.extend(['--log', '0'])
     args.extend([graph, str(phi)])
+
+    result = {'graph': os.path.basename(graph), 'phi': phi}
+    result.update(options)  # copy the options into the result
+    result['measured time'] = timelimit
+    result['cut'] = -1
+    result['partitions'] = -1
+
     try:
-        result = subprocess.run(args, text=True, check=False, capture_output=True, timeout=timelimit)
+        subproc_result = subprocess.run(args, text=True, check=False, capture_output=True, timeout=timelimit)
     except:
         print('Time out / Failed run: ', graph, phi, options)
-        return None
+        return result
 
-    lines = result.stdout.strip().split('\n')
-    result = {'graph': os.path.basename(graph), 'phi': phi}
+    lines = subproc_result.stdout.strip().split('\n')
+    
 
     for l in lines:
         s = l.split('\t\t')
@@ -69,7 +76,7 @@ def edc_call(graph, phi, options, timelimit=1800):
             result['cut'] = int(s[0])
             result['partitions'] = int(s[1])
 
-    result.update(options)  # copy the options into the result
+    
     return result
 
 
@@ -206,6 +213,6 @@ if __name__ == '__main__':
         results = pool.starmap(edc_call, tqdm.tqdm(jobs, total=len(jobs)), chunksize=1)
 
     with open(args.output, 'w') as f:
-        writer = csv.DictWriter(f, fieldnames=results[0].keys())
+        writer = csv.DictWriter(f, fieldnames = set().union(*[r.keys() for r in results]), restval=args.timelimit)
         writer.writeheader()
-        writer.writerows(results)  # TODO beware of failed runs
+        writer.writerows(results)
