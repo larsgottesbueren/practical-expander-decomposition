@@ -29,7 +29,7 @@ options = {
 }
 
 
-def edc_call(graph, phi, options):
+def edc_call(graph, phi, options, timelimit=1800):
     args = [bin_path]
     for key, val in options.items():
         if key == 'name':
@@ -43,7 +43,7 @@ def edc_call(graph, phi, options):
     args.extend(['--log', '0'])
     args.extend([graph, str(phi)])
     try:
-        result = subprocess.run(args, text=True, check=False, capture_output=True, timeout=1800)
+        result = subprocess.run(args, text=True, check=False, capture_output=True, timeout=timelimit)
     except:
         print('Time out / Failed run: ', graph, phi, options)
         return None
@@ -145,6 +145,35 @@ def incremental_configs():
 
     return configs
 
+def large_graphs_configs():
+    base_config = {
+        'flow-vectors': 1,
+        'krv-first': False,
+        'use-cut-heuristics': False,
+        'use-balanced-partitions': False,
+        'flow-fraction': False,
+        'adaptive': False,
+        'kahan-error': True,
+        'flow-vectors' : 1,
+        'seed': 1,
+        'name': 'Arv',
+        'base-config' : True
+    }
+
+    our_config = {
+        'flow-vectors': 20,
+        'krv-first': False,
+        'use-cut-heuristics': True,
+        'use-balanced-partitions': True,
+        'flow-fraction': False,
+        'adaptive': True,
+        'kahan-error': True,
+        'seed': 1,
+        'base-config' : False,
+        'name': 'Ours'
+    }
+    return [base_config, our_config]
+
 def add_more_seeds(configs):
     res = []
     for c in configs:
@@ -157,15 +186,22 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-t', '--threads', type=int, default=1)
     parser.add_argument('-o', '--output', type=str, default='results.csv')
+    parser.add_argument('-g', '--graphs', type=str, default='../graphs/real/')
+    parser.add_argument('--timelimit', type=int, default=1800, help='Time limit in seconds')
+    parser.add_argument('c', '--configs', type=str, default='incremental', help='Which configs of EDC to run. [incremental, large-graphs]')
     args = parser.parse_args()
+
+    graph_path = args.graphs
 
     graph_files = glob.glob(graph_path + '*.graph')
     # configs = enum_options()
-    configs = incremental_configs()
+    if args.configs == 'incremental':
+        configs = incremental_configs()
+        configs = add_more_seeds(configs)
+    elif args.configs == 'large-graphs':
+        configs = large_graphs_configs()
 
-    configs = add_more_seeds(configs)
-
-    jobs = list(itertools.product(graph_files, phi_values, configs))  # list is necessary for len(jobs)
+    jobs = list(itertools.product(graph_files, phi_values, configs, [args.timelimit]))  # list is necessary for len(jobs)
     with mp.Pool(processes=args.threads) as pool:
         results = pool.starmap(edc_call, tqdm.tqdm(jobs, total=len(jobs)), chunksize=1)
 
