@@ -143,9 +143,6 @@ def incremental_configs():
     }
     #configs.append(our_config)
 
-    for c in configs:
-        print(c)
-    exit()
     return configs
 
 def add_more_seeds(configs):
