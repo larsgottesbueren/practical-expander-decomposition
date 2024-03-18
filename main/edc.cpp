@@ -98,7 +98,7 @@ int main(int argc, char* argv[]) {
 
     // our optimizations
     cp.add_bool("use-cut-heuristics", params.use_cut_heuristics, "Try heuristic cut procedures before cut-matching.");
-    cp.add_bool("use-balanced_partitions", params.use_balanced_partitions, "Use balanced partitions (via Metis) during heuristic cut procedures.");
+    cp.add_bool("use-balanced-partitions", params.use_balanced_partitions, "Use balanced partitions (via Metis) during heuristic cut procedures.");
     cp.add_bool("adaptive", params.use_potential_based_dynamic_stopping_criterion,
                 "Perform dynamic number of cut-matching rounds based on how well the flow vectors are mixing.");
     cp.add_bool("flow-fraction", params.stop_flow_at_fraction, "Stop flow computation once almost all flow is routed.");
