@@ -188,7 +188,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output', type=str, default='results.csv')
     parser.add_argument('-g', '--graphs', type=str, default='../graphs/real/')
     parser.add_argument('--timelimit', type=int, default=1800, help='Time limit in seconds')
-    parser.add_argument('c', '--configs', type=str, default='incremental', help='Which configs of EDC to run. [incremental, large-graphs]')
+    parser.add_argument('-c', '--configs', type=str, default='incremental', help='Which configs of EDC to run. [incremental, large-graphs]')
     args = parser.parse_args()
 
     graph_path = args.graphs
