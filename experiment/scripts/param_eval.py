@@ -83,6 +83,7 @@ def incremental_configs():
         'flow-vectors': 1,
         'krv-first': False,
         'use-cut-heuristics': False,
+        'use-balanced-partitions': False,
         'flow-fraction': False,
         'adaptive': False,
         'kahan-error': True,
@@ -95,8 +96,14 @@ def incremental_configs():
     base_config['base-config'] = True
     configs = [base_config]
 
+    b20 = copy.copy(base_config)
+    b20['flow-vectors'] = 20
+    b20['name'] = 'Arv-20'
+    configs.append(b20)
+
     ada = copy.copy(config)
     ada['name'] = '+Ada'
+    ada['flow-vectors'] = 20
     ada['adaptive'] = True
     configs.append(ada)
 
@@ -104,24 +111,24 @@ def incremental_configs():
     config['name'] = '+Cut'
     configs.append(copy.copy(config))
 
+    config['use-balanced-partitions'] = True
+    config['name'] = '+Cut+Bala'
+    configs.append(copy.copy(config))
+
+    config['use-balanced-partitions'] = False
     config['adaptive'] = True
+    config['flow-vectors'] = 20
     config['name'] = '+Cut+Ada'
     configs.append(copy.copy(config))
 
-    #krv = copy.copy(config)
-    #krv['krv-first'] = True
-    #krv['name'] = '+Cut+Ada+KRV'
-    #configs.append(krv)
+    config['use-balanced-partitions'] = True
+    config['name'] = '+Cut+Bala+Ada'
+    configs.append(copy.copy(config))
 
     frac = copy.copy(config)
     frac['flow-fraction'] = True
     frac['name'] = '+Cut+Ada+Frac'
     # configs.append(frac) # leave out frac for now
-
-    kahan = copy.copy(config)
-    kahan['kahan-error'] = False
-    kahan['name'] = '+Cut+Ada-Kahan'
-    #configs.append(kahan)
 
     our_config = {
         'flow-vectors': 20,
@@ -136,6 +143,9 @@ def incremental_configs():
     }
     #configs.append(our_config)
 
+    for c in configs:
+        print(c)
+    exit()
     return configs
 
 def add_more_seeds(configs):
