@@ -57,6 +57,8 @@ namespace ExpanderDecomposition {
          */
         int numPartitions;
 
+        int num_vertices_finalized = 0;
+
         /**
            Vector of indices such that 'partitionOf[u]' is the partition index of
            vertex 'u'.
@@ -81,9 +83,12 @@ namespace ExpanderDecomposition {
             congestionOf.push_back(c);
             assert(congestionOf.size() == static_cast<size_t>(numPartitions + 1));
 
-            for (auto it = begin; it != end; ++it)
+            for (auto it = begin; it != end; ++it) {
                 partitionOf[*it] = numPartitions;
+                num_vertices_finalized++;
+            }
             numPartitions++;
+            VLOG(3) << V(numPartitions) << V(num_vertices_finalized);
         }
 
         SparseCutHeuristics sparse_cut_heuristics;
