@@ -88,7 +88,7 @@ namespace ExpanderDecomposition {
                 num_vertices_finalized++;
             }
             numPartitions++;
-            VLOG(3) << V(numPartitions) << V(num_vertices_finalized);
+            VLOG(2) << V(numPartitions) << V(num_vertices_finalized);
         }
 
         SparseCutHeuristics sparse_cut_heuristics;
