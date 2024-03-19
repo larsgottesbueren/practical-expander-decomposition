@@ -31,7 +31,7 @@ def aggregate_runtimes(df, field = 'Total', seed_aggregator = 'median'):
   df = df.groupby(runtime.keys)[field].agg(aggregate_func).reset_index()
   return df
 
-df = pd.read_csv('results.flow-vecs=1.parallel.csv')
+df = pd.read_csv('results.v3.parallel.csv')
 
 for phi in df.phi.unique():
   print("phi=", phi)
@@ -61,8 +61,8 @@ for phi in df.phi.unique():
   #rdf = rdf[rdf['base_time'] <= 100]
   
   algos = list(rdf.name.unique())
-
-  for algo in itertools.chain(algos, ['Arv']):
+  print(algos)
+  for algo in itertools.chain(algos):
     print(algo)
     print(mdf[mdf.name == algo].iloc[mdf[mdf.name == algo]['Total'].argmax()])
     print(df[df.name == algo].iloc[df[df.name == algo]['Total'].argmax()])
