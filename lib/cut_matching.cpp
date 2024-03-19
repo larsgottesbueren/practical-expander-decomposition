@@ -433,7 +433,7 @@ namespace CutMatching {
 
         if (balanced_cut) {
             result.type = Result::Balanced; // We have: graph.volume(R) > m / (10 * T)
-            VLOG(3) << "Cut matching ran " << iterations << " iterations and resulted in balanced cut with size (" << graph->size() << ", "
+            VLOG(2) << "Cut matching ran " << iterations << " iterations and resulted in balanced cut with size (" << graph->size() << ", "
                     << graph->removedSize() << ") and volume (" << graph->globalVolume(graph->cbegin(), graph->cend()) << ", "
                     << graph->globalVolume(graph->cbeginRemoved(), graph->cendRemoved()) << ").";
         } else if ((graph->removedSize() == 0 || graph->size() == 0) && result.fake_matching_edges.empty()) {
@@ -441,16 +441,16 @@ namespace CutMatching {
             if (graph->size() == 0) {
                 graph->restoreRemoves(); // the surrounding code expects that the remaining part is stored as the current graph
             }
-            VLOG(3) << "Cut matching ran " << iterations << " iterations and resulted in expander.";
+            VLOG(2) << "Cut matching ran " << iterations << " iterations and resulted in expander.";
         } else if (!result.fake_matching_edges.empty()) {
             result.type = Result::NearExpanderFakeEdges;
             graph->restoreRemoves();
             subdivGraph->restoreRemoves();
-            VLOG(3) << "Cut matching ran " << iterations << " iterations and resulted in a near expander with " << result.fake_matching_edges.size()
+            VLOG(2) << "Cut matching ran " << iterations << " iterations and resulted in a near expander with " << result.fake_matching_edges.size()
                     << " fake edges";
         } else {
             result.type = Result::NearExpander;
-            VLOG(3) << "Cut matching ran " << iterations << " iterations and resulted in near expander of size " << graph->size() << ".";
+            VLOG(2) << "Cut matching ran " << iterations << " iterations and resulted in near expander of size " << graph->size() << ".";
         }
 
         return result;
