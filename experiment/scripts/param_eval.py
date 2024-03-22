@@ -48,11 +48,13 @@ def edc_call(graph, phi, options, timelimit=1800):
     result['measured time'] = timelimit
     result['cut'] = -1
     result['partitions'] = -1
+    result['timeout'] = False
 
     try:
         subproc_result = subprocess.run(args, text=True, check=False, capture_output=True, timeout=timelimit)
     except:
         print('Time out / Failed run: ', graph, phi, options)
+        result['timeout'] = True
         return result
 
     lines = subproc_result.stdout.strip().split('\n')
