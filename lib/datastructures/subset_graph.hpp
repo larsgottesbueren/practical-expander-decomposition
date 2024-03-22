@@ -5,6 +5,7 @@
 #include <iostream>
 #include <numeric>
 #include <queue>
+#include <span>
 #include <stack>
 #include <vector>
 
@@ -182,9 +183,11 @@ namespace SubsetGraph {
          */
         typename std::vector<E>::const_iterator cendEdge(V u) const { return edges[u].cbegin() + edgeBounds[u].top().middle; }
 
+        std::span<E> edgesOf(V u) { return { beginEdge(u), endEdge(u) }; }
+
         /**
            Return the i'th edge in the adjacency list of vertex 'u'.
-         */
+        */
         E& getEdge(V u, int idx) {
             assert(idx >= 0 && "Edge index cannot be negative.");
             assert(idx < edgeBounds[u].top().middle && "Edge index larger than number of edges in subgraph adjacency list.");
