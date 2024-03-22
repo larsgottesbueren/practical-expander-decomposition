@@ -59,7 +59,7 @@ namespace Trimming {
 
         subdiv_graph.reset(); // have to use subdiv_graph to place flow on fake matching edges
         for (UnitFlow::Vertex u : graph) {
-            subdiv_graph.addSink(u, graph.globalDegree(u));
+            subdiv_graph.addSink(u, graph.globalDegree(u)); // TODO this will have to be normal degree
         }
         for (UnitFlow::Vertex u : subdiv_graph) {
             for (auto e = subdiv_graph.beginEdge(u); e != subdiv_graph.endEdge(u); ++e) {
@@ -67,14 +67,9 @@ namespace Trimming {
             }
         }
         for (const auto& [a, b] : fake_matching_edges) {
-            // TODO deduplication should be wrong?
-            if (!subdiv_graph.isSource(a)) {
-                // If T > 2 * 2/phi then the flow already gets congested at the source
-                subdiv_graph.addSource(a, cut_matching_iterations);
-            }
-            if (!subdiv_graph.isSource(b)) {
-                subdiv_graph.addSource(b, cut_matching_iterations);
-            }
+            // we can put flow on arbitrary endpoint --> can use normal graph
+            subdiv_graph.addSource(a, cut_matching_iterations);
+            subdiv_graph.addSource(b, cut_matching_iterations);
         }
 
         while (true) {
@@ -83,19 +78,17 @@ namespace Trimming {
                 break;
             }
 
-            // TODO pick the smaller side to remove...
+            // TODO pick the smaller side to remove... --> go for mincut
             const auto [cut, _] = subdiv_graph.levelCut(height);
             if (cut.empty()) {
                 break;
             }
 
-#if false
             for (auto u : cut) {
                 for (auto e = subdiv_graph.beginEdge(u); e != subdiv_graph.endEdge(u); ++e) {
-                    subdiv_graph.addSource(e->to, capacity);
+                    subdiv_graph.addSource(e->to, cut_matching_iterations);
                 }
             }
-#endif
 
             for (auto u : cut) {
                 subdiv_graph.remove(u);
