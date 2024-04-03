@@ -67,15 +67,17 @@ namespace Trimming {
         }
         for (const auto& [a, b] : fake_matching_edges) {
             // we can put flow on arbitrary endpoint --> can use normal graph
-            // TODO map a/b to endpoints of the edge
-            graph.addSource(a, cut_matching_iterations);
-            graph.addSource(b, cut_matching_iterations);
+            // map a/b to endpoints of the edge
+            UnitFlow::Vertex ea = subdiv_graph.edgesOf(a)[0].to;
+            UnitFlow::Vertex eb = subdiv_graph.edgesOf(b)[1].to;
+            graph.addSource(ea, cut_matching_iterations);
+            graph.addSource(eb, cut_matching_iterations);
         }
 
         while (true) {
 
-            // try true max flow for h * m work first, then switch to unit flow, keep flow assignment and run global relabeling so the input to unit flow is
-            // usable
+            // try true max flow for h * m * 2/phi work first, then switch to unit flow.
+            // keep flow assignment and run global relabeling so the input to unit flow is usable
             const bool has_excess = graph.computeFlow(height).second;
             if (!has_excess) {
                 break;
