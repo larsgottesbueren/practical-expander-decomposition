@@ -62,8 +62,8 @@ namespace Trimming {
             subdiv_graph.addSink(u, graph.globalDegree(u)); // TODO this will have to be normal degree
         }
         for (UnitFlow::Vertex u : subdiv_graph) {
-            for (auto e = subdiv_graph.beginEdge(u); e != subdiv_graph.endEdge(u); ++e) {
-                e->capacity = capacity;
+            for (auto& e : subdiv_graph.edgesOf(u)) {
+                e.capacity = capacity;
             }
         }
         for (const auto& [a, b] : fake_matching_edges) {

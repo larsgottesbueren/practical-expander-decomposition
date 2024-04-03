@@ -113,7 +113,7 @@ namespace UnitFlow {
 
            Precondition: A flow has been computed.
          */
-        std::pair<std::vector<Vertex>, std::vector<Vertex>> levelCut(const int maxHeight);
+        std::pair<std::vector<Vertex>, std::vector<Vertex>> levelCut(const int maxHeight, const double conductance_bound = -1.0);
 
         /**
            Set all flow, sinks and source capacities to 0.

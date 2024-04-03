@@ -185,6 +185,8 @@ namespace SubsetGraph {
 
         std::span<E> edgesOf(V u) { return { beginEdge(u), endEdge(u) }; }
 
+        std::span<E> edgesOf(V u) const { return { cbeginEdge(u), cendEdge(u) }; }
+
         /**
            Return the i'th edge in the adjacency list of vertex 'u'.
         */
