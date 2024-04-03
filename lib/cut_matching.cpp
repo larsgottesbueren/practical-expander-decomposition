@@ -398,7 +398,21 @@ namespace CutMatching {
 
             if (reached_flow_fraction && has_excess_flow) {
                 // Add extra fake edges to the matching between yet unmatched endpoints in axLeft and axRight
-                // result.fake_matching_edges
+                std::unordered_set<UnitFlow::Vertex> matched;
+                for (const auto& [a, b] : matching) {
+                    matched.insert(a);
+                    matched.insert(b);
+                }
+                std::vector<UnitFlow::Vertex> unmatched_left, unmatched_right;
+                std::copy_if(axLeft.begin(), axLeft.end(), std::back_inserter(unmatched_left), [&](const UnitFlow::Vertex a) { return !matched.contains(a); });
+                std::copy_if(axRight.begin(), axRight.end(), std::back_inserter(unmatched_right),
+                             [&](const UnitFlow::Vertex a) { return !matched.contains(a); });
+                std::shuffle(unmatched_left.begin(), unmatched_left.end(), *randomGen);
+                std::shuffle(unmatched_right.begin(), unmatched_right.end(), *randomGen);
+                for (size_t i = 0; i < std::min(unmatched_left.size(), unmatched_right.size()); ++i) {
+                    matching.emplace_back(unmatched_left[i], unmatched_right[i]);
+                    result.fake_matching_edges.emplace_back(unmatched_left[i], unmatched_right[i]);
+                }
             }
 
             for (auto& p : matching) {
