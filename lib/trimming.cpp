@@ -53,48 +53,48 @@ namespace Trimming {
         const int height = ceil(40 * std::log(2 * m + 1) / phi);
         const int capacity = (UnitFlow::Flow) std::ceil(2.0 / phi);
 
-        // TODO can we use the normal graph somehow? does the witness graph come into play?
-        graph.restoreRemoves(); // restore removes made during cut-matching
+        graph.restoreRemoves();
         subdiv_graph.restoreRemoves(); // restore removes made during cut-matching
 
-        subdiv_graph.reset(); // have to use subdiv_graph to place flow on fake matching edges
+        graph.reset(); // have to use subdiv_graph to place flow on fake matching edges
         for (UnitFlow::Vertex u : graph) {
-            subdiv_graph.addSink(u, graph.globalDegree(u)); // TODO this will have to be normal degree
+            graph.addSink(u, graph.degree(u));
         }
-        for (UnitFlow::Vertex u : subdiv_graph) {
-            for (auto& e : subdiv_graph.edgesOf(u)) {
+        for (UnitFlow::Vertex u : graph) {
+            for (auto& e : graph.edgesOf(u)) {
                 e.capacity = capacity;
             }
         }
         for (const auto& [a, b] : fake_matching_edges) {
             // we can put flow on arbitrary endpoint --> can use normal graph
-            subdiv_graph.addSource(a, cut_matching_iterations);
-            subdiv_graph.addSource(b, cut_matching_iterations);
+            // TODO map a/b to endpoints of the edge
+            graph.addSource(a, cut_matching_iterations);
+            graph.addSource(b, cut_matching_iterations);
         }
 
         while (true) {
-            const bool has_excess = subdiv_graph.computeFlow(height).second;
+
+            // try true max flow for h * m work first, then switch to unit flow, keep flow assignment and run global relabeling so the input to unit flow is
+            // usable
+            const bool has_excess = graph.computeFlow(height).second;
             if (!has_excess) {
                 break;
             }
 
-            // TODO pick the smaller side to remove... --> go for mincut
-            const auto [cut, _] = subdiv_graph.levelCut(height);
+            // TODO pick the smaller side to remove... --> go for mincut.
+            const auto [cut, _] = graph.levelCut(height);
             if (cut.empty()) {
                 break;
             }
 
             for (auto u : cut) {
-                for (auto e = subdiv_graph.beginEdge(u); e != subdiv_graph.endEdge(u); ++e) {
-                    subdiv_graph.addSource(e->to, cut_matching_iterations);
+                for (auto& e : graph.edgesOf(u)) {
+                    graph.addSource(e->to, cut_matching_iterations);
                 }
             }
 
             for (auto u : cut) {
-                subdiv_graph.remove(u);
-                if (subdiv_idx[u] == -1) {
-                    graph.remove(u); // regular vertex
-                }
+                graph.remove(u);
             }
         }
     }
