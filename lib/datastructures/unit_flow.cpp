@@ -116,7 +116,7 @@ namespace UnitFlow {
     }
 
     // TODO add bounds parameter --> if conductance < bound --> return early
-    std::pair<std::vector<Vertex>, std::vector<Vertex>> Graph::levelCut(const int h) {
+    std::pair<std::vector<Vertex>, std::vector<Vertex>> Graph::levelCut(const int h, const double conductance_bound) {
         std::vector<std::vector<Vertex>> levels(h + 1);
         for (auto u : *this)
             levels[height[u]].push_back(u);
@@ -137,6 +137,9 @@ namespace UnitFlow {
             if (cut > 0 && conductance < bestConductance) {
                 VLOG(4) << V(cut) << V(volume) << V(conductance) << V(level) << V(h);
                 bestConductance = conductance, bestLevel = level;
+                if (bestConductance < conductance_bound) {
+                    break;
+                }
             }
         }
 
