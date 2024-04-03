@@ -89,7 +89,7 @@ namespace Trimming {
 
             for (auto u : cut) {
                 for (auto& e : graph.edgesOf(u)) {
-                    graph.addSource(e->to, cut_matching_iterations);
+                    graph.addSource(e.to, cut_matching_iterations);
                 }
             }
 
