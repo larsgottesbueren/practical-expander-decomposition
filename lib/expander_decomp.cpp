@@ -168,6 +168,26 @@ namespace ExpanderDecomposition {
                     break;
                 }
                 case CutMatching::Result::NearExpanderFakeEdges: {
+                    timer.Start();
+                    Trimming::FakeEdgeTrimming(*flowGraph, *subdivisionFlowGraph, *subdivisionIdx, phi, cut_matching_result.iterations,
+                                               cut_matching_result.fake_matching_edges);
+                    Timings::GlobalTimings().AddTiming(Timing::FlowTrim, timer.Stop());
+
+                    assert(flowGraph->size() > 0 && "Should not trim all vertices from graph.");
+                    finalizePartition(flowGraph->cbegin(), flowGraph->cend(), 0);
+
+                    r.clear();
+                    std::copy(flowGraph->cbeginRemoved(), flowGraph->cendRemoved(), std::back_inserter(r));
+
+                    flowGraph->restoreRemoves();
+                    // subdivisionFlowGraph->restoreRemoves(); not needed
+
+                    auto subR = subdivisionFlowGraph->subdivisionVertices(r.begin(), r.end());
+                    flowGraph->subgraph(r.begin(), r.end());
+                    subdivisionFlowGraph->subgraph(subR.begin(), subR.end());
+                    compute(depth + 1);
+                    flowGraph->restoreSubgraph();
+                    subdivisionFlowGraph->restoreSubgraph();
                     break;
                 }
                 case CutMatching::Result::Expander: {

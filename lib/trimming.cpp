@@ -56,7 +56,7 @@ namespace Trimming {
         graph.restoreRemoves();
         subdiv_graph.restoreRemoves(); // restore removes made during cut-matching
 
-        graph.reset(); // have to use subdiv_graph to place flow on fake matching edges
+        graph.reset();
         for (UnitFlow::Vertex u : graph) {
             graph.addSink(u, graph.degree(u));
         }
@@ -66,8 +66,7 @@ namespace Trimming {
             }
         }
         for (const auto& [a, b] : fake_matching_edges) {
-            // we can put flow on arbitrary endpoint --> can use normal graph
-            // map a/b to endpoints of the edge
+            // we can put flow on arbitrary endpoint --> map a/b to endpoints of the edge
             UnitFlow::Vertex ea = subdiv_graph.edgesOf(a)[0].to;
             UnitFlow::Vertex eb = subdiv_graph.edgesOf(b)[1].to;
             graph.addSource(ea, cut_matching_iterations);
