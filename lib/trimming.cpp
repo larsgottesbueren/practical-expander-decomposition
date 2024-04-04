@@ -56,22 +56,30 @@ namespace Trimming {
         graph.restoreRemoves();
         subdiv_graph.restoreRemoves(); // restore removes made during cut-matching
 
+
+        VLOG(2) << V(m) << V(height) << V(capacity) << V(cut_matching_iterations);
+        VLOG(2) << V(graph.size());
         graph.reset();
+        size_t total_sink_cap = 0, total_source_cap = 0;
         for (UnitFlow::Vertex u : graph) {
             graph.addSink(u, graph.degree(u));
+            total_sink_cap += graph.degree(u);
         }
         for (UnitFlow::Vertex u : graph) {
             for (auto& e : graph.edgesOf(u)) {
                 e.capacity = capacity;
             }
         }
+        VLOG(2) << V(cut_matching_iterations) << V(fake_matching_edges.size());
         for (const auto& [a, b] : fake_matching_edges) {
             // we can put flow on arbitrary endpoint --> map a/b to endpoints of the edge
             UnitFlow::Vertex ea = subdiv_graph.edgesOf(a)[0].to;
             UnitFlow::Vertex eb = subdiv_graph.edgesOf(b)[1].to;
             graph.addSource(ea, cut_matching_iterations);
             graph.addSource(eb, cut_matching_iterations);
+            total_source_cap += 2 * cut_matching_iterations;
         }
+        VLOG(2) << V(total_source_cap) << V(total_sink_cap);
 
         while (true) {
 
@@ -84,6 +92,7 @@ namespace Trimming {
 
             // TODO pick the smaller side to remove... --> go for mincut.
             const auto [cut, _] = graph.levelCut(height);
+            VLOG(2) << V(cut.size());
             if (cut.empty()) {
                 break;
             }
