@@ -29,10 +29,14 @@ namespace UnitFlow {
 
         int steps = 0;
         int pushes = 0;
+        size_t relabels = 0;
+        size_t skips = 0;
 
         while (level <= maxH) {
             if (q[level].empty()) {
                 level++;
+                if (maxH > 500)
+                    VLOG(2) << "Level increased due to empty queue." << V(level) << V(relabels);
                 continue;
             }
 
@@ -75,7 +79,9 @@ namespace UnitFlow {
 
                 if (height[e.to] < maxH && excess(e.to) > 0) {
                     q[height[e.to]].push(e.to);
-                    level = std::min(level, height[e.to]);
+                    level = std::min(level, height[e.to]); // TODO here's the bug in combination with only increasing level if the queue is empty. if every node
+                                                           // has excess flow, we just relabel everyone repeatedly and never have a node of appropriate height
+                                                           // to push to. that behavior is fine if all you want is to route flow and dont care about the cut
                     nextEdgeIdx[e.to] = 0;
                 }
             } else if (nextEdgeIdx[u] == degree(u) - 1) {
@@ -86,12 +92,28 @@ namespace UnitFlow {
                 if (height[u] < maxH) {
                     q[height[u]].push(u);
                 }
+                relabels++;
             } else {
                 nextEdgeIdx[u]++;
+                skips++;
             }
         }
 
-        VLOG(2) << V(flow_routed);
+        if (maxH > 500) {
+            VLOG(2) << V(flow_routed) << V(level) << V(steps) << V(pushes) << V(skips) << V(relabels);
+
+            std::vector<size_t> height_freq(maxH + 1, 0);
+            for (Vertex u : *this) {
+                height_freq[height[u]]++;
+            }
+            for (int i = 0; i <= maxH; ++i) {
+                if (height_freq[i] != 0) {
+                    std::cout << i << ": " << height_freq[i] << " . ";
+                }
+            }
+            std::cout << std::endl;
+        }
+
 
         return false;
     }
