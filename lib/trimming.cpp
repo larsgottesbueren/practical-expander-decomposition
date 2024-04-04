@@ -60,10 +60,10 @@ namespace Trimming {
         VLOG(2) << V(m) << V(height) << V(capacity) << V(cut_matching_iterations);
         VLOG(2) << V(graph.size());
         graph.reset();
-        size_t total_sink_cap = 0, total_source_cap = 0;
+        int64_t drained = 0, injected = 0;
         for (UnitFlow::Vertex u : graph) {
             graph.addSink(u, graph.degree(u));
-            total_sink_cap += graph.degree(u);
+            drained += graph.degree(u);
         }
         for (UnitFlow::Vertex u : graph) {
             for (auto& e : graph.edgesOf(u)) {
@@ -77,9 +77,9 @@ namespace Trimming {
             UnitFlow::Vertex eb = subdiv_graph.edgesOf(b)[1].to;
             graph.addSource(ea, cut_matching_iterations);
             graph.addSource(eb, cut_matching_iterations);
-            total_source_cap += 2 * cut_matching_iterations;
+            injected += 2 * cut_matching_iterations;
         }
-        VLOG(2) << V(total_source_cap) << V(total_sink_cap);
+        VLOG(2) << V(injected) << V(drained);
 
         while (true) {
 
@@ -107,6 +107,7 @@ namespace Trimming {
                 graph.remove(u);
             }
         }
+        std::exit(0); // for tests
     }
 
 

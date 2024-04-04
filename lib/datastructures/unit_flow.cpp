@@ -117,7 +117,6 @@ namespace UnitFlow {
         return std::make_pair(reached_flow_fraction, has_excess);
     }
 
-    // TODO add bounds parameter --> if conductance < bound --> return early
     std::pair<std::vector<Vertex>, std::vector<Vertex>> Graph::levelCut(const int h, const double conductance_bound) {
         std::vector<std::vector<Vertex>> levels(h + 1);
         for (auto u : *this)

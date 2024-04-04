@@ -396,6 +396,7 @@ namespace CutMatching {
 
             auto matching = subdivGraph->matching(axLeft);
 
+            VLOG(2) << V(matching.size()) << V(axLeft.size()) << V(axRight.size());
             if (reached_flow_fraction && has_excess_flow) {
                 // Add extra fake edges to the matching between yet unmatched endpoints in axLeft and axRight
                 std::unordered_set<UnitFlow::Vertex> matched;
