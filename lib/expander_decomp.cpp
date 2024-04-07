@@ -120,10 +120,14 @@ namespace ExpanderDecomposition {
                     assert(!a.empty() && "Cut should be balanced but A was empty.");
                     assert(!r.empty() && "Cut should be balanced but R was empty.");
 
+                    VLOG(2) << "Bala. " << V(depth);
+
                     if (restore_removes) {
+                        VLOG(2) << "Through CM";
                         flowGraph->restoreRemoves();
                         subdivisionFlowGraph->restoreRemoves();
                     }
+
 
                     auto subA = subdivisionFlowGraph->subdivisionVertices(a.begin(), a.end());
                     auto subR = subdivisionFlowGraph->subdivisionVertices(r.begin(), r.end());

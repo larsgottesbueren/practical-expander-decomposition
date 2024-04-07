@@ -324,6 +324,11 @@ namespace CutMatching {
             flow_vectors.push_back(randomUnitVector());
         }
 
+        // 1/2T^2 * perfect matching size; perf size = vol/4 = #edges/2
+        double f = (1.0 - (1.0 / 2 / square(T)));
+        const size_t max_num_fake_matches = f * (graph->volume() / 4.0);
+        VLOG(2) << V(max_num_fake_matches) << V(graph->volume()) << V(square(T)) << V(subdivGraph->volume());
+
         int iterations = 0;
         const int iterationsToRun = std::max(params.minIterations, T);
         for (; iterations < iterationsToRun && subdivGraph->globalVolume(subdivGraph->cbeginRemoved(), subdivGraph->cendRemoved()) <= targetVolumeBalance;
@@ -396,6 +401,8 @@ namespace CutMatching {
 
             auto matching = subdivGraph->matching(axLeft);
 
+            Timings::GlobalTimings().AddTiming(Timing::Match, timer.Stop());
+
             VLOG(2) << V(matching.size()) << V(axLeft.size()) << V(axRight.size());
             if (reached_flow_fraction && has_excess_flow) {
                 // Add extra fake edges to the matching between yet unmatched endpoints in axLeft and axRight
@@ -414,7 +421,18 @@ namespace CutMatching {
                     matching.emplace_back(unmatched_left[i], unmatched_right[i]);
                     result.fake_matching_edges.emplace_back(unmatched_left[i], unmatched_right[i]);
                 }
+
+                if (result.fake_matching_edges.size() >= max_num_fake_matches) {
+                    VLOG(2) << "Number of fake matches exceeded. " << result.fake_matching_edges.size() << " / " << max_num_fake_matches;
+                    result.fake_matching_edges.clear();
+                    result.type = Result::Balanced;
+                    const auto [cutLeft, cutRight] = subdivGraph->levelCut(h);
+                    VLOG(3) << "\tHas level cut with (" << cutLeft.size() << ", " << cutRight.size() << ") vertices.";
+                    RemoveCutSide(cutLeft, cutRight, axLeft, axRight);
+                    return result;
+                }
             }
+
 
             for (auto& p : matching) {
                 int u = (*subdivisionIdx)[p.first];
@@ -433,8 +451,6 @@ namespace CutMatching {
                     });
                 }
             }
-
-            Timings::GlobalTimings().AddTiming(Timing::Match, timer.Stop());
         }
 
         result.iterations = iterations;

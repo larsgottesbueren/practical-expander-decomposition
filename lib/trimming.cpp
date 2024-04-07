@@ -81,6 +81,14 @@ namespace Trimming {
         }
         VLOG(2) << V(injected) << V(drained);
 
+        bool unroutable = false;
+        for (auto u : graph) {
+            if (capacity * graph.degree(u) < graph.excess(u)) {
+                unroutable = true;
+                break;
+            }
+        }
+
         while (true) {
 
             // try true max flow for h * m * 2/phi work first, then switch to unit flow.
