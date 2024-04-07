@@ -108,6 +108,8 @@ namespace UnitFlow {
          */
         std::pair<bool, bool> computeFlow(const int maxHeight);
 
+        bool StandardMaxFlow();
+
         /**
            Compute a level cut. See Saranurak and Wang A.1.
 

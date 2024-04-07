@@ -27,16 +27,9 @@ namespace UnitFlow {
 
         int level = 0;
 
-        int steps = 0;
-        int pushes = 0;
-        size_t relabels = 0;
-        size_t skips = 0;
-
         while (level <= maxH) {
             if (q[level].empty()) {
                 level++;
-                if (maxH > 500)
-                    VLOG(2) << "Level increased due to empty queue." << V(level) << V(relabels);
                 continue;
             }
 
@@ -46,8 +39,6 @@ namespace UnitFlow {
                 continue;
             }
             assert(excess(u) > 0 && "Vertex popped from queue should have excess flow.");
-
-            steps++;
 
             auto& e = getEdge(u, nextEdgeIdx[u]);
             assert(e.flow + reverse(e).flow == 0 && "Flow across edge and its reverse should cancel.");
@@ -62,8 +53,6 @@ namespace UnitFlow {
                 reverse(e).flow -= delta;
                 absorbed[u] -= delta;
                 absorbed[e.to] += delta;
-
-                pushes++;
 
                 if (sink[e.to] > 0) {
                     flow_routed += delta;
@@ -92,31 +81,15 @@ namespace UnitFlow {
                 if (height[u] < maxH) {
                     q[height[u]].push(u);
                 }
-                relabels++;
             } else {
                 nextEdgeIdx[u]++;
-                skips++;
             }
         }
-
-        if (maxH > 500) {
-            VLOG(2) << V(flow_routed) << V(level) << V(steps) << V(pushes) << V(skips) << V(relabels);
-
-            std::vector<size_t> height_freq(maxH + 1, 0);
-            for (Vertex u : *this) {
-                height_freq[height[u]]++;
-            }
-            for (int i = 0; i <= maxH; ++i) {
-                if (height_freq[i] != 0) {
-                    std::cout << i << ": " << height_freq[i] << " . ";
-                }
-            }
-            std::cout << std::endl;
-        }
-
 
         return false;
     }
+
+    bool Graph::StandardMaxFlow() { return false; }
 
     std::pair<bool, bool> Graph::computeFlow(const int maxHeight) {
         bool reached_flow_fraction = SinglePushLowestLabel(maxHeight);
