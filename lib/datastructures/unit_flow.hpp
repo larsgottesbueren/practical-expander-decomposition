@@ -11,7 +11,7 @@
 namespace UnitFlow {
 
     using Vertex = int;
-    using Flow = long long;
+    using Flow = long long; // TODO is this really needed?
 
     struct Edge {
         Vertex from, to, revIdx;
@@ -74,8 +74,6 @@ namespace UnitFlow {
          */
         std::vector<int> nextEdgeIdx;
 
-        size_t flow_pushed_since = 0;
-
         bool SinglePushLowestLabel(int maxHeight);
 
     public:
@@ -97,6 +95,8 @@ namespace UnitFlow {
          */
         void addSink(Vertex u, Flow amount) { sink[u] += amount; }
 
+        bool isSink(Vertex u) const { return sink[u] > absorbed[u]; }
+
         /**
            Return the excess of a node, i.e. the flow it cannot absorb.
          */
@@ -109,6 +109,8 @@ namespace UnitFlow {
         std::pair<bool, bool> computeFlow(const int maxHeight);
 
         bool StandardMaxFlow();
+
+        void GlobalRelabel();
 
         /**
            Compute a level cut. See Saranurak and Wang A.1.

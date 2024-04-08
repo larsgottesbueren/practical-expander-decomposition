@@ -376,11 +376,10 @@ namespace CutMatching {
             const int h = (int) ceil(1.0 / phi / std::log10(numSplitNodes));
 
             if (params.stop_flow_at_fraction) {
-                subdivGraph->excess_fraction = [&]() -> double {
-                    const size_t max_flow = std::min(axLeft.size(), axRight.size());
-                    const double fraction = 1.0 - (1. / iterationsToRun);
-                    return fraction * max_flow;
-                }();
+                const size_t max_flow = std::min(axLeft.size(), axRight.size());
+                const double fraction = 1.0 - (1. / iterationsToRun);
+                subdivGraph->excess_fraction = fraction * max_flow;
+                VLOG(3) << V(max_flow) << V(subdivGraph->excess_fraction);
             }
 
             const auto [reached_flow_fraction, has_excess_flow] = subdivGraph->computeFlow(h);

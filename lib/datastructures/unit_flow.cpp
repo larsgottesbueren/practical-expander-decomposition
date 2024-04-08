@@ -26,7 +26,6 @@ namespace UnitFlow {
         }
 
         int level = 0;
-
         while (level <= maxH) {
             if (q[level].empty()) {
                 level++;
@@ -47,19 +46,20 @@ namespace UnitFlow {
                 assert(excess(e.to) == 0 && "Pushing to vertex with non-zero excess");
                 const Flow delta = std::min({ excess(u), e.residual(), (Flow) degree(e.to) });
                 assert(delta > 0);
-                flow_pushed_since += delta;
+
+                if (sink[e.to] > 0) {
+                    int drain_here = std::max<int>(0, sink[e.to] - absorbed[e.to]);
+                    flow_routed += std::min<int>(delta, drain_here); // only count the amount that the sink can still drain as fully routed
+                    if (flow_routed >= excess_fraction) {
+                        VLOG(2) << V(flow_routed) << V(level);
+                        return true;
+                    }
+                }
 
                 e.flow += delta;
                 reverse(e).flow -= delta;
                 absorbed[u] -= delta;
                 absorbed[e.to] += delta;
-
-                if (sink[e.to] > 0) {
-                    flow_routed += delta;
-                    if (flow_routed >= excess_fraction) {
-                        return true;
-                    }
-                }
 
                 assert(excess(u) >= 0 && "Excess after pushing cannot be negative");
                 if (height[u] >= maxH || excess(u) == 0) {
@@ -86,10 +86,10 @@ namespace UnitFlow {
             }
         }
 
+        VLOG(2) << V(flow_routed) << V(level);
+
         return false;
     }
-
-    bool Graph::StandardMaxFlow() { return false; }
 
     std::pair<bool, bool> Graph::computeFlow(const int maxHeight) {
         bool reached_flow_fraction = SinglePushLowestLabel(maxHeight);
@@ -110,6 +110,90 @@ namespace UnitFlow {
             }
         }
         return std::make_pair(reached_flow_fraction, has_excess);
+    }
+
+
+    // flow decomposition? not needed in trimming, I guess
+    // TODO check for cases where the flow cannout be routed
+    bool Graph::StandardMaxFlow() {
+        GlobalRelabel();
+
+        std::queue<Vertex> active_vertices;
+        for (Vertex u : *this) {
+            if (excess(u) > 0) {
+                active_vertices.push(u);
+            }
+        }
+
+        size_t work_since_last_global_relabel = 0;
+        const int n = size();
+        const size_t global_relabel_work_threshold = 20 * n + 10 * volume();
+
+        while (!active_vertices.empty()) {
+            const Vertex u = active_vertices.front();
+            active_vertices.pop();
+            // discharge u
+            while (excess(u) > 0) {
+                if (nextEdgeIdx[u] < degree(u)) {
+                    // try to push
+                    auto& e = getEdge(u, nextEdgeIdx[u]);
+                    if (e.residual() > 0 && height[u] > height[e.to]) {
+                        if (excess(e.to) == 0) {
+                            active_vertices.push(e.to);
+                        }
+                        Flow delta = std::min<Flow>(e.residual(), excess(u));
+                        assert(delta > 0);
+                        e.flow += delta;
+                        reverse(e).flow -= delta;
+                        absorbed[u] -= delta;
+                        absorbed[e.to] += delta;
+                        // don't increment next-arc pointer here -- if all excess is drained we want to stay on this edge, otherwise the edge is no longer
+                        // residual and the next loop iter will increment.
+                    } else {
+                        ++nextEdgeIdx[u];
+                    }
+                } else {
+                    // relabel
+                    int new_level = n + 1;
+                    for (const auto& e : edgesOf(u)) {
+                        if (e.residual() > 0 && height[e.to] < new_level) {
+                            new_level = height[e.to];
+                            height[u] = new_level + 1;
+                        }
+                    }
+                    nextEdgeIdx[u] = 0;
+                    if (new_level == n + 1) {
+                        VLOG(2) << "Discharge finished because the node couldn't be relabeled, but it still had excess left.";
+                        break;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    void Graph::GlobalRelabel() {
+        std::queue<Vertex> queue;
+        const int n = size();
+        for (Vertex u : *this) {
+            height[u] = isSink(u) ? 0 : n;
+            if (isSink(u)) {
+                queue.push(u);
+            }
+        }
+
+        while (!queue.empty()) {
+            const Vertex u = queue.front();
+            queue.pop();
+            const int d = height[u] + 1;
+            for (const Edge& e : edgesOf(u)) {
+                if (reverse(e).residual() && height[e.to] == n) {
+                    height[e.to] = d;
+                    queue.push(e.to);
+                }
+            }
+        }
     }
 
     std::pair<std::vector<Vertex>, std::vector<Vertex>> Graph::levelCut(const int h, const double conductance_bound) {
