@@ -321,11 +321,8 @@ namespace CutMatching {
             flow_vectors.push_back(randomUnitVector());
         }
 
-        // 1/2T^2 * perfect matching size; perf size = vol/4 = #edges/2
-        double f = (1.0 - (1.0 / 2 / square(T)));
-        const size_t max_num_fake_matches = f * (graph->volume() / 4.0);
-        VLOG(3) << V(max_num_fake_matches) << V(graph->volume()) << V(square(T)) << V(subdivGraph->volume());
 
+        const size_t max_num_fake_matches = graph->volume() / 8.0 / T;
         int iterations = 0;
         const int iterationsToRun = std::max(params.minIterations, T);
         for (; iterations < iterationsToRun && subdivGraph->globalVolume(subdivGraph->cbeginRemoved(), subdivGraph->cendRemoved()) <= targetVolumeBalance;
@@ -372,18 +369,16 @@ namespace CutMatching {
 
             const int h = (int) ceil(1.0 / phi / std::log10(numSplitNodes));
 
-            if (params.stop_flow_at_fraction) {
-                const size_t max_flow = std::min(axLeft.size(), axRight.size());
-                const double fraction = 1.0 - (1. / iterationsToRun);
-                subdivGraph->excess_fraction = fraction * max_flow;
-                VLOG(3) << V(max_flow) << V(subdivGraph->excess_fraction);
+            subdivGraph->max_flow = std::min(axLeft.size(), axRight.size());
+            if (params.stop_flow_at_fraction && result.fake_matching_edges.size() < max_num_fake_matches) {
+                const size_t num_unrouted =
+                        std::min<size_t>(result.fake_matching_edges.size() - max_num_fake_matches, std::floor(subdivGraph->max_flow * 1.0 / T));
+                subdivGraph->max_flow -= num_unrouted;
             }
 
             const auto [reached_flow_fraction, has_excess_flow] = subdivGraph->computeFlow(h);
 
-            if (params.stop_flow_at_fraction) {
-                subdivGraph->excess_fraction = std::numeric_limits<double>::max();
-            }
+            subdivGraph->max_flow = std::numeric_limits<Flow>::max(); // reset
 
             Timings::GlobalTimings().AddTiming(Timing::FlowMatch, timer.Restart());
 
@@ -398,7 +393,7 @@ namespace CutMatching {
             auto matching = subdivGraph->matching(axLeft);
 
             Timings::GlobalTimings().AddTiming(Timing::Match, timer.Stop());
-
+#if true
             if (reached_flow_fraction && has_excess_flow) {
                 // Add extra fake edges to the matching between yet unmatched endpoints in axLeft and axRight
                 std::unordered_set<UnitFlow::Vertex> matched;
@@ -412,11 +407,12 @@ namespace CutMatching {
                              [&](const UnitFlow::Vertex a) { return !matched.contains(a); });
                 std::shuffle(unmatched_left.begin(), unmatched_left.end(), *randomGen);
                 std::shuffle(unmatched_right.begin(), unmatched_right.end(), *randomGen);
+                VLOG(3) << "num fakes " << std::min(unmatched_left.size(), unmatched_right.size());
                 for (size_t i = 0; i < std::min(unmatched_left.size(), unmatched_right.size()); ++i) {
                     matching.emplace_back(unmatched_left[i], unmatched_right[i]);
                     result.fake_matching_edges.emplace_back(unmatched_left[i], unmatched_right[i]);
                 }
-#if true
+
                 if (result.fake_matching_edges.size() >= max_num_fake_matches) {
                     VLOG(2) << "Number of fake matches exceeded. " << result.fake_matching_edges.size() << " / " << max_num_fake_matches;
                     result.fake_matching_edges.clear();
@@ -426,10 +422,8 @@ namespace CutMatching {
                     RemoveCutSide(cutLeft, cutRight, axLeft, axRight);
                     return result;
                 }
-#endif
             }
-
-
+#endif
             for (auto& p : matching) {
                 int u = (*subdivisionIdx)[p.first];
                 int v = (*subdivisionIdx)[p.second];

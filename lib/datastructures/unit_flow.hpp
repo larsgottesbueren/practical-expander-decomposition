@@ -126,7 +126,7 @@ namespace UnitFlow {
          */
         void reset();
 
-        double excess_fraction = std::numeric_limits<double>::max();
+        Flow max_flow = std::numeric_limits<Flow>::max();
 
     private:
         std::vector<std::pair<Vertex, Vertex>> matchingDfs(const std::vector<Vertex>& sources);

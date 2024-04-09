@@ -27,7 +27,7 @@ namespace UnitFlow {
         }
 
         int level = 0;
-        while (level <= maxH) {
+        while (level <= maxH && flow_routed <= max_flow) {
             if (q[level].empty()) {
                 level++;
                 continue;
@@ -49,18 +49,12 @@ namespace UnitFlow {
                 assert(delta > 0);
 
                 int drain_here = std::max<int>(0, sink[e.to] - absorbed[e.to]);
+                flow_routed += std::min<int>(delta, drain_here); // only count the amount that the sink can still drain as fully routed
 
                 e.flow += delta;
                 reverse(e).flow -= delta;
                 absorbed[u] -= delta;
                 absorbed[e.to] += delta;
-
-                if (sink[e.to] > 0) {
-                    flow_routed += std::min<int>(delta, drain_here); // only count the amount that the sink can still drain as fully routed
-                    if (flow_routed >= excess_fraction) {
-                        return true;
-                    }
-                }
 
                 assert(excess(u) >= 0 && "Excess after pushing cannot be negative");
                 if (height[u] >= maxH || excess(u) == 0) {
@@ -69,9 +63,7 @@ namespace UnitFlow {
 
                 if (height[e.to] < maxH && excess(e.to) > 0) {
                     q[height[e.to]].push(e.to);
-                    level = std::min(level, height[e.to]); // TODO here's the bug in combination with only increasing level if the queue is empty. if every node
-                                                           // has excess flow, we just relabel everyone repeatedly and never have a node of appropriate height
-                                                           // to push to. that behavior is fine if all you want is to route flow and dont care about the cut
+                    level = std::min(level, height[e.to]);
                     nextEdgeIdx[e.to] = 0;
                 }
             } else if (nextEdgeIdx[u] == degree(u) - 1) {
@@ -211,6 +203,7 @@ namespace UnitFlow {
                 height[u] = 0;
             }
         }
+        VLOG(2) << "num excesses" << source_side_cut.size();
 
         for (size_t head = 0; head < source_side_cut.size(); ++head) {
             Vertex u = source_side_cut[head];
@@ -221,6 +214,8 @@ namespace UnitFlow {
                 }
             }
         }
+        VLOG(2) << V(source_side_cut.size());
+        std::exit(0);
         return source_side_cut;
     }
 
