@@ -152,7 +152,7 @@ namespace UnitFlow {
                         reverse(e).flow -= delta;
                         absorbed[u] -= delta;
                         absorbed[e.to] += delta;
-                        work_since_last_global_relabel += 2;
+                        work_since_last_global_relabel += 3;
                     } else {
                         ++nextEdgeIdx[u];
                         work_since_last_global_relabel += 1;
@@ -167,7 +167,6 @@ namespace UnitFlow {
                         }
                     }
                     nextEdgeIdx[u] = 0;
-                    work_since_last_global_relabel += degree(u);
                     if (new_level == n + 1) {
                         height[u] = n + 1;
                         break;
@@ -188,7 +187,6 @@ namespace UnitFlow {
                 queue.push(u);
             }
         }
-        VLOG(2) << V(queue.size());
 
         while (!queue.empty()) {
             const Vertex u = queue.front();
@@ -204,19 +202,24 @@ namespace UnitFlow {
     }
 
     std::vector<Vertex> Graph::MinCut() {
-        GlobalRelabel();
-        std::vector<Vertex> source_side_cut;
         const int n = size();
-        size_t abs = 0;
-        size_t drain = 0;
-        size_t routed = 0;
+        std::vector<Vertex> source_side_cut;
         for (Vertex u : *this) {
-            if (height[u] >= n) {
+            height[u] = n;
+            if (excess(u) > 0) {
                 source_side_cut.push_back(u);
+                height[u] = 0;
             }
-            abs += absorbed[u];
-            drain += sink[u];
-            routed += std::min(sink[u], absorbed[u]);
+        }
+
+        for (size_t head = 0; head < source_side_cut.size(); ++head) {
+            Vertex u = source_side_cut[head];
+            for (const auto& e : edgesOf(u)) {
+                if (e.residual() && height[e.to] == n) {
+                    source_side_cut.push_back(e.to);
+                    height[e.to] = 0;
+                }
+            }
         }
         return source_side_cut;
     }
