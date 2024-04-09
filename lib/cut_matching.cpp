@@ -378,7 +378,7 @@ namespace CutMatching {
 
             const auto [reached_flow_fraction, has_excess_flow] = subdivGraph->computeFlow(h);
 
-            subdivGraph->max_flow = std::numeric_limits<Flow>::max(); // reset
+            subdivGraph->max_flow = std::numeric_limits<UnitFlow::Flow>::max(); // reset
 
             Timings::GlobalTimings().AddTiming(Timing::FlowMatch, timer.Restart());
 
@@ -393,7 +393,7 @@ namespace CutMatching {
             auto matching = subdivGraph->matching(axLeft);
 
             Timings::GlobalTimings().AddTiming(Timing::Match, timer.Stop());
-#if true
+
             if (reached_flow_fraction && has_excess_flow) {
                 // Add extra fake edges to the matching between yet unmatched endpoints in axLeft and axRight
                 std::unordered_set<UnitFlow::Vertex> matched;
@@ -412,18 +412,8 @@ namespace CutMatching {
                     matching.emplace_back(unmatched_left[i], unmatched_right[i]);
                     result.fake_matching_edges.emplace_back(unmatched_left[i], unmatched_right[i]);
                 }
-
-                if (result.fake_matching_edges.size() >= max_num_fake_matches) {
-                    VLOG(2) << "Number of fake matches exceeded. " << result.fake_matching_edges.size() << " / " << max_num_fake_matches;
-                    result.fake_matching_edges.clear();
-                    result.type = Result::Balanced;
-                    const auto [cutLeft, cutRight] = subdivGraph->levelCut(h);
-                    VLOG(3) << "\tHas level cut with (" << cutLeft.size() << ", " << cutRight.size() << ") vertices.";
-                    RemoveCutSide(cutLeft, cutRight, axLeft, axRight);
-                    return result;
-                }
             }
-#endif
+
             for (auto& p : matching) {
                 int u = (*subdivisionIdx)[p.first];
                 int v = (*subdivisionIdx)[p.second];

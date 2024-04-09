@@ -26,6 +26,8 @@ namespace UnitFlow {
             flow_routed += std::min(sink[u], absorbed[u]);
         }
 
+        // TODO optional warm-start with Dinitz/Shiloach-Vishkin style
+
         int level = 0;
         while (level <= maxH && flow_routed <= max_flow) {
             if (q[level].empty()) {
