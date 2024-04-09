@@ -416,8 +416,7 @@ namespace CutMatching {
                     matching.emplace_back(unmatched_left[i], unmatched_right[i]);
                     result.fake_matching_edges.emplace_back(unmatched_left[i], unmatched_right[i]);
                 }
-
-#if false
+#if true
                 if (result.fake_matching_edges.size() >= max_num_fake_matches) {
                     VLOG(2) << "Number of fake matches exceeded. " << result.fake_matching_edges.size() << " / " << max_num_fake_matches;
                     result.fake_matching_edges.clear();

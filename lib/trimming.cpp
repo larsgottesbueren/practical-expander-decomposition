@@ -129,7 +129,6 @@ namespace Trimming {
             graph.remove(u);
         }
 #endif
-        std::exit(0);
     }
 
 

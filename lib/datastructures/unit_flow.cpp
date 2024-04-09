@@ -23,11 +23,8 @@ namespace UnitFlow {
             if (excess(u) > 0) {
                 q[0].push(u);
             }
-            if (sink[u] > 0) {
-                flow_routed += std::min(sink[u], absorbed[u]);
-            }
+            flow_routed += std::min(sink[u], absorbed[u]);
         }
-        VLOG(4) << V(flow_routed);
 
         int level = 0;
         while (level <= maxH) {
@@ -61,11 +58,6 @@ namespace UnitFlow {
                 if (sink[e.to] > 0) {
                     flow_routed += std::min<int>(delta, drain_here); // only count the amount that the sink can still drain as fully routed
                     if (flow_routed >= excess_fraction) {
-                        size_t drained = 0;
-                        for (Vertex u : *this) {
-                            drained += std::min(sink[u], absorbed[u]);
-                        }
-                        VLOG(4) << V(flow_routed) << V(drained) << V(level);
                         return true;
                     }
                 }
@@ -95,8 +87,6 @@ namespace UnitFlow {
             }
         }
 
-        VLOG(4) << V(flow_routed) << V(level);
-
         return false;
     }
 
@@ -122,34 +112,20 @@ namespace UnitFlow {
     }
 
     bool Graph::StandardMaxFlow() {
-        GlobalRelabel();
 
+
+        size_t flow_routed = 0;
         std::queue<Vertex> active_vertices;
         for (Vertex u : *this) {
             if (excess(u) > 0) {
                 active_vertices.push(u);
             }
+            flow_routed += std::min(sink[u], absorbed[u]);
         }
 
-        size_t work_since_last_global_relabel = 0;
         const int n = size();
         const size_t global_relabel_work_threshold = 20 * n + 10 * volume();
-
-        size_t flow_routed = 0;
-        for (Vertex u : *this) {
-            if (sink[u] > 0) {
-                flow_routed += std::min(sink[u], absorbed[u]);
-            }
-        }
-        VLOG(2) << V(flow_routed);
-
-        size_t num_excesses = 0;
-        for (auto u : *this) {
-            if (excess(u) > 0) {
-                num_excesses++;
-            }
-        }
-        VLOG(2) << V(num_excesses);
+        size_t work_since_last_global_relabel = global_relabel_work_threshold + 1;
 
         while (!active_vertices.empty()) {
             if (work_since_last_global_relabel > global_relabel_work_threshold) {
@@ -169,18 +145,13 @@ namespace UnitFlow {
                             active_vertices.push(e.to);
                         }
                         Flow delta = std::min<Flow>(e.residual(), excess(u));
-                        int drain_here = std::max<int>(0, sink[e.to] - absorbed[e.to]); // TODO is this counting the correct thing???
+                        int drain_here = std::max<int>(0, sink[e.to] - absorbed[e.to]);
+                        flow_routed += std::min<int>(delta, drain_here);
                         assert(delta > 0);
                         e.flow += delta;
                         reverse(e).flow -= delta;
                         absorbed[u] -= delta;
                         absorbed[e.to] += delta;
-
-
-                        flow_routed += std::min<int>(delta, drain_here); // only count the amount that the sink can still drain as fully routed
-
-                        // don't increment next-arc pointer here -- if all excess is drained we want to stay on this edge, otherwise the edge is no longer
-                        // residual and the next loop iter will increment.
                         work_since_last_global_relabel += 2;
                     } else {
                         ++nextEdgeIdx[u];
@@ -204,16 +175,6 @@ namespace UnitFlow {
                 }
             }
         }
-
-        VLOG(2) << V(flow_routed);
-
-        num_excesses = 0;
-        for (auto u : *this) {
-            if (excess(u) > 0) {
-                num_excesses++;
-            }
-        }
-        VLOG(2) << V(num_excesses);
 
         return false;
     }
@@ -257,7 +218,6 @@ namespace UnitFlow {
             drain += sink[u];
             routed += std::min(sink[u], absorbed[u]);
         }
-        VLOG(2) << V(abs) << V(drain) << V(routed);
         return source_side_cut;
     }
 
@@ -280,15 +240,12 @@ namespace UnitFlow {
             }
             double conductance = double(cut) / double(std::min(volume, total_volume - volume));
             if (cut > 0 && conductance < bestConductance) {
-                VLOG(4) << V(cut) << V(volume) << V(conductance) << V(level) << V(h);
                 bestConductance = conductance, bestLevel = level;
                 if (bestConductance < conductance_bound) {
                     break;
                 }
             }
         }
-
-        VLOG(4) << V(bestConductance);
 
         std::vector<int> left, right;
         if (bestLevel != h + 1) {
