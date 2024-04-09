@@ -199,7 +199,6 @@ namespace CutMatching {
         }
 
         if (leftPotential <= totalPotential / 20.0) {
-            VLOG(3) << "repartition along mu";
             double l = 0.0;
             for (auto u : axLeft) {
                 const int idx = (*subdivisionIdx)[u];
@@ -261,7 +260,6 @@ namespace CutMatching {
         auto* smaller_side =
                 subdivGraph->globalVolume(cutLeft.begin(), cutLeft.end()) < subdivGraph->globalVolume(cutRight.begin(), cutRight.end()) ? &cutLeft : &cutRight;
         std::unordered_set<int> removed(smaller_side->begin(), smaller_side->end());
-        VLOG(3) << "\tRemoving " << removed.size() << " vertices.";
 
         auto isRemoved = [&removed](int u) { return removed.find(u) != removed.end(); };
         axLeft.erase(std::remove_if(axLeft.begin(), axLeft.end(), isRemoved), axLeft.end());
@@ -300,7 +298,6 @@ namespace CutMatching {
                 highest_potential = potential;
             }
         }
-        VLOG(3) << V(highest_potential) << V(highest);
         return std::make_pair(highest, highest_potential);
     }
 
@@ -327,7 +324,7 @@ namespace CutMatching {
         // 1/2T^2 * perfect matching size; perf size = vol/4 = #edges/2
         double f = (1.0 - (1.0 / 2 / square(T)));
         const size_t max_num_fake_matches = f * (graph->volume() / 4.0);
-        VLOG(2) << V(max_num_fake_matches) << V(graph->volume()) << V(square(T)) << V(subdivGraph->volume());
+        VLOG(3) << V(max_num_fake_matches) << V(graph->volume()) << V(square(T)) << V(subdivGraph->volume());
 
         int iterations = 0;
         const int iterationsToRun = std::max(params.minIterations, T);
@@ -402,7 +399,6 @@ namespace CutMatching {
 
             Timings::GlobalTimings().AddTiming(Timing::Match, timer.Stop());
 
-            VLOG(2) << V(matching.size()) << V(axLeft.size()) << V(axRight.size());
             if (reached_flow_fraction && has_excess_flow) {
                 // Add extra fake edges to the matching between yet unmatched endpoints in axLeft and axRight
                 std::unordered_set<UnitFlow::Vertex> matched;
@@ -421,6 +417,7 @@ namespace CutMatching {
                     result.fake_matching_edges.emplace_back(unmatched_left[i], unmatched_right[i]);
                 }
 
+#if false
                 if (result.fake_matching_edges.size() >= max_num_fake_matches) {
                     VLOG(2) << "Number of fake matches exceeded. " << result.fake_matching_edges.size() << " / " << max_num_fake_matches;
                     result.fake_matching_edges.clear();
@@ -430,6 +427,7 @@ namespace CutMatching {
                     RemoveCutSide(cutLeft, cutRight, axLeft, axRight);
                     return result;
                 }
+#endif
             }
 
 

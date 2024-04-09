@@ -81,18 +81,24 @@ namespace Trimming {
         }
         VLOG(2) << V(injected) << V(drained);
 
-        bool unroutable = false;
+        size_t num_flooded_nodes = 0;
+        std::vector<size_t> abs_vals;
         for (auto u : graph) {
             if (capacity * graph.degree(u) < graph.excess(u)) {
-                unroutable = true;
-                break;
+                num_flooded_nodes++;
             }
+            abs_vals.push_back(graph.absorbed[u]);
         }
+        VLOG(2) << V(num_flooded_nodes) << " / " << graph.size();
+        std::sort(abs_vals.begin(), abs_vals.end(), std::greater<size_t>());
+        std::cout << "abs vals = ";
+        for (size_t i = 0; i < std::min<size_t>(20, abs_vals.size()); ++i) {
+            std::cout << abs_vals[i] << " ";
+        }
+        std::cout << std::endl;
 
+#if false
         while (true) {
-
-            // try true max flow for h * m * 2/phi work first, then switch to unit flow.
-            // keep flow assignment and run global relabeling so the input to unit flow is usable
             const bool has_excess = graph.computeFlow(height).second;
             if (!has_excess) {
                 break;
@@ -115,7 +121,15 @@ namespace Trimming {
                 graph.remove(u);
             }
         }
-        std::exit(0); // for tests
+#else
+        graph.StandardMaxFlow();
+        auto cut = graph.MinCut();
+        VLOG(2) << V(cut.size()) << V(graph.size());
+        for (auto u : cut) {
+            graph.remove(u);
+        }
+#endif
+        std::exit(0);
     }
 
 

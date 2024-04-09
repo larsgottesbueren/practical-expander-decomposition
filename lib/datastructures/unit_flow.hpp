@@ -53,7 +53,7 @@ namespace UnitFlow {
        Push relabel based unit flow algorithm. Based on push relabel in KACTL.
      */
     class Graph : public SubsetGraph::Graph<int, Edge> {
-    private:
+    public:
         /**
            The amount of flow a vertex is absorbing. In the beginning, before any flow
            has been moved, this corresponds to the source function '\Delta(v)'.
@@ -109,6 +109,8 @@ namespace UnitFlow {
         std::pair<bool, bool> computeFlow(const int maxHeight);
 
         bool StandardMaxFlow();
+
+        std::vector<Vertex> MinCut();
 
         void GlobalRelabel();
 

@@ -23,7 +23,11 @@ namespace UnitFlow {
             if (excess(u) > 0) {
                 q[0].push(u);
             }
+            if (sink[u] > 0) {
+                flow_routed += std::min(sink[u], absorbed[u]);
+            }
         }
+        VLOG(4) << V(flow_routed);
 
         int level = 0;
         while (level <= maxH) {
@@ -47,19 +51,24 @@ namespace UnitFlow {
                 const Flow delta = std::min({ excess(u), e.residual(), (Flow) degree(e.to) });
                 assert(delta > 0);
 
-                if (sink[e.to] > 0) {
-                    int drain_here = std::max<int>(0, sink[e.to] - absorbed[e.to]);
-                    flow_routed += std::min<int>(delta, drain_here); // only count the amount that the sink can still drain as fully routed
-                    if (flow_routed >= excess_fraction) {
-                        VLOG(2) << V(flow_routed) << V(level);
-                        return true;
-                    }
-                }
+                int drain_here = std::max<int>(0, sink[e.to] - absorbed[e.to]);
 
                 e.flow += delta;
                 reverse(e).flow -= delta;
                 absorbed[u] -= delta;
                 absorbed[e.to] += delta;
+
+                if (sink[e.to] > 0) {
+                    flow_routed += std::min<int>(delta, drain_here); // only count the amount that the sink can still drain as fully routed
+                    if (flow_routed >= excess_fraction) {
+                        size_t drained = 0;
+                        for (Vertex u : *this) {
+                            drained += std::min(sink[u], absorbed[u]);
+                        }
+                        VLOG(4) << V(flow_routed) << V(drained) << V(level);
+                        return true;
+                    }
+                }
 
                 assert(excess(u) >= 0 && "Excess after pushing cannot be negative");
                 if (height[u] >= maxH || excess(u) == 0) {
@@ -86,7 +95,7 @@ namespace UnitFlow {
             }
         }
 
-        VLOG(2) << V(flow_routed) << V(level);
+        VLOG(4) << V(flow_routed) << V(level);
 
         return false;
     }
@@ -112,9 +121,6 @@ namespace UnitFlow {
         return std::make_pair(reached_flow_fraction, has_excess);
     }
 
-
-    // flow decomposition? not needed in trimming, I guess
-    // TODO check for cases where the flow cannout be routed
     bool Graph::StandardMaxFlow() {
         GlobalRelabel();
 
@@ -129,7 +135,28 @@ namespace UnitFlow {
         const int n = size();
         const size_t global_relabel_work_threshold = 20 * n + 10 * volume();
 
+        size_t flow_routed = 0;
+        for (Vertex u : *this) {
+            if (sink[u] > 0) {
+                flow_routed += std::min(sink[u], absorbed[u]);
+            }
+        }
+        VLOG(2) << V(flow_routed);
+
+        size_t num_excesses = 0;
+        for (auto u : *this) {
+            if (excess(u) > 0) {
+                num_excesses++;
+            }
+        }
+        VLOG(2) << V(num_excesses);
+
         while (!active_vertices.empty()) {
+            if (work_since_last_global_relabel > global_relabel_work_threshold) {
+                work_since_last_global_relabel = 0;
+                GlobalRelabel();
+            }
+
             const Vertex u = active_vertices.front();
             active_vertices.pop();
             // discharge u
@@ -142,15 +169,22 @@ namespace UnitFlow {
                             active_vertices.push(e.to);
                         }
                         Flow delta = std::min<Flow>(e.residual(), excess(u));
+                        int drain_here = std::max<int>(0, sink[e.to] - absorbed[e.to]); // TODO is this counting the correct thing???
                         assert(delta > 0);
                         e.flow += delta;
                         reverse(e).flow -= delta;
                         absorbed[u] -= delta;
                         absorbed[e.to] += delta;
+
+
+                        flow_routed += std::min<int>(delta, drain_here); // only count the amount that the sink can still drain as fully routed
+
                         // don't increment next-arc pointer here -- if all excess is drained we want to stay on this edge, otherwise the edge is no longer
                         // residual and the next loop iter will increment.
+                        work_since_last_global_relabel += 2;
                     } else {
                         ++nextEdgeIdx[u];
+                        work_since_last_global_relabel += 1;
                     }
                 } else {
                     // relabel
@@ -162,13 +196,24 @@ namespace UnitFlow {
                         }
                     }
                     nextEdgeIdx[u] = 0;
+                    work_since_last_global_relabel += degree(u);
                     if (new_level == n + 1) {
-                        VLOG(2) << "Discharge finished because the node couldn't be relabeled, but it still had excess left.";
+                        height[u] = n + 1;
                         break;
                     }
                 }
             }
         }
+
+        VLOG(2) << V(flow_routed);
+
+        num_excesses = 0;
+        for (auto u : *this) {
+            if (excess(u) > 0) {
+                num_excesses++;
+            }
+        }
+        VLOG(2) << V(num_excesses);
 
         return false;
     }
@@ -182,18 +227,38 @@ namespace UnitFlow {
                 queue.push(u);
             }
         }
+        VLOG(2) << V(queue.size());
 
         while (!queue.empty()) {
             const Vertex u = queue.front();
             queue.pop();
             const int d = height[u] + 1;
             for (const Edge& e : edgesOf(u)) {
-                if (reverse(e).residual() && height[e.to] == n) {
+                if (reverse(e).residual() && height[e.to] >= n) {
                     height[e.to] = d;
                     queue.push(e.to);
                 }
             }
         }
+    }
+
+    std::vector<Vertex> Graph::MinCut() {
+        GlobalRelabel();
+        std::vector<Vertex> source_side_cut;
+        const int n = size();
+        size_t abs = 0;
+        size_t drain = 0;
+        size_t routed = 0;
+        for (Vertex u : *this) {
+            if (height[u] >= n) {
+                source_side_cut.push_back(u);
+            }
+            abs += absorbed[u];
+            drain += sink[u];
+            routed += std::min(sink[u], absorbed[u]);
+        }
+        VLOG(2) << V(abs) << V(drain) << V(routed);
+        return source_side_cut;
     }
 
     std::pair<std::vector<Vertex>, std::vector<Vertex>> Graph::levelCut(const int h, const double conductance_bound) {
