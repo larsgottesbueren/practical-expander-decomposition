@@ -50,15 +50,11 @@ namespace Trimming {
     void FakeEdgeTrimming(UnitFlow::Graph& graph, UnitFlow::Graph& subdiv_graph, std::vector<int>& subdiv_idx, const double phi, int cut_matching_iterations,
                           const std::vector<std::pair<UnitFlow::Vertex, UnitFlow::Vertex>>& fake_matching_edges) {
         const int m = graph.edgeCount();
-        const int height = ceil(40 * std::log(2 * m + 1) / phi);
         const int capacity = (UnitFlow::Flow) std::ceil(2.0 / phi);
 
         graph.restoreRemoves();
         subdiv_graph.restoreRemoves(); // restore removes made during cut-matching
 
-
-        VLOG(2) << V(m) << V(height) << V(capacity) << V(cut_matching_iterations);
-        VLOG(2) << V(graph.size());
         graph.reset();
         int64_t drained = 0, injected = 0;
         for (UnitFlow::Vertex u : graph) {
@@ -70,7 +66,7 @@ namespace Trimming {
                 e.capacity = capacity;
             }
         }
-        VLOG(2) << V(cut_matching_iterations) << V(fake_matching_edges.size());
+
         for (const auto& [a, b] : fake_matching_edges) {
             // we can put flow on arbitrary endpoint --> map a/b to endpoints of the edge
             UnitFlow::Vertex ea = subdiv_graph.edgesOf(a)[0].to;
@@ -79,25 +75,9 @@ namespace Trimming {
             graph.addSource(eb, cut_matching_iterations);
             injected += 2 * cut_matching_iterations;
         }
-        VLOG(2) << V(injected) << V(drained);
-
-        size_t num_flooded_nodes = 0;
-        std::vector<size_t> abs_vals;
-        for (auto u : graph) {
-            if (capacity * graph.degree(u) < graph.excess(u)) {
-                num_flooded_nodes++;
-            }
-            abs_vals.push_back(graph.absorbed[u]);
-        }
-        VLOG(2) << V(num_flooded_nodes) << " / " << graph.size();
-        std::sort(abs_vals.begin(), abs_vals.end(), std::greater<size_t>());
-        std::cout << "abs vals = ";
-        for (size_t i = 0; i < std::min<size_t>(20, abs_vals.size()); ++i) {
-            std::cout << abs_vals[i] << " ";
-        }
-        std::cout << std::endl;
 
 #if false
+        const int height = ceil(40 * std::log(2 * m + 1) / phi);
         while (true) {
             const bool has_excess = graph.computeFlow(height).second;
             if (!has_excess) {

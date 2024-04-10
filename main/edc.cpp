@@ -57,6 +57,7 @@ CutMatching::Parameters ArvConfig() {
         .use_balanced_partitions = false,
         .use_potential_based_dynamic_stopping_criterion = false,
         .stop_flow_at_fraction = false,
+        .warm_start_unit_flow = false,
         .krv_step_first = false,
         .num_flow_vectors = 1,
         .tune_num_flow_vectors = false,
@@ -77,6 +78,7 @@ int main(int argc, char* argv[]) {
         .use_balanced_partitions = false,
         .use_potential_based_dynamic_stopping_criterion = false,
         .stop_flow_at_fraction = false,
+        .warm_start_unit_flow = false,
         .krv_step_first = false,
         .num_flow_vectors = 20,
         .tune_num_flow_vectors = false,
@@ -102,6 +104,8 @@ int main(int argc, char* argv[]) {
     cp.add_bool("adaptive", params.use_potential_based_dynamic_stopping_criterion,
                 "Perform dynamic number of cut-matching rounds based on how well the flow vectors are mixing.");
     cp.add_bool("flow-fraction", params.stop_flow_at_fraction, "Stop flow computation once almost all flow is routed.");
+    cp.add_bool("warm-start", params.warm_start_unit_flow,
+                "Potentially speed up flow computation by routing flow with one round of Shiloach-Vishkin and warm-starting unit flow with this assignment.");
     cp.add_bool("krv-first", params.krv_step_first, "Perform the matching step from KRV instead of RST as long as no cut was made.");
     cp.add_bool("kahan-error", params.kahan_error, "Use Kahan summation to reduce floating point issues.");
 

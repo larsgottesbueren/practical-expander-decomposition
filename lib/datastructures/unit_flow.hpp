@@ -106,11 +106,18 @@ namespace UnitFlow {
            Compute max flow with push relabel and max height h. Return whether the fractional flow bound was reached (only applies if that setting
            is enabled) and whether there are nodes with excess flow.
          */
-        std::pair<bool, bool> computeFlow(const int maxHeight);
+        std::pair<bool, bool> computeFlow(const int maxHeight, bool warm_start = false);
+
+        void Push(Vertex u, Edge& e);
+
+        Flow Dinitz();
+
+        void ForwardShiloachVishkin();
 
         bool StandardMaxFlow();
 
         std::vector<Vertex> MinCut();
+        std::pair<std::vector<Vertex>, std::vector<Vertex>> MinCut2();
 
         void GlobalRelabel();
 

@@ -14,6 +14,14 @@ namespace UnitFlow {
 
     Graph::Graph(int n, const std::vector<Edge>& es) : SubsetGraph::Graph<int, Edge>(n, es), absorbed(n), sink(n), height(n), nextEdgeIdx(n) {}
 
+    void Graph::Push(Vertex u, Edge& e) {
+        Flow delta = std::min(excess(u), e.residual());
+        e.flow += delta;
+        reverse(e).flow -= delta;
+        absorbed[u] -= delta;
+        absorbed[e.to] += delta;
+    }
+
     bool Graph::SinglePushLowestLabel(int maxHeight) {
         const int maxH = std::min(maxHeight, size() * 2 + 1);
         size_t flow_routed = 0;
@@ -26,10 +34,10 @@ namespace UnitFlow {
             flow_routed += std::min(sink[u], absorbed[u]);
         }
 
-        // TODO optional warm-start with Dinitz/Shiloach-Vishkin style
-
+        size_t work = 0;
         int level = 0;
         while (level <= maxH && flow_routed <= max_flow) {
+            work++;
             if (q[level].empty()) {
                 level++;
                 continue;
@@ -49,10 +57,8 @@ namespace UnitFlow {
                 assert(excess(e.to) == 0 && "Pushing to vertex with non-zero excess");
                 const Flow delta = std::min({ excess(u), e.residual(), (Flow) degree(e.to) });
                 assert(delta > 0);
-
-                int drain_here = std::max<int>(0, sink[e.to] - absorbed[e.to]);
-                flow_routed += std::min<int>(delta, drain_here); // only count the amount that the sink can still drain as fully routed
-
+                int drain_here = std::min<int>(delta, std::max<int>(0, sink[e.to] - absorbed[e.to]));
+                flow_routed += drain_here;
                 e.flow += delta;
                 reverse(e).flow -= delta;
                 absorbed[u] -= delta;
@@ -81,10 +87,20 @@ namespace UnitFlow {
             }
         }
 
-        return false;
+        VLOG(3) << V(work) << V(flow_routed);
+        return flow_routed >= max_flow;
     }
 
-    std::pair<bool, bool> Graph::computeFlow(const int maxHeight) {
+    std::pair<bool, bool> Graph::computeFlow(const int maxHeight, bool warm_start) {
+        if (warm_start) {
+            // ForwardShiloachVishkin();
+            Flow flow = Dinitz();
+            if (flow >= max_flow) {
+                // TODO careful with distance labels for level cut
+                return std::make_pair(true, false);
+            }
+        }
+
         bool reached_flow_fraction = SinglePushLowestLabel(maxHeight);
 
         for (auto u : *this) {
@@ -103,6 +119,173 @@ namespace UnitFlow {
             }
         }
         return std::make_pair(reached_flow_fraction, has_excess);
+    }
+
+    Flow Graph::Dinitz() {
+        int n = size() + 1;
+        size_t flow_routed = 0;
+        std::vector<Vertex> frontier;
+        std::vector<Vertex> stack;
+
+        size_t work = 0;
+
+        for (int round = 0; false || round < 2; ++round) {
+
+            frontier.clear();
+            for (Vertex u : *this) {
+                height[u] = n;
+                if (excess(u) > 0) {
+                    frontier.push_back(u);
+                    height[u] = 0;
+                }
+            }
+            size_t num_sources = frontier.size();
+
+            bool sink_reached = false;
+            int depth = 0;
+            for (size_t head = 0; head < frontier.size(); ++head) {
+                Vertex u = frontier[head];
+                nextEdgeIdx[u] = 0;
+                for (auto& e : edgesOf(u)) {
+                    if (e.residual() && height[e.to] == n) {
+                        height[e.to] = height[u] + 1;
+                        depth = std::max(height[e.to], depth);
+                        if (!isSink(e.to)) {
+                            frontier.push_back(e.to);
+                        } else {
+                            sink_reached = true;
+                        }
+                    }
+                    work++;
+                }
+            }
+
+            if (!sink_reached) {
+                break;
+            }
+
+            for (size_t i = 0; i < num_sources; ++i) {
+                stack.clear();
+                Vertex source = frontier[i];
+                stack.push_back(source);
+                while (!stack.empty()) {
+                    Vertex u = stack.back();
+
+                    if (nextEdgeIdx[u] == degree(u)) {
+                        height[stack.back()] = n;
+                        stack.pop_back();
+                        continue;
+                    }
+
+                    Vertex v = -1;
+                    for (; nextEdgeIdx[u] < degree(u); ++nextEdgeIdx[u]) {
+                        const Edge& e = getEdge(u, nextEdgeIdx[u]);
+                        work++;
+                        if (e.residual() && (isSink(e.to) || height[e.to] == height[u] + 1)) {
+                            v = e.to;
+                            break;
+                        }
+                    }
+
+                    if (v != -1) {
+                        if (!isSink(v)) {
+                            stack.push_back(v);
+                        } else {
+                            Flow delta = std::numeric_limits<Flow>::max();
+                            int lowest = std::numeric_limits<int>::max();
+                            for (int j = 0; j < stack.size(); ++j) {
+                                const Edge& e = getEdge(stack[j], nextEdgeIdx[stack[j]]);
+                                if (e.residual() < delta) {
+                                    delta = e.residual();
+                                    lowest = j;
+                                }
+                            }
+                            delta = std::min(delta, excess(source));
+                            for (int j = 0; j < stack.size(); ++j) {
+                                Vertex u = stack[j];
+                                Edge& e = getEdge(u, nextEdgeIdx[u]);
+                                e.flow += delta;
+                                reverse(e).flow -= delta;
+                                absorbed[u] -= delta;
+                                absorbed[e.to] += delta;
+                            }
+                            stack.resize(lowest + 1);
+                            flow_routed += delta;
+
+                            if (excess(source) == 0) {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+
+        for (Vertex u : *this) {
+            height[u] = 0;
+            nextEdgeIdx[u] = 0;
+        }
+
+        VLOG(4) << V(flow_routed) << V(max_flow) << V(work);
+
+        return flow_routed;
+    }
+
+    void Graph::ForwardShiloachVishkin() {
+        int n = size();
+        std::vector<Vertex> frontier, next_frontier;
+        for (Vertex u : *this) {
+            height[u] = n;
+            if (excess(u) > 0) {
+                frontier.push_back(u);
+                height[u] = 0;
+            }
+        }
+        size_t work = 0;
+        size_t sink_pushes = 0;
+        size_t pushes = 0;
+        size_t depth = 0;
+        while (!frontier.empty()) {
+            VLOG(4) << V(frontier.size());
+            for (Vertex u : frontier) {
+                // don't just flood the network immediately. if you can find a sink try that first
+                for (auto& e : edgesOf(u)) {
+                    if (excess(u) == 0) {
+                        break;
+                    }
+                    if (e.residual() && isSink(e.to)) {
+                        Push(u, e);
+                        sink_pushes++;
+                    }
+                    work++;
+                }
+
+                for (auto& e : edgesOf(u)) {
+                    if (excess(u) == 0) {
+                        break;
+                    }
+                    if (e.residual() && height[e.to] > height[u]) {
+                        Push(u, e);
+                        height[e.to] = height[u] + 1;
+                        next_frontier.push_back(e.to);
+                        pushes++;
+                    }
+                    work++;
+                }
+            }
+
+            depth++;
+            frontier.clear();
+            std::swap(next_frontier, frontier);
+        }
+
+        size_t flow_routed = 0;
+        for (Vertex u : *this) {
+            height[u] = 0;
+            flow_routed += std::min(sink[u], absorbed[u]);
+        }
+        VLOG(3) << V(work) << V(flow_routed) << V(sink_pushes) << V(pushes) << V(depth);
     }
 
     bool Graph::StandardMaxFlow() {
@@ -205,7 +388,6 @@ namespace UnitFlow {
                 height[u] = 0;
             }
         }
-        VLOG(2) << "num excesses" << source_side_cut.size();
 
         for (size_t head = 0; head < source_side_cut.size(); ++head) {
             Vertex u = source_side_cut[head];
@@ -216,9 +398,54 @@ namespace UnitFlow {
                 }
             }
         }
-        VLOG(2) << V(source_side_cut.size());
-        std::exit(0);
         return source_side_cut;
+    }
+
+    std::pair<std::vector<Vertex>, std::vector<Vertex>> Graph::MinCut2() {
+        const int n = size();
+        std::vector<Vertex> source_side_cut;
+        for (Vertex u : *this) {
+            height[u] = n;
+            if (excess(u) > 0) {
+                source_side_cut.push_back(u);
+                height[u] = 0;
+            }
+        }
+
+        for (size_t head = 0; head < source_side_cut.size(); ++head) {
+            Vertex u = source_side_cut[head];
+            for (const auto& e : edgesOf(u)) {
+                if (e.residual() && height[e.to] == n) {
+                    source_side_cut.push_back(e.to);
+                    height[e.to] = 0;
+                }
+            }
+        }
+
+        std::vector<Vertex> sink_side_cut;
+        for (Vertex u : *this) {
+            if (isSink(u)) {
+                sink_side_cut.push_back(u);
+                assert(height[u] == n);
+                height[u] = 1;
+            }
+        }
+
+        for (size_t head = 0; head < sink_side_cut.size(); ++head) {
+            Vertex u = sink_side_cut[head];
+            for (const auto& e : edgesOf(u)) {
+                if (reverse(e).residual()) {
+                    assert(height[e.to] == n || height[e.to] == 1);
+                    if (height[e.to] == n) {
+                        sink_side_cut.push_back(e.to);
+                        height[e.to] = 1;
+                    }
+                }
+            }
+        }
+
+        VLOG(4) << V(source_side_cut.size()) << V(sink_side_cut.size()) << V(size()) << "combined" << source_side_cut.size() + sink_side_cut.size();
+        return std::make_pair(source_side_cut, sink_side_cut);
     }
 
     std::pair<std::vector<Vertex>, std::vector<Vertex>> Graph::levelCut(const int h, const double conductance_bound) {

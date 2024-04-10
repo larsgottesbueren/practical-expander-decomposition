@@ -57,6 +57,8 @@ namespace CutMatching {
 
         bool stop_flow_at_fraction = false;
 
+        bool warm_start_unit_flow = false;
+
         bool krv_step_first = false;
 
         bool kahan_error = false;

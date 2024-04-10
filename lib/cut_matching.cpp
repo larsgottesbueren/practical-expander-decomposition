@@ -376,7 +376,7 @@ namespace CutMatching {
                 subdivGraph->max_flow -= num_unrouted;
             }
 
-            const auto [reached_flow_fraction, has_excess_flow] = subdivGraph->computeFlow(h);
+            const auto [reached_flow_fraction, has_excess_flow] = subdivGraph->computeFlow(h, params.warm_start_unit_flow);
 
             subdivGraph->max_flow = std::numeric_limits<UnitFlow::Flow>::max(); // reset
 
@@ -385,6 +385,7 @@ namespace CutMatching {
             if (has_excess_flow && !reached_flow_fraction) {
                 const auto [cutLeft, cutRight] = subdivGraph->levelCut(h);
                 VLOG(3) << "\tHas level cut with (" << cutLeft.size() << ", " << cutRight.size() << ") vertices.";
+                // const auto [cL, cR] = subdivGraph->MinCut2();
                 RemoveCutSide(cutLeft, cutRight, axLeft, axRight);
             }
 
@@ -395,6 +396,9 @@ namespace CutMatching {
             Timings::GlobalTimings().AddTiming(Timing::Match, timer.Stop());
 
             if (reached_flow_fraction && has_excess_flow) {
+                if (!params.stop_flow_at_fraction) {
+                    throw std::runtime_error("Excess flow left and all desired flow routed but fractional flow routing is disabled. That's impossible --> bug");
+                }
                 // Add extra fake edges to the matching between yet unmatched endpoints in axLeft and axRight
                 std::unordered_set<UnitFlow::Vertex> matched;
                 for (const auto& [a, b] : matching) {
