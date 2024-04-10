@@ -88,6 +88,8 @@ def enum_options():
 
 
 def incremental_configs():
+    configs = []
+
     base_config = {
         'flow-vectors': 1,
         'krv-first': False,
@@ -103,41 +105,41 @@ def incremental_configs():
     }
     config = copy.copy(base_config)
     base_config['base-config'] = True
-    configs = [base_config]
-
+    #configs.append(base_config)
+    
     b20 = copy.copy(base_config)
     b20['flow-vectors'] = 20
     b20['name'] = 'Arv-20'
-    configs.append(b20)
+    #configs.append(b20)
 
     ada = copy.copy(config)
     ada['name'] = '+Ada'
     ada['flow-vectors'] = 20
     ada['adaptive'] = True
-    configs.append(ada)
+    #configs.append(ada)
 
     config['use-cut-heuristics'] = True
     config['name'] = '+Cut'
-    configs.append(copy.copy(config))
+    #configs.append(copy.copy(config))
 
     config['use-balanced-partitions'] = True
     config['name'] = '+Cut+Bala'
-    configs.append(copy.copy(config))
+    #configs.append(copy.copy(config))
 
     config['use-balanced-partitions'] = False
     config['adaptive'] = True
     config['flow-vectors'] = 20
     config['name'] = '+Cut+Ada'
-    configs.append(copy.copy(config))
+    #configs.append(copy.copy(config))
 
     config['use-balanced-partitions'] = True
     config['name'] = '+Cut+Bala+Ada'
-    configs.append(copy.copy(config))
+    #configs.append(copy.copy(config))
 
     frac = copy.copy(config)
     frac['flow-fraction'] = True
     frac['name'] = '+Cut+Ada+Frac'
-    # configs.append(frac) # leave out frac for now
+    configs.append(frac) # leave out frac for now
 
     our_config = {
         'flow-vectors': 20,
