@@ -141,6 +141,16 @@ def incremental_configs():
     frac['name'] = '+Cut+Ada+Frac'
     configs.append(frac) # leave out frac for now
 
+    ada_frac = copy.copy(frac)
+    ada_frac['name'] = '+Ada+Frac'
+    ada_frac['use-cut-heuristics'] = False
+    configs.append(ada_frac)
+
+    cut_frac = copy.copy(frac)
+    cut_frac['name'] = '+Cut+Frac'
+    config['adaptive'] = False
+    configs.append(cut_frac)
+
     our_config = {
         'flow-vectors': 20,
         'krv-first': False,
