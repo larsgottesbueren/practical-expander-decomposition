@@ -11,10 +11,10 @@ namespace Trimming {
         graph->reset();
 
         for (auto u : *graph) {
-            const int removedEdges =
-                    graph->globalDegree(u) -
-                    graph->degree(u); // TODO this is not the cut between A and R. especially deeper in the recursion. to test on the top level it suffices...
-            graph->addSource(u, (UnitFlow::Flow) std::ceil(removedEdges * 2.0 / phi));
+            const int removedEdges = graph->removedEdges(u);
+            UnitFlow::Flow supply = std::ceil(removedEdges * 2.0 / phi);
+            injected += supply;
+            graph->addSource(u, supply);
             for (auto e = graph->beginEdge(u); e != graph->endEdge(u); ++e) {
                 e->capacity = (UnitFlow::Flow) std::ceil(2.0 / phi);
             }
