@@ -96,7 +96,7 @@ namespace UnitFlow {
             // ForwardShiloachVishkin();
             Flow flow = Dinitz();
             if (flow >= max_flow) {
-                // TODO careful with distance labels for level cut
+                // TODO careful with distance labels for level cut...
                 return std::make_pair(true, false);
             }
         }
@@ -288,7 +288,7 @@ namespace UnitFlow {
         VLOG(3) << V(work) << V(flow_routed) << V(sink_pushes) << V(pushes) << V(depth);
     }
 
-    Flow Graph::StandardMaxFlow() {
+    Flow Graph::StandardMaxFlow(size_t work_bound) {
 
 
         Flow flow_routed = 0;
@@ -303,8 +303,12 @@ namespace UnitFlow {
         const int n = size();
         const size_t global_relabel_work_threshold = 20 * n + 10 * volume();
         size_t work_since_last_global_relabel = global_relabel_work_threshold + 1;
+        size_t total_work = 0;
 
         while (!active_vertices.empty()) {
+            if (work_bound != 0 && total_work > work_bound) {
+                return -1; // stop and transition to unit flow
+            }
             if (work_since_last_global_relabel > global_relabel_work_threshold) {
                 work_since_last_global_relabel = 0;
                 GlobalRelabel();
@@ -314,6 +318,7 @@ namespace UnitFlow {
             active_vertices.pop();
             // discharge u
             while (excess(u) > 0) {
+                ++total_work;
                 if (nextEdgeIdx[u] < degree(u)) {
                     // try to push
                     auto& e = getEdge(u, nextEdgeIdx[u]);

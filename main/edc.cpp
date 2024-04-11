@@ -79,6 +79,7 @@ int main(int argc, char* argv[]) {
         .use_potential_based_dynamic_stopping_criterion = false,
         .stop_flow_at_fraction = false,
         .warm_start_unit_flow = false,
+        .trim_with_max_flow_first = false,
         .krv_step_first = false,
         .num_flow_vectors = 20,
         .tune_num_flow_vectors = false,

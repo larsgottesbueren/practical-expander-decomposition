@@ -114,7 +114,7 @@ namespace UnitFlow {
 
         void ForwardShiloachVishkin();
 
-        Flow StandardMaxFlow();
+        Flow StandardMaxFlow(size_t work_bound = 0);
 
         std::vector<Vertex> MinCut();
         std::pair<std::vector<Vertex>, std::vector<Vertex>> MinCut2();

@@ -145,7 +145,7 @@ namespace ExpanderDecomposition {
                     assert(!r.empty() && "Near expander should have non-empty R.");
 
                     timer.Start();
-                    Trimming::SaranurakWangTrimming(flowGraph.get(), phi);
+                    Trimming::SaranurakWangTrimming(flowGraph.get(), phi, cutMatchingParams.trim_with_max_flow_first);
                     Timings::GlobalTimings().AddTiming(Timing::FlowTrim, timer.Stop());
 
                     assert(flowGraph->size() > 0 && "Should not trim all vertices from graph.");

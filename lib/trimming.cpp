@@ -5,7 +5,7 @@
 
 namespace Trimming {
 
-    void SaranurakWangTrimming(UnitFlow::Graph* graph, const double phi) {
+    void SaranurakWangTrimming(UnitFlow::Graph* graph, const double phi, bool trim_with_max_flow_first) {
         VLOG(2) << "Trimming partition with " << graph->size() << " vertices.";
 
         graph->reset();
@@ -22,39 +22,53 @@ namespace Trimming {
             graph->addSink(u, d);
         }
 
-#if false
         const int m = graph->edgeCount();
         const int h = ceil(40 * std::log(2 * m + 1) / phi);
-        while (true) {
+
+        bool run_unit_flow = true;
+        if (trim_with_max_flow_first) {
+            size_t work_bound = size_t(m) * h * 500;
+            work_bound = 0; // temporary to test
+            auto flow = graph->StandardMaxFlow(work_bound);
+            if (flow != -1) {
+                run_unit_flow = false;
+                if (flow < injected) {
+                    auto cut = graph->MinCut();
+                    VLOG(2) << V(cut.size()) << V(flow) << V(graph->size());
+                    for (auto u : cut) {
+                        graph->remove(u);
+                    }
+                } else {
+                    VLOG(2) << "Trimming flow fully routed";
+                }
+            } else {
+                VLOG(2) << "Canceled standard max flow --> transition to unit flow";
+            }
+        }
+
+        while (run_unit_flow) {
             const bool has_excess_flow = graph->computeFlow(h).second;
-            if (!has_excess_flow)
+            if (!has_excess_flow) {
                 break;
+            }
 
             const auto [levelCut, _] = graph->levelCut(h);
             VLOG(3) << "Found level cut of size: " << levelCut.size();
-            if (levelCut.empty())
+            if (levelCut.empty()) {
                 break;
-
+            }
             // NOTE I swapped this with the vertex removal. This is a bug in the baseline implementation.
-            for (auto u : levelCut)
-                for (auto e = graph->beginEdge(u); e != graph->endEdge(u); ++e)
+            for (auto u : levelCut) {
+                for (auto e = graph->beginEdge(u); e != graph->endEdge(u); ++e) {
                     graph->addSource(e->to, (UnitFlow::Flow) std::ceil(2.0 / phi));
+                }
+            }
 
-            for (auto u : levelCut)
-                graph->remove(u);
-        }
-#else
-        auto flow = graph->StandardMaxFlow();
-        if (flow < injected) {
-            auto cut = graph->MinCut();
-            VLOG(2) << V(cut.size()) << V(flow) << V(graph->size());
-            for (auto u : cut) {
+            for (auto u : levelCut) {
                 graph->remove(u);
             }
-        } else {
-            VLOG(2) << "Trimming flow fully routed";
         }
-#endif
+
         VLOG(2) << "After trimming partition has " << graph->size() << " vertices.";
     }
 

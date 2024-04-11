@@ -59,6 +59,8 @@ namespace CutMatching {
 
         bool warm_start_unit_flow = false;
 
+        bool trim_with_max_flow_first = false;
+
         bool krv_step_first = false;
 
         bool kahan_error = false;
