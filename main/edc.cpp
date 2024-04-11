@@ -107,6 +107,8 @@ int main(int argc, char* argv[]) {
     cp.add_bool("flow-fraction", params.stop_flow_at_fraction, "Stop flow computation once almost all flow is routed.");
     cp.add_bool("warm-start", params.warm_start_unit_flow,
                 "Potentially speed up flow computation by routing flow with one round of Shiloach-Vishkin and warm-starting unit flow with this assignment.");
+    cp.add_bool("trim-with-max-flow-first", params.trim_with_max_flow_first,
+                "In trimming: first try to solve it with standard max flow for some amount of time, then switch to unit flow.");
     cp.add_bool("krv-first", params.krv_step_first, "Perform the matching step from KRV instead of RST as long as no cut was made.");
     cp.add_bool("kahan-error", params.kahan_error, "Use Kahan summation to reduce floating point issues.");
 
