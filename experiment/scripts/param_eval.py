@@ -187,13 +187,29 @@ def large_graphs_configs():
         'use-cut-heuristics': True,
         'use-balanced-partitions': True,
         'flow-fraction': False,
+        'trim-with-max-flow-first' : True,
         'adaptive': True,
         'kahan-error': True,
         'seed': 1,
         'base-config' : False,
         'name': 'Ours'
     }
-    return [base_config, our_config]
+
+    frac = {
+        'flow-vectors': 20,
+        'krv-first': False,
+        'use-cut-heuristics': True,
+        'use-balanced-partitions': True,
+        'flow-fraction': True,
+        'adaptive': True,
+        'trim-with-max-flow-first' : True,
+        'kahan-error': True,
+        'seed': 1,
+        'base-config' : False,
+        'name': 'Ours+Frac'
+    }
+
+    return [our_config, frac]
 
 def add_more_seeds(configs):
     res = []
