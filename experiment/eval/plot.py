@@ -31,7 +31,9 @@ def aggregate_runtimes(df, field = 'Total', seed_aggregator = 'median'):
   df = df.groupby(runtime.keys)[field].agg(aggregate_func).reset_index()
   return df
 
-df = pd.read_csv('results.v3.parallel.csv')
+files = ['results.v3.parallel.csv', 'results.partial-flow.csv']
+
+df = pd.concat([pd.read_csv(f) for f in files])
 
 for phi in df.phi.unique():
   print("phi=", phi)
@@ -63,13 +65,14 @@ for phi in df.phi.unique():
   algos = list(rdf.name.unique())
   print(algos)
   for algo in itertools.chain(algos):
+    '''
     print(algo)
     print(mdf[mdf.name == algo].iloc[mdf[mdf.name == algo]['Total'].argmax()])
     print(df[df.name == algo].iloc[df[df.name == algo]['Total'].argmax()])
     print('---------------------------')
     print('---------------------------')
     print('---------------------------')
-    
+    '''
   colors = commons.construct_new_color_mapping(algos)
   if True:
     fig, ax = plt.subplots()
