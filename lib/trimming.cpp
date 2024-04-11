@@ -9,7 +9,7 @@ namespace Trimming {
         VLOG(2) << "Trimming partition with " << graph->size() << " vertices.";
 
         graph->reset();
-
+        UnitFlow::Flow injected = 0;
         for (auto u : *graph) {
             const int removedEdges = graph->removedEdges(u);
             UnitFlow::Flow supply = std::ceil(removedEdges * 2.0 / phi);
@@ -22,9 +22,9 @@ namespace Trimming {
             graph->addSink(u, d);
         }
 
+#if false
         const int m = graph->edgeCount();
         const int h = ceil(40 * std::log(2 * m + 1) / phi);
-
         while (true) {
             const bool has_excess_flow = graph->computeFlow(h).second;
             if (!has_excess_flow)
@@ -43,7 +43,18 @@ namespace Trimming {
             for (auto u : levelCut)
                 graph->remove(u);
         }
-
+#else
+        auto flow = graph->StandardMaxFlow();
+        if (flow < injected) {
+            auto cut = graph->MinCut();
+            VLOG(2) << V(cut.size()) << V(flow) << V(graph->size());
+            for (auto u : cut) {
+                graph->remove(u);
+            }
+        } else {
+            VLOG(2) << "Trimming flow fully routed";
+        }
+#endif
         VLOG(2) << "After trimming partition has " << graph->size() << " vertices.";
     }
 

@@ -288,10 +288,10 @@ namespace UnitFlow {
         VLOG(3) << V(work) << V(flow_routed) << V(sink_pushes) << V(pushes) << V(depth);
     }
 
-    bool Graph::StandardMaxFlow() {
+    Flow Graph::StandardMaxFlow() {
 
 
-        size_t flow_routed = 0;
+        Flow flow_routed = 0;
         std::queue<Vertex> active_vertices;
         for (Vertex u : *this) {
             if (excess(u) > 0) {
@@ -352,7 +352,7 @@ namespace UnitFlow {
             }
         }
 
-        return false;
+        return flow_routed;
     }
 
     void Graph::GlobalRelabel() {
