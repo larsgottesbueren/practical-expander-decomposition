@@ -278,7 +278,7 @@ namespace SubsetGraph {
          */
         int globalDegree(V u) const { return int(edges[u].size()); }
 
-        int removedEdges(V u) const { return edgeBounds[u].top().end - edgeBounds[u].top.middle; }
+        int removedEdges(V u) const { return edgeBounds[u].top().end - edgeBounds[u].top().middle; }
 
         /**
            Number of edges in graph.
