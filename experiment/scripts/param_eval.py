@@ -57,6 +57,9 @@ def edc_call(graph, phi, options, timelimit=1800):
         result['timeout'] = True
         return result
     
+
+    with open('logs/' + graph + '.' + options['name'] + '.log', 'w') as log_file:
+        log_file.write(subproc_result.stdout)
     lines = subproc_result.stdout.strip().split('\n')
 
     try:
@@ -78,9 +81,6 @@ def edc_call(graph, phi, options, timelimit=1800):
                 result['cut'] = int(s[0])
                 result['partitions'] = int(s[1])
     except:
-        with open('logs/' + graph + '.' + options['name'] + '.log', 'w') as log_file:
-            log_file.write(subproc_result.stdout)
-
         result['cut'] = -2
         result['partitions'] = -2
     
