@@ -34,7 +34,6 @@ namespace UnitFlow {
             flow_routed += std::min(sink[u], absorbed[u]);
         }
 
-        size_t work = 0;
         int level = 0;
         while (level <= maxH && flow_routed <= max_flow) {
             if (q[level].empty()) {
@@ -48,8 +47,6 @@ namespace UnitFlow {
                 continue;
             }
             assert(excess(u) > 0 && "Vertex popped from queue should have excess flow.");
-
-            work++;
 
             auto& e = getEdge(u, nextEdgeIdx[u]);
             assert(e.flow + reverse(e).flow == 0 && "Flow across edge and its reverse should cancel.");
@@ -88,7 +85,6 @@ namespace UnitFlow {
             }
         }
 
-        VLOG(3) << "Unit Flow" << V(work) << V(flow_routed);
         return flow_routed >= max_flow;
     }
 
@@ -127,8 +123,6 @@ namespace UnitFlow {
         std::vector<Vertex> frontier;
         std::vector<Vertex> stack;
 
-        size_t work = 0;
-
         for (int round = 0; false || round < 2; ++round) {
 
             frontier.clear();
@@ -156,7 +150,6 @@ namespace UnitFlow {
                             sink_reached = true;
                         }
                     }
-                    work++;
                 }
             }
 
@@ -180,7 +173,6 @@ namespace UnitFlow {
                     Vertex v = -1;
                     for (; nextEdgeIdx[u] < degree(u); ++nextEdgeIdx[u]) {
                         const Edge& e = getEdge(u, nextEdgeIdx[u]);
-                        work++;
                         if (e.residual() && (isSink(e.to) || height[e.to] == height[u] + 1)) {
                             v = e.to;
                             break;
@@ -226,8 +218,6 @@ namespace UnitFlow {
             height[u] = 0;
             nextEdgeIdx[u] = 0;
         }
-
-        VLOG(4) << "Dinitz" << V(flow_routed) << V(max_flow) << V(work);
 
         return flow_routed;
     }
