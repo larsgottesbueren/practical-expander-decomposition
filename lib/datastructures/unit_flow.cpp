@@ -95,8 +95,8 @@ namespace UnitFlow {
     std::pair<bool, bool> Graph::computeFlow(const int maxHeight, bool warm_start) {
         if (warm_start) {
             Flow flow = Dinitz();
+            GlobalRelabel();
             if (flow >= max_flow) {
-                // TODO careful with distance labels for level cut...
                 return std::make_pair(true, false);
             }
         }
