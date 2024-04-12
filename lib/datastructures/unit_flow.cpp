@@ -446,7 +446,7 @@ namespace UnitFlow {
     std::pair<std::vector<Vertex>, std::vector<Vertex>> Graph::levelCut(const int h, const double conductance_bound) {
         std::vector<std::vector<Vertex>> levels(h + 1);
         for (auto u : *this)
-            levels[height[u]].push_back(u);
+            levels[std::min(h, height[u])].push_back(u);
 
         int volume = 0;
         const int total_volume = this->globalVolume(); // TODO volume() or globalVolume()? Note: globalVolume() only looks at nodes in the active subgraph
