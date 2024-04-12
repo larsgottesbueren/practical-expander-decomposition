@@ -58,7 +58,7 @@ def edc_call(graph, phi, options, timelimit=1800):
         return result
     
 
-    with open('logs/' + result['graph'] + '.' + options['name'] + '.log', 'w') as log_file:
+    with open('logs/' + result['graph'] + '.' + options['name'] + '.s' + options['seed'] + '.log', 'w') as log_file:
         log_file.write(subproc_result.stdout)
     lines = subproc_result.stdout.strip().split('\n')
 
