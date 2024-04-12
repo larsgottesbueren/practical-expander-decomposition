@@ -56,28 +56,33 @@ def edc_call(graph, phi, options, timelimit=1800):
         print('Time out / Failed run: ', graph, phi, options)
         result['timeout'] = True
         return result
-
-    lines = subproc_result.stdout.strip().split('\n')
     
+    lines = subproc_result.stdout.strip().split('\n')
 
-    for l in lines:
-        s = l.split('\t\t')
-        if len(s) == 3:
-            # timer
-            if s[0] != "Category":
-                result[s[0]] = float(s[1])
-        elif "Total measured time" in l:
-            s = l.replace('---', '')
-            s = s.split(' ')
-            result['measured time'] = float(s[-2])
-        elif "Time " in l:
-            s = l.split(' ')
-            result[s[1]] = float(s[2].replace('s', ''))
-        else:
-            s = l.split(' ')
-            result['cut'] = int(s[0])
-            result['partitions'] = int(s[1])
+    try:
+        for l in lines:
+            s = l.split('\t\t')
+            if len(s) == 3:
+                # timer
+                if s[0] != "Category":
+                    result[s[0]] = float(s[1])
+            elif "Total measured time" in l:
+                s = l.replace('---', '')
+                s = s.split(' ')
+                result['measured time'] = float(s[-2])
+            elif "Time " in l:
+                s = l.split(' ')
+                result[s[1]] = float(s[2].replace('s', ''))
+            else:
+                s = l.split(' ')
+                result['cut'] = int(s[0])
+                result['partitions'] = int(s[1])
+    except:
+        with open('logs/' + graph + '.' + options['name'] + '.log', 'w') as log_file:
+            log_file.write(subproc_result.stdout)
 
+        result['cut'] = -2
+        result['partitions'] = -2
     
     return result
 
