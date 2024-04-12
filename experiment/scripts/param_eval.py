@@ -206,7 +206,11 @@ def large_graphs_configs():
     warm['name'] = '+Cut+Ada+Warm'
     warm['warm-start'] = True
 
-    return [our_config, frac, warm]
+    frac_warm = copy.copy(warm)
+    frac_warm['flow-fraction'] = True
+    frac_warm['name'] = '+Cut+Ada+Frac+Warm'
+
+    return [our_config, frac, warm, frac_warm]
 
 def add_more_seeds(configs):
     res = []
