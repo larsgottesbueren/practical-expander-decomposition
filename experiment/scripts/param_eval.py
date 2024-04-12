@@ -185,7 +185,7 @@ def large_graphs_configs():
         'kahan-error': True,
         'seed': 1,
         'base-config' : False,
-        'name': 'Ours'
+        'name': '+Cut+Ada'
     }
 
     frac = {
@@ -199,10 +199,14 @@ def large_graphs_configs():
         'kahan-error': True,
         'seed': 1,
         'base-config' : False,
-        'name': 'Ours+Frac'
+        'name': '+Cut+Ada+Frac'
     }
 
-    return [our_config, frac]
+    warm = copy.copy(our_config)
+    warm['name'] = '+Cut+Ada+Warm'
+    warm['warm-start'] = True
+
+    return [our_config, frac, warm]
 
 def add_more_seeds(configs):
     res = []
