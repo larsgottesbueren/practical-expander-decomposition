@@ -24,7 +24,7 @@ namespace UnitFlow {
 
     bool Graph::SinglePushLowestLabel(int maxHeight) {
         const int maxH = std::min(maxHeight, size() * 2 + 1);
-        size_t flow_routed = 0;
+        Flow flow_routed = 0;
         std::vector<std::queue<Vertex>> q(maxH + 1);
 
         for (auto u : *this) {
@@ -37,7 +37,6 @@ namespace UnitFlow {
         size_t work = 0;
         int level = 0;
         while (level <= maxH && flow_routed <= max_flow) {
-            work++;
             if (q[level].empty()) {
                 level++;
                 continue;
@@ -49,6 +48,8 @@ namespace UnitFlow {
                 continue;
             }
             assert(excess(u) > 0 && "Vertex popped from queue should have excess flow.");
+
+            work++;
 
             auto& e = getEdge(u, nextEdgeIdx[u]);
             assert(e.flow + reverse(e).flow == 0 && "Flow across edge and its reverse should cancel.");
@@ -193,7 +194,7 @@ namespace UnitFlow {
                         } else {
                             Flow delta = std::numeric_limits<Flow>::max();
                             int lowest = std::numeric_limits<int>::max();
-                            for (int j = 0; j < stack.size(); ++j) {
+                            for (size_t j = 0; j < stack.size(); ++j) {
                                 const Edge& e = getEdge(stack[j], nextEdgeIdx[stack[j]]);
                                 if (e.residual() < delta) {
                                     delta = e.residual();
@@ -201,7 +202,7 @@ namespace UnitFlow {
                                 }
                             }
                             delta = std::min(delta, excess(source));
-                            for (int j = 0; j < stack.size(); ++j) {
+                            for (size_t j = 0; j < stack.size(); ++j) {
                                 Vertex u = stack[j];
                                 Edge& e = getEdge(u, nextEdgeIdx[u]);
                                 e.flow += delta;
