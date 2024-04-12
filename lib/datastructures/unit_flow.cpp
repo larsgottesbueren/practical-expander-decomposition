@@ -28,7 +28,7 @@ namespace UnitFlow {
         std::vector<std::queue<Vertex>> q(maxH + 1);
 
         for (auto u : *this) {
-            if (excess(u) > 0) {
+            if (excess(u) > 0 && height[u] < maxH) {
                 q[height[u]].push(u);
             }
             flow_routed += std::min(sink[u], absorbed[u]);
