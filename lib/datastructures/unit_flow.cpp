@@ -88,13 +88,12 @@ namespace UnitFlow {
             }
         }
 
-        VLOG(3) << V(work) << V(flow_routed);
+        VLOG(3) << "Unit Flow" << V(work) << V(flow_routed);
         return flow_routed >= max_flow;
     }
 
     std::pair<bool, bool> Graph::computeFlow(const int maxHeight, bool warm_start) {
         if (warm_start) {
-            // ForwardShiloachVishkin();
             Flow flow = Dinitz();
             if (flow >= max_flow) {
                 // TODO careful with distance labels for level cut...
@@ -228,7 +227,7 @@ namespace UnitFlow {
             nextEdgeIdx[u] = 0;
         }
 
-        VLOG(4) << V(flow_routed) << V(max_flow) << V(work);
+        VLOG(4) << "Dinitz" << V(flow_routed) << V(max_flow) << V(work);
 
         return flow_routed;
     }
@@ -290,8 +289,6 @@ namespace UnitFlow {
     }
 
     Flow Graph::StandardMaxFlow(size_t work_bound) {
-
-
         Flow flow_routed = 0;
         std::queue<Vertex> active_vertices;
         for (Vertex u : *this) {
@@ -357,6 +354,8 @@ namespace UnitFlow {
                 }
             }
         }
+
+        VLOG(4) << "max flow" << V(flow_routed) << V(total_work);
 
         return flow_routed;
     }
