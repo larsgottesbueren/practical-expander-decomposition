@@ -29,7 +29,7 @@ namespace UnitFlow {
 
         for (auto u : *this) {
             if (excess(u) > 0) {
-                q[0].push(u);
+                q[height[u]].push(u);
             }
             flow_routed += std::min(sink[u], absorbed[u]);
         }
