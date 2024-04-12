@@ -109,65 +109,53 @@ def incremental_configs():
         'base-config' : False   # yes...
     }
     config = copy.copy(base_config)
+    config['flow-vectors'] = 20
+    config['trim-with-max-flow-first'] = True
+    
     base_config['base-config'] = True
-    #configs.append(base_config)
+    configs.append(base_config)
     
     b20 = copy.copy(base_config)
     b20['flow-vectors'] = 20
     b20['name'] = 'Arv-20'
-    #configs.append(b20)
+    configs.append(b20)
 
     ada = copy.copy(config)
     ada['name'] = '+Ada'
-    ada['flow-vectors'] = 20
     ada['adaptive'] = True
-    #configs.append(ada)
+    configs.append(ada)
 
-    config['use-cut-heuristics'] = True
-    config['name'] = '+Cut'
-    #configs.append(copy.copy(config))
+    cut = copy.copy(config)
+    cut['use-cut-heuristics'] = True
+    cut['use-balanced-partitions'] = True
+    cut['name'] = '+Cut'
+    configs.append(cut)
 
-    config['use-balanced-partitions'] = True
-    config['name'] = '+Cut+Bala'
-    #configs.append(copy.copy(config))
+    
+    cut_ada = copy.copy(cut)
+    cut_ada['adaptive'] = True
+    cut_ada['name'] = '+Cut+Ada'
+    configs.append(copy.copy(config))
 
-    config['use-balanced-partitions'] = False
-    config['adaptive'] = True
-    config['flow-vectors'] = 20
-    config['name'] = '+Cut+Ada'
-    #configs.append(copy.copy(config))
+    cut_ada_frac = copy.copy(cut_ada)
+    cut_ada_frac['flow-fraction'] = True
+    cut_ada_frac['name'] = '+Cut+Ada+Frac'
+    configs.append(cut_ada_frac)
 
-    config['use-balanced-partitions'] = True
-    config['name'] = '+Cut+Bala+Ada'
-    #configs.append(copy.copy(config))
-
-    frac = copy.copy(config)
-    frac['flow-fraction'] = True
-    frac['name'] = '+Cut+Ada+Frac'
-    configs.append(frac) # leave out frac for now
-
-    ada_frac = copy.copy(frac)
+    ada_frac = copy.copy(ada)
     ada_frac['name'] = '+Ada+Frac'
-    ada_frac['use-cut-heuristics'] = False
+    ada_frac['flow-fraction'] = True
     configs.append(ada_frac)
 
-    cut_frac = copy.copy(frac)
+    cut_frac = copy.copy(cut_ada_frac)
     cut_frac['name'] = '+Cut+Frac'
-    config['adaptive'] = False
+    cut_frac['adaptive'] = False
     configs.append(cut_frac)
 
-    our_config = {
-        'flow-vectors': 20,
-        'krv-first': False,
-        'use-cut-heuristics': True,
-        'flow-fraction': False,
-        'adaptive': True,
-        'kahan-error': True,
-        'seed': 1,
-        'base-config' : False,
-        'name': 'Ours'
-    }
-    #configs.append(our_config)
+    warm_start = copy.copy(cut_ada_frac)
+    warm_start['warm-start'] = True
+    warm_start['name'] = '+Cut+Ada+Frac+Warm'
+    configs.append(warm_start)
 
     return configs
 
