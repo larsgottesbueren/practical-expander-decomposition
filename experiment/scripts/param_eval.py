@@ -135,7 +135,7 @@ def incremental_configs():
     cut_ada = copy.copy(cut)
     cut_ada['adaptive'] = True
     cut_ada['name'] = '+Cut+Ada'
-    configs.append(copy.copy(config))
+    configs.append(copy.copy(cut_ada))
 
     cut_ada_frac = copy.copy(cut_ada)
     cut_ada_frac['flow-fraction'] = True
