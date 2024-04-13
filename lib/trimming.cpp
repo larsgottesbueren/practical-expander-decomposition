@@ -127,7 +127,9 @@ namespace Trimming {
             }
         }
 #else
-        graph.StandardMaxFlow();
+        // graph.StandardMaxFlow();
+        VLOG(2) << V(injected) << V(drained);
+        graph.Dinitz(std::numeric_limits<int>::max());
         auto cut = graph.MinCut();
         VLOG(2) << V(cut.size()) << V(graph.size());
         for (auto u : cut) {

@@ -110,7 +110,7 @@ namespace UnitFlow {
 
         void Push(Vertex u, Edge& e);
 
-        Flow Dinitz();
+        Flow Dinitz(int rounds = 2);
 
         void ForwardShiloachVishkin();
 

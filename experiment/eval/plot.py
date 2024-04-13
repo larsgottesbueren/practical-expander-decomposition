@@ -32,7 +32,7 @@ def aggregate_runtimes(df, field = 'Total', seed_aggregator = 'median'):
   return df
 
 #files = ['results.v3.parallel.csv', 'results.partial-flow.csv']
-files = ['results.compute6.csv']
+files = ['results.small.csv']
 
 df = pd.concat([pd.read_csv(f) for f in files])
 

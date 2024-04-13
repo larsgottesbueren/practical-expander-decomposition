@@ -118,13 +118,13 @@ namespace UnitFlow {
         return std::make_pair(reached_flow_fraction, has_excess);
     }
 
-    Flow Graph::Dinitz() {
+    Flow Graph::Dinitz(int rounds) {
         int n = size() + 1;
         size_t flow_routed = 0;
         std::vector<Vertex> frontier;
         std::vector<Vertex> stack;
 
-        for (int round = 0; false || round < 2; ++round) {
+        for (int round = 0; round < rounds; ++round) {
 
             frontier.clear();
             for (Vertex u : *this) {
