@@ -288,6 +288,7 @@ namespace UnitFlow {
             }
             flow_routed += std::min(sink[u], absorbed[u]);
         }
+        VLOG(4) << V(flow_routed);
 
         const int n = size();
         const size_t global_relabel_work_threshold = 20 * n + 10 * volume();
