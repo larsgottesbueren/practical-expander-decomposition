@@ -82,8 +82,8 @@ namespace Trimming {
         graph.reset();
         int64_t drained = 0, injected = 0;
         for (UnitFlow::Vertex u : graph) {
-            graph.addSink(u, graph.degree(u));
-            drained += graph.degree(u);
+            graph.addSink(u, graph.globalDegree(u));
+            drained += graph.globalDegree(u);
         }
         for (UnitFlow::Vertex u : graph) {
             for (auto& e : graph.edgesOf(u)) {
