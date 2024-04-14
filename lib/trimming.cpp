@@ -73,7 +73,7 @@ namespace Trimming {
     }
 
     void FakeEdgeTrimming(UnitFlow::Graph& graph, UnitFlow::Graph& subdiv_graph, std::vector<int>& subdiv_idx, const double phi, int cut_matching_iterations,
-                          const std::vector<std::pair<UnitFlow::Vertex, UnitFlow::Vertex>>& fake_matching_edges) {
+                          const std::vector<std::pair<UnitFlow::Vertex, UnitFlow::Vertex>>& fake_matching_edges, std::mt19937& prng) {
 
         const int capacity = (UnitFlow::Flow) std::ceil(2.0 / phi);
         graph.restoreRemoves();
@@ -90,11 +90,11 @@ namespace Trimming {
                 e.capacity = capacity;
             }
         }
-
         for (const auto& [a, b] : fake_matching_edges) {
             // we can put flow on arbitrary endpoint --> map a/b to endpoints of the edge
-            UnitFlow::Vertex ea = subdiv_graph.edgesOf(a)[0].to;
-            UnitFlow::Vertex eb = subdiv_graph.edgesOf(b)[1].to;
+            UnitFlow::Vertex ea = subdiv_graph.edgesOf(a)[std::uniform_int_distribution<>(0, subdiv_graph.degree(a) - 1)(prng)].to;
+            UnitFlow::Vertex eb = subdiv_graph.edgesOf(b)[std::uniform_int_distribution<>(0, subdiv_graph.degree(b) - 1)(prng)].to;
+            assert(graph.alive(ea) && graph.alive(eb));
             graph.addSource(ea, cut_matching_iterations);
             graph.addSource(eb, cut_matching_iterations);
             injected += 2 * cut_matching_iterations;

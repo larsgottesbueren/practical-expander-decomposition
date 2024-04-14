@@ -168,7 +168,7 @@ namespace ExpanderDecomposition {
                 case CutMatching::Result::NearExpanderFakeEdges: {
                     timer.Start();
                     Trimming::FakeEdgeTrimming(*flowGraph, *subdivisionFlowGraph, *subdivisionIdx, phi, cut_matching_result.iterations,
-                                               cut_matching_result.fake_matching_edges);
+                                               cut_matching_result.fake_matching_edges, *randomGen);
                     Timings::GlobalTimings().AddTiming(Timing::FlowTrim, timer.Stop());
 
                     assert(flowGraph->size() > 0 && "Should not trim all vertices from graph.");

@@ -385,7 +385,6 @@ namespace CutMatching {
             if (has_excess_flow && !reached_flow_fraction) {
                 const auto [cutLeft, cutRight] = subdivGraph->levelCut(h);
                 VLOG(3) << "\tHas level cut with (" << cutLeft.size() << ", " << cutRight.size() << ") vertices.";
-                // const auto [cL, cR] = subdivGraph->MinCut2();
                 RemoveCutSide(cutLeft, cutRight, axLeft, axRight);
             }
 
